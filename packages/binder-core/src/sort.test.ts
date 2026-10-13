@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareCardNumbers, sortPockets } from "./sort.js";
+import { compareCardNumbers, sortPockets } from "./sort";
 
 describe("compareCardNumbers", () => {
   it("sorts plain numbers before prefixed ones, by value then letter suffix", () => {

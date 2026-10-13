@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { parsePocketCode } from "./pocket-code.js";
+import { parsePocketCode } from "./pocket-code";
 
 const pocketCodeString = z.string().refine(
   (value) => {

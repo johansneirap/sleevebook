@@ -1,5 +1,5 @@
-import { deriveImageSizes } from "./derivatives.js";
-import type { ImageStorage } from "./storage.js";
+import { deriveImageSizes } from "./derivatives";
+import type { ImageStorage } from "./storage";
 
 export interface ImagePipelineConfig {
   storage: ImageStorage;

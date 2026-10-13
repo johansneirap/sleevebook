@@ -6,7 +6,7 @@ import {
   pocketCodeFromGlobalIndex,
   pocketCodeToGlobalIndex,
   toAsciiAlias,
-} from "./pocket-code.js";
+} from "./pocket-code";
 
 const FORMAT_3X3 = { rows: 3, cols: 3 };
 

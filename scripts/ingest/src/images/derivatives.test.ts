@@ -1,6 +1,6 @@
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";
-import { deriveImageSizes } from "./derivatives.js";
+import { deriveImageSizes } from "./derivatives";
 
 async function makeTestImage(): Promise<Buffer> {
   return sharp({

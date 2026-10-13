@@ -1,7 +1,7 @@
 import { date, integer, jsonb, numeric, pgTable, text, uuid } from "drizzle-orm/pg-core";
-import { user } from "./auth.js";
-import { cardVariant } from "./catalog.js";
-import { uuidPk } from "./columns.js";
+import { user } from "./auth";
+import { cardVariant } from "./catalog";
+import { uuidPk } from "./columns";
 
 export const cardInstance = pgTable("card_instance", {
   id: uuidPk(),

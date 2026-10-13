@@ -1,6 +1,6 @@
-import type { Format } from "./format.js";
-import { coveredPockets, type Panel } from "./panel.js";
-import type { PocketCode } from "./pocket-code.js";
+import type { Format } from "./format";
+import { coveredPockets, type Panel } from "./panel";
+import type { PocketCode } from "./pocket-code";
 
 // Physical sleeve size (mm) shared with the printed PDFs; see docs/PRODUCT.md NFR.
 export const CARD_WIDTH_MM = 63;

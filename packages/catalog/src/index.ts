@@ -1,1 +1,1 @@
-export * from "./variant-rules.js";
+export * from "./variant-rules";

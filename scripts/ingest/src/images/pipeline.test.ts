@@ -1,7 +1,7 @@
 import sharp from "sharp";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { processVariantImage } from "./pipeline.js";
-import type { ImageStorage } from "./storage.js";
+import { processVariantImage } from "./pipeline";
+import type { ImageStorage } from "./storage";
 
 function createFakeStorage(): ImageStorage & { objects: Map<string, Buffer> } {
   const objects = new Map<string, Buffer>();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { layoutSchema } from "./layout-schema.js";
+import { layoutSchema } from "./layout-schema";
 
 const VALID_LAYOUT = {
   format: { rows: 3, cols: 3 },

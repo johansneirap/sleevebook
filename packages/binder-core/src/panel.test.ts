@@ -5,7 +5,7 @@ import {
   PanelOutOfBoundsError,
   PanelOverlapError,
   validatePanels,
-} from "./panel.js";
+} from "./panel";
 
 const FORMAT_3X3 = { rows: 3, cols: 3 };
 

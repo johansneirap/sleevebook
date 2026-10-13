@@ -12,7 +12,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { uuidPk } from "./columns.js";
+import { uuidPk } from "./columns";
 
 export const game = pgTable("game", {
   id: uuidPk(),

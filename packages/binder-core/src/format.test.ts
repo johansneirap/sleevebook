@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { capacity, pocketsPerSheet, pocketsPerSide } from "./format.js";
+import { capacity, pocketsPerSheet, pocketsPerSide } from "./format";
 
 describe("format", () => {
   it("computes pockets per side and per sheet", () => {

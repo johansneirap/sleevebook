@@ -1,3 +1,3 @@
-export * from "./derivatives.js";
-export * from "./pipeline.js";
-export * from "./storage.js";
+export * from "./derivatives";
+export * from "./pipeline";
+export * from "./storage";

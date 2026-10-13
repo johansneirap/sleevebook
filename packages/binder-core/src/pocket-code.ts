@@ -1,5 +1,5 @@
-import type { Format } from "./format.js";
-import { pocketsPerSheet, pocketsPerSide } from "./format.js";
+import type { Format } from "./format";
+import { pocketsPerSheet, pocketsPerSide } from "./format";
 
 export type Side = "F" | "B";
 

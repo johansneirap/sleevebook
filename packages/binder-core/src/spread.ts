@@ -1,4 +1,4 @@
-import type { Side } from "./pocket-code.js";
+import type { Side } from "./pocket-code";
 
 export interface SheetFace {
   sheet: number;

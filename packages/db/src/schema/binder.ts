@@ -1,7 +1,7 @@
 import { integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
-import { user } from "./auth.js";
-import { goal } from "./collection.js";
-import { uuidPk } from "./columns.js";
+import { user } from "./auth";
+import { goal } from "./collection";
+import { uuidPk } from "./columns";
 
 export const binder = pgTable("binder", {
   id: uuidPk(),

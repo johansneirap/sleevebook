@@ -1,9 +1,9 @@
 import { createDb } from "@sleevebook/db";
-import { downloadAndExtract } from "./download.js";
-import type { ImagePipelineConfig } from "./images/pipeline.js";
-import { createS3Storage } from "./images/storage.js";
-import { loadCatalogSource } from "./source.js";
-import { upsertCatalog } from "./upsert.js";
+import { downloadAndExtract } from "./download";
+import type { ImagePipelineConfig } from "./images/pipeline";
+import { createS3Storage } from "./images/storage";
+import { loadCatalogSource } from "./source";
+import { upsertCatalog } from "./upsert";
 
 function buildImagePipeline(): ImagePipelineConfig | undefined {
   const endpoint = process.env.S3_ENDPOINT;

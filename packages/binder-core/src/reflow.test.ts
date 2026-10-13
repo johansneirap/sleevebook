@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type PocketState, reflow } from "./reflow.js";
+import { type PocketState, reflow } from "./reflow";
 
 function pocketsOfSheet1Front(): PocketState<string>[] {
   return Array.from({ length: 9 }, (_, i) => ({

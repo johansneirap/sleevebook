@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { capacity, formatPocketCode, layoutSchema, parsePocketCode } from "./index.js";
+import { capacity, formatPocketCode, layoutSchema, parsePocketCode } from "./index";
 
 describe("public API", () => {
   it("re-exports the module functions from a single entry point", () => {

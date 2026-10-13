@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sectionize } from "./sectionize.js";
+import { sectionize } from "./sectionize";
 
 describe("sectionize", () => {
   it("groups consecutive items by key, preserving order", () => {

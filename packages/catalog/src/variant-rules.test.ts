@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deriveVariants } from "./variant-rules.js";
+import { deriveVariants } from "./variant-rules";
 
 describe("deriveVariants", () => {
   it("gives a plain rarity normal + reverse in a regular set", () => {

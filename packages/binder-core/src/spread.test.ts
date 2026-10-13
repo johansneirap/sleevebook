@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateSpreads } from "./spread.js";
+import { generateSpreads } from "./spread";
 
 describe("spread", () => {
   it("generates sheets + 1 spreads for a 20-sheet binder", () => {

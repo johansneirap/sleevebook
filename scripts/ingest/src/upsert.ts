@@ -2,9 +2,9 @@ import { deriveVariants } from "@sleevebook/catalog";
 import type { Database } from "@sleevebook/db";
 import { card, cardVariant, externalId, game, set } from "@sleevebook/db";
 import { and, eq } from "drizzle-orm";
-import type { ImagePipelineConfig } from "./images/pipeline.js";
-import { processVariantImage } from "./images/pipeline.js";
-import type { CatalogSource, RawCard, RawSet } from "./source.js";
+import type { ImagePipelineConfig } from "./images/pipeline";
+import { processVariantImage } from "./images/pipeline";
+import type { CatalogSource, RawCard, RawSet } from "./source";
 
 const PROVIDER = "pokemontcg.io";
 

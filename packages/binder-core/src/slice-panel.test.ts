@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { Panel } from "./panel.js";
-import { slicePanel } from "./slice-panel.js";
+import type { Panel } from "./panel";
+import { slicePanel } from "./slice-panel";
 
 const FORMAT_3X3 = { rows: 3, cols: 3 };
 

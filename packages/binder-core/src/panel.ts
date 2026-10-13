@@ -1,5 +1,5 @@
-import type { Format } from "./format.js";
-import type { PocketCode } from "./pocket-code.js";
+import type { Format } from "./format";
+import type { PocketCode } from "./pocket-code";
 
 export interface PanelSpan {
   rows: number;
