@@ -4,7 +4,11 @@ dist/
 build/
 .next/
 coverage/
+test-results/
+playwright-report/
+blob-report/
 .env
 .env.*.local
 *.log
 .DS_Store
+*.tsbuildinfo
