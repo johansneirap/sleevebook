@@ -1,0 +1,1 @@
+ALTER TABLE "card_variant" ADD COLUMN "needs_review" boolean DEFAULT false NOT NULL;

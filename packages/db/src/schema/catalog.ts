@@ -1,5 +1,6 @@
 import { desc } from "drizzle-orm";
 import {
+  boolean,
   date,
   index,
   integer,
@@ -60,6 +61,7 @@ export const cardVariant = pgTable(
     variant: text("variant").notNull(),
     renderEffect: text("render_effect"),
     images: jsonb("images"),
+    needsReview: boolean("needs_review").notNull().default(false),
   },
   (table) => [index("card_variant_card_id_variant_idx").on(table.cardId, table.variant)],
 );

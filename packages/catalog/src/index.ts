@@ -1,1 +1,1 @@
-export {};
+export * from "./variant-rules.js";
