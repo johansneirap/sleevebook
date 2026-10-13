@@ -2,6 +2,8 @@ import { deriveVariants } from "@sleevebook/catalog";
 import type { Database } from "@sleevebook/db";
 import { card, cardVariant, externalId, game, set } from "@sleevebook/db";
 import { and, eq } from "drizzle-orm";
+import type { ImagePipelineConfig } from "./images/pipeline.js";
+import { processVariantImage } from "./images/pipeline.js";
 import type { CatalogSource, RawCard, RawSet } from "./source.js";
 
 const PROVIDER = "pokemontcg.io";
@@ -105,19 +107,37 @@ async function upsertCard(db: Database, setId: string, raw: RawCard): Promise<st
   return cardId;
 }
 
+async function resolveImages(
+  imagePipeline: ImagePipelineConfig | undefined,
+  variantKey: string,
+  images: RawCard["images"],
+): Promise<Record<string, unknown> | null> {
+  if (!images) {
+    return null;
+  }
+  const sourceUrl = images.large ?? images.small;
+  if (!imagePipeline || !sourceUrl) {
+    return { [PROVIDER]: images };
+  }
+  const r2 = await processVariantImage(imagePipeline, variantKey, sourceUrl);
+  return { [PROVIDER]: images, r2 };
+}
+
 async function upsertVariant(
   db: Database,
   cardId: string,
   variant: string,
+  variantKey: string,
   images: RawCard["images"],
   needsReview: boolean,
+  imagePipeline: ImagePipelineConfig | undefined,
 ): Promise<void> {
   const [existing] = await db
     .select({ id: cardVariant.id })
     .from(cardVariant)
     .where(and(eq(cardVariant.cardId, cardId), eq(cardVariant.variant, variant)));
 
-  const imagesJson = images ? { [PROVIDER]: images } : null;
+  const imagesJson = await resolveImages(imagePipeline, variantKey, images);
 
   if (existing) {
     await db
@@ -130,7 +150,11 @@ async function upsertVariant(
   await db.insert(cardVariant).values({ cardId, variant, images: imagesJson, needsReview });
 }
 
-export async function upsertCatalog(db: Database, source: CatalogSource): Promise<IngestSummary> {
+export async function upsertCatalog(
+  db: Database,
+  source: CatalogSource,
+  imagePipeline?: ImagePipelineConfig,
+): Promise<IngestSummary> {
   const gameId = await ensurePokemonGame(db);
   const summary: IngestSummary = {
     setsUpserted: 0,
@@ -157,7 +181,16 @@ export async function upsertCatalog(db: Database, source: CatalogSource): Promis
       }
 
       for (const variant of variants) {
-        await upsertVariant(db, cardId, variant, rawCard.images, needsReview);
+        const variantKey = `${rawCard.id}-${variant}`;
+        await upsertVariant(
+          db,
+          cardId,
+          variant,
+          variantKey,
+          rawCard.images,
+          needsReview,
+          imagePipeline,
+        );
         summary.variantsUpserted++;
       }
     }
