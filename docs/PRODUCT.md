@@ -376,14 +376,14 @@ Seis fases; cada una termina con algo usable. La fase 1 tiene que poder reproduc
 
 ### Fase 1 — MVP: editor, visor y tracking
 
-- [ ] Crear binder: formato 2×2/3×3/4×3/4×4, hojas, apertura lateral/vertical
-- [ ] Editor de caras: agregar carta por búsqueda, placeholder, vacío; drag & drop; selección múltiple; undo/redo
-- [ ] Importar lista PTCGL/Limitless y CSV con resolución de ambiguas
-- [ ] Ordenamiento compuesto (era, set, número, variante, rareza, precio, custom) con secciones
-- [ ] Objetivo master set por especie con % de avance y "me faltan"
-- [ ] Precios snapshot (pokemontcg.io) + precio manual; USD/CLP
-- [ ] Draft y publicado; link público sin cuenta; imagen Open Graph
-- [ ] Migrar el tracker actual (267 cartas, 2 objetivos, códigos de bolsillo)
+- [x] Crear binder: formato 2×2/3×3/4×3/4×4, hojas, apertura lateral/vertical
+- [x] Editor de caras: agregar carta por búsqueda, placeholder, vacío; drag & drop; selección múltiple; undo/redo (sin drag de grupo, lasso ni auto-avance de página — ver registro de decisiones)
+- [x] Importar lista PTCGL/Limitless y CSV con resolución de ambiguas (sin códigos ALT ni texto libre/foto — ver registro)
+- [x] Ordenamiento compuesto (era, set, número, variante, rareza) con agrupado y secciones (sin precio/custom como criterio ni encabezados de sección persistentes — ver registro)
+- [x] Objetivo master set por especie con % de avance y "me faltan"
+- [x] Precios snapshot (pokemontcg.io, tcgplayer) + precio manual; solo USD (CLP/EUR queda pendiente — ver registro)
+- [x] Draft y publicado; link público sin cuenta; imagen Open Graph
+- [x] Migrar el tracker actual (267 cartas, 2 objetivos, códigos de bolsillo)
 
 ### Fase 2 — Experiencia visual
 
@@ -450,3 +450,10 @@ Alcance, backend y hosting quedaron decididos el 13-10-2026; antes del primer li
 | 2026-10-13 | No se escribe `railway.json` en el repo | Config as Code de Railway está deprecado y los servicios nuevos ya no pueden usarlo; el build usa autodetección del `Dockerfile` en la raíz y el resto (healthcheck, restart policy, pre-deploy) se configura en el dashboard — ver `docs/DEPLOY.md` |
 | 2026-10-13 | Las migraciones en producción corren con el migrator de `drizzle-orm` (no `drizzle-kit`) vía `packages/db/src/migrate-cli.ts` | `drizzle-kit` es dependencia de desarrollo; el runtime de producción no debe necesitarla |
 | 2026-10-13 | Fase 0 y MVP solo con catálogo e interfaz en inglés (ES/JP vía TCGdex pasa a fase posterior) | Enfocar el primer tramo del proyecto; el modelo de datos ya queda abierto a más idiomas sin rehacerlo |
+| 2026-10-13/14 | Login real (Better Auth) queda para más adelante; toda la Fase 1 usa `DEV_USER_ID`/`ensureDevUser`, un seam centralizado de "usuario actual" | Pedido explícito del usuario al arrancar la fase, para que enchufar auth real después no implique rehacer binders/goals/share |
+| 2026-10-14 | Editor de caras sin drag de grupo, lasso ni auto-avance de página al arrastrar al borde | El usuario aprobó recortar las 3 sub-features más caras de drag & drop vía pregunta directa; dnd-kit permite agregarlas después sin rehacer la base |
+| 2026-10-14 | Orden compuesto sin precio/fecha de adquisición/estado/tipo de energía como criterio, sin preview animado, sin presets guardados, sin encabezados de sección persistentes en el visor | Precio/fecha/estado viven en `card_instance`, todavía no conectado a los bolsillos; encabezados de sección necesitarían conectar el campo `sections` del layout (hoy sin uso) a algo que los ancle a un rango de bolsillos |
+| 2026-10-14 | Importación de listas sin códigos ALT de PTCGL, sin "set completo"/"master set" como entrada (ya se resuelve vía Goals), sin texto libre/foto, y solo por texto pegado (sin subir archivo, ni para CSV) | El usuario aprobó el recorte vía pregunta directa; códigos ALT necesitan una tabla de mapeo que no existe; texto libre/foto está marcado en la spec como fase posterior |
+| 2026-10-14 | Precios: solo snapshot de tcgplayer (USD) ya embebido en el dump de pokemontcg.io; sin CLP/EUR con tipo de cambio diario, sin precio por estado/gradeo, sin historial con gráfico | Ninguno de estos está marcado [MVP] en la spec; el historial con gráfico la spec lo marca explícitamente como fase posterior; Scrydex/JustTCG/PriceCharting quedan como pregunta abierta (ver tabla de Datos externos) |
+| 2026-10-14 | Publicar un binder no congela una versión inmutable: la página pública (`/s/[slug]`) muestra el layout en vivo, igual que la vista del dueño, no una copia fijada al momento de publicar | La nota de arquitectura "Publicar = copiar la versión" implicaría que `pocket-actions.ts`/`sort-actions.ts`/`import-actions.ts` dejen de pisar la única fila de `binder_version` y empiecen a insertar versiones nuevas; ese refactor quedó fuera de alcance del bloque. Efecto: editar después de publicar se ve al instante en el link público, sin "republicar" |
+| 2026-10-14 | Compartir sin modo vendedor (precio visible, estados disponible/reservado/vendido, contacto), sin iframe+QR, sin exportar PDF/imagen | El usuario aprobó cortar las 3 vía pregunta directa; ninguna está marcada [MVP] en la spec |
