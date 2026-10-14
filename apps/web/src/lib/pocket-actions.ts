@@ -1,25 +1,27 @@
 "use server";
 
+import type { Layout } from "@sleevebook/binder-core";
 import { layoutSchema } from "@sleevebook/binder-core";
 import { binderVersion } from "@sleevebook/db";
 import { desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "./db";
 
-export type PocketContentInput =
-  | { kind: "empty" }
-  | { kind: "card"; variantId: string }
-  | {
-      kind: "placeholder";
-      variantId: string;
-      style: "ficha" | "silueta" | "minimal" | "vacio-con-borde";
-    };
+export type PocketValue = Layout["pockets"][string];
 
-export async function setPocketContent(
-  binderId: string,
-  pocketCode: string,
-  content: PocketContentInput,
-): Promise<void> {
+export interface PocketChange {
+  pocketCode: string;
+  content: PocketValue;
+}
+
+// Every pocket mutation -- click-to-assign, drag/swap, bulk clear, and
+// undo/redo replay -- goes through this one atomic read-patch-write so a
+// multi-pocket change (e.g. a swap) never persists half-applied.
+export async function applyPocketChanges(binderId: string, changes: PocketChange[]): Promise<void> {
+  if (changes.length === 0) {
+    return;
+  }
+
   const [versionRow] = await db
     .select({ id: binderVersion.id, layout: binderVersion.layout })
     .from(binderVersion)
@@ -31,18 +33,12 @@ export async function setPocketContent(
   }
 
   const layout = layoutSchema.parse(versionRow.layout);
+  const pockets = { ...layout.pockets };
+  for (const change of changes) {
+    pockets[change.pocketCode] = change.content;
+  }
 
-  const pocketContent =
-    content.kind === "empty"
-      ? { kind: "empty" as const }
-      : content.kind === "card"
-        ? { kind: "card" as const, variant: content.variantId, instance: null }
-        : { kind: "placeholder" as const, variant: content.variantId, style: content.style };
-
-  const updatedLayout = layoutSchema.parse({
-    ...layout,
-    pockets: { ...layout.pockets, [pocketCode]: pocketContent },
-  });
+  const updatedLayout = layoutSchema.parse({ ...layout, pockets });
 
   await db
     .update(binderVersion)
