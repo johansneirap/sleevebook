@@ -368,11 +368,11 @@ Seis fases; cada una termina con algo usable. La fase 1 tiene que poder reproduc
 
 ### Fase 0 — Fundaciones
 
-- [ ] Monorepo (pnpm + Turborepo), lint, CI, Vitest y Playwright
-- [ ] Base de datos y migraciones (Drizzle) con las tablas del Modelo de datos
-- [ ] Ingesta del catálogo EN desde `pokemon-tcg-data` (ES/JP vía TCGdex queda para una fase posterior)
-- [ ] Pipeline de imágenes: copia a R2, derivados por tamaño, CDN
-- [ ] `binder-core`: formatos, códigos `S·F/B·n`, reflow, corte de paneles, con tests
+- [x] Monorepo (pnpm + Turborepo), lint, CI, Vitest y Playwright
+- [x] Base de datos y migraciones (Drizzle) con las tablas del Modelo de datos
+- [x] Ingesta del catálogo EN desde `pokemon-tcg-data` (ES/JP vía TCGdex queda para una fase posterior)
+- [x] Pipeline de imágenes: copia a R2, derivados por tamaño, CDN
+- [x] `binder-core`: formatos, códigos `S·F/B·n`, reflow, corte de paneles, con tests
 
 ### Fase 1 — MVP: editor, visor y tracking
 
@@ -443,4 +443,10 @@ Alcance, backend y hosting quedaron decididos el 13-10-2026; antes del primer li
 | 2026-10-13 | No usar arte que ya aparece en cartas para paneles | Que el binder sume arte nuevo, no repita |
 | 2026-10-13 | Nombre del producto: Sleevebook (sleevebook.com y .app libres al 13-10-2026) | Claro, bilingüe, evoca el binder como libro de fundas |
 | 2026-10-13 | Desplegar en Railway; gasto sobre el plan permitido solo con límite de uso y alertas configuradas | Usar lo que ya se paga sin sorpresas en la factura |
+| 2026-10-13 | Fase 0 y MVP solo con catálogo e interfaz en inglés (ES/JP vía TCGdex pasa a fase posterior) | Enfocar el primer tramo del proyecto; el modelo de datos ya queda abierto a más idiomas sin rehacerlo |
+| 2026-10-13 | Pipeline de imágenes (R2 + derivados) entra en Fase 0, dentro de la sesión de arranque | El usuario decidió incluirlo ya en vez de posponerlo a Fase 1 |
+| 2026-10-13 | `card_variant` gana la columna `needs_review` (boolean) | Hacer visible en la base, no solo en logs, qué variantes inferidas por la ingesta requieren confirmación manual (sets muy recientes o rareza desconocida) |
+| 2026-10-13 | Resolución de módulos del repo: `module`/`moduleResolution` tipo "Bundler" en vez de "NodeNext"; sin extensión `.js` en imports relativos | Turbopack (usado por `apps/web`) no soporta el mapeo `.js`→`.ts` que sí soporta webpack; "Bundler" funciona igual para tsc, vitest y tsx |
+| 2026-10-13 | No se escribe `railway.json` en el repo | Config as Code de Railway está deprecado y los servicios nuevos ya no pueden usarlo; el build usa autodetección del `Dockerfile` en la raíz y el resto (healthcheck, restart policy, pre-deploy) se configura en el dashboard — ver `docs/DEPLOY.md` |
+| 2026-10-13 | Las migraciones en producción corren con el migrator de `drizzle-orm` (no `drizzle-kit`) vía `packages/db/src/migrate-cli.ts` | `drizzle-kit` es dependencia de desarrollo; el runtime de producción no debe necesitarla |
 | 2026-10-13 | Fase 0 y MVP solo con catálogo e interfaz en inglés (ES/JP vía TCGdex pasa a fase posterior) | Enfocar el primer tramo del proyecto; el modelo de datos ya queda abierto a más idiomas sin rehacerlo |
