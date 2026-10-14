@@ -6,7 +6,7 @@ import type { ImagePipelineConfig } from "./images/pipeline";
 import { processVariantImage } from "./images/pipeline";
 import type { CatalogSource, RawCard, RawSet } from "./source";
 
-const PROVIDER = "pokemontcg.io";
+export const PROVIDER = "pokemontcg.io";
 
 export interface IngestSummary {
   setsUpserted: number;
@@ -15,9 +15,10 @@ export interface IngestSummary {
   needsReview: number;
 }
 
-async function findExternalEntityId(
+export async function findExternalEntityId(
   db: Database,
   entityType: string,
+  provider: string,
   externalIdValue: string,
 ): Promise<string | undefined> {
   const [row] = await db
@@ -26,7 +27,7 @@ async function findExternalEntityId(
     .where(
       and(
         eq(externalId.entityType, entityType),
-        eq(externalId.provider, PROVIDER),
+        eq(externalId.provider, provider),
         eq(externalId.externalId, externalIdValue),
       ),
     )
@@ -34,7 +35,7 @@ async function findExternalEntityId(
   return row?.entityId;
 }
 
-async function linkExternalId(
+export async function linkExternalId(
   db: Database,
   entityType: string,
   entityId: string,
@@ -47,7 +48,7 @@ async function linkExternalId(
     .onConflictDoNothing();
 }
 
-async function ensurePokemonGame(db: Database): Promise<string> {
+export async function ensurePokemonGame(db: Database): Promise<string> {
   const [existing] = await db.select({ id: game.id }).from(game).where(eq(game.name, "Pokémon"));
   if (existing) {
     return existing.id;
@@ -67,7 +68,7 @@ async function upsertSet(db: Database, gameId: string, raw: RawSet): Promise<str
     language: "en",
   };
 
-  const existingId = await findExternalEntityId(db, "set", raw.id);
+  const existingId = await findExternalEntityId(db, "set", PROVIDER, raw.id);
   if (existingId) {
     await db.update(set).set(values).where(eq(set.id, existingId));
     return existingId;
@@ -95,7 +96,7 @@ async function upsertCard(db: Database, setId: string, raw: RawCard): Promise<st
     language: "en",
   };
 
-  const existingId = await findExternalEntityId(db, "card", raw.id);
+  const existingId = await findExternalEntityId(db, "card", PROVIDER, raw.id);
   if (existingId) {
     await db.update(card).set(values).where(eq(card.id, existingId));
     return existingId;
