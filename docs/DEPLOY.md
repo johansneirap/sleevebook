@@ -69,3 +69,16 @@ Verificado en el dashboard actual (Workspace → Usage):
 2. R2 → **Manage API tokens** → crear un token con permisos **solo sobre ese bucket** (no "todos los buckets de la cuenta"). Copiá `Access Key ID` y `Secret Access Key`.
 3. El **endpoint S3** de R2 tiene la forma `https://<account-id>.r2.cloudflarestorage.com`.
 4. Para `PUBLIC_ASSETS_URL`, usá un **subdominio dedicado, no el dominio raíz**: `assets.sleevebook.com`. El raíz (`sleevebook.com`) queda libre para la app del paso 5. R2 → bucket → **Settings → Custom Domains → Connect Domain** → `assets.sleevebook.com` (como el dominio ya está en tu Cloudflare, el DNS y el certificado se crean solos). Queda `PUBLIC_ASSETS_URL=https://assets.sleevebook.com`.
+
+## 7. Seed inicial de datos (una sola vez, post-deploy)
+
+El pre-deploy solo aplica migraciones de **esquema** (tablas vacías). Antes de poder crear el primer binder hacen falta dos pasos manuales contra la `DATABASE_URL` de producción (vía `railway run` o el proxy público temporal, como se usó la primera vez):
+
+1. **Fila `dev-user`**: mientras no haya login real (Better Auth, pendiente de Fase 1), todo binder se crea con `user_id = 'dev-user'`, una fila fija en la tabla `user`. Si falta, crear cualquier binder falla con una violación de foreign key y Next.js muestra el error genérico "A server error occurred" sin detalle. Insertarla una vez:
+   ```sql
+   INSERT INTO "user" (id, name, email, handle) VALUES ('dev-user', 'Johans', 'dev@sleevebook.local', 'johans');
+   ```
+   (mismos valores que `ensureDevUser()` en `packages/db/src/dev-user.ts`).
+2. **Catálogo**: correr `pnpm --filter @sleevebook/ingest start` apuntando a producción para cargar sets/cartas/variantes. El código actual (desde el fix de octubre 2026) hace batch por set dentro de una transacción; aun así, contra una conexión con latencia real (el proxy público de Railway, o la futura ejecución del cron diario) puede ser lento o inestable — preferir correrlo desde dentro de la red privada de Railway (mismo proyecto) en vez del proxy público si es posible.
+
+Si en algún momento se recrea la base desde cero, repetir ambos pasos antes de usar la app.
