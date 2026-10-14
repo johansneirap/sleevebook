@@ -15,6 +15,22 @@ import { useRef, useState, useTransition } from "react";
 import type { VariantDisplay } from "../../lib/binders";
 import { applyPocketChanges, type PocketChange, type PocketValue } from "../../lib/pocket-actions";
 import { searchCardVariants } from "../../lib/search";
+import {
+  computeSortedLayout,
+  type GroupField,
+  type SortableField,
+  type SortCriterion,
+} from "../../lib/sort-actions";
+
+const SORT_FIELD_OPTIONS: { value: SortableField; label: string }[] = [
+  { value: "era", label: "Era" },
+  { value: "releasedAt", label: "Fecha de lanzamiento" },
+  { value: "setName", label: "Set" },
+  { value: "number", label: "Número" },
+  { value: "name", label: "Nombre" },
+  { value: "rarity", label: "Rareza" },
+  { value: "variant", label: "Variante" },
+];
 
 interface BinderEditorProps {
   binderId: string;
@@ -113,6 +129,15 @@ export function BinderEditor({ binderId, faces, format, pockets, displays }: Bin
   const [redoStack, setRedoStack] = useState<HistoryEntry[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const [criteriaSlots, setCriteriaSlots] = useState<(SortCriterion | null)[]>([
+    { field: "setName", dir: "asc" },
+    null,
+    null,
+  ]);
+  const [groupBy, setGroupBy] = useState<GroupField | null>(null);
+  const [startOnNewSide, setStartOnNewSide] = useState(false);
+  const [sortError, setSortError] = useState<string | null>(null);
+  const [isSorting, setIsSorting] = useState(false);
 
   function getContent(code: string): PocketValue {
     return pockets[code] ?? EMPTY_POCKET;
@@ -198,6 +223,30 @@ export function BinderEditor({ binderId, faces, format, pockets, displays }: Bin
     runChanges(entry.changes.map(({ pocketCode, after }) => ({ pocketCode, content: after })));
   }
 
+  async function handleApplySort() {
+    setSortError(null);
+    setIsSorting(true);
+    const criteria = criteriaSlots.filter((slot): slot is SortCriterion => slot !== null);
+    const result = await computeSortedLayout(binderId, { criteria, groupBy, startOnNewSide });
+    setIsSorting(false);
+
+    if (!result.ok) {
+      setSortError(result.error);
+      return;
+    }
+
+    const changes: HistoryChange[] = [];
+    for (const [code, after] of Object.entries(result.pockets)) {
+      const before = getContent(code);
+      if (JSON.stringify(before) !== JSON.stringify(after)) {
+        changes.push({ pocketCode: code, before, after });
+      }
+    }
+    if (changes.length > 0) {
+      recordAndRun(changes);
+    }
+  }
+
   function onSearchChange(value: string) {
     setQuery(value);
     if (debounceRef.current) {
@@ -227,6 +276,83 @@ export function BinderEditor({ binderId, faces, format, pockets, displays }: Bin
           Rehacer
         </button>
       </div>
+
+      <details style={{ marginBottom: 16, maxWidth: 420 }}>
+        <summary>Reordenar binder</summary>
+        <div style={{ marginTop: 8 }}>
+          {criteriaSlots.map((slot, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: fixed 3 slots (Criterio 1/2/3), never reordered/inserted/removed
+            <div key={index} style={{ display: "flex", gap: 4, marginTop: 4 }}>
+              <select
+                aria-label={`Criterio ${index + 1}: campo`}
+                value={slot?.field ?? ""}
+                onChange={(event) => {
+                  const field = event.target.value as SortableField | "";
+                  setCriteriaSlots((current) => {
+                    const next = [...current];
+                    next[index] = field ? { field, dir: slot?.dir ?? "asc" } : null;
+                    return next;
+                  });
+                }}
+              >
+                {index > 0 && <option value="">— sin usar —</option>}
+                {SORT_FIELD_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              {slot && (
+                <select
+                  aria-label={`Criterio ${index + 1}: dirección`}
+                  value={slot.dir}
+                  onChange={(event) => {
+                    const dir = event.target.value as "asc" | "desc";
+                    setCriteriaSlots((current) => {
+                      const next = [...current];
+                      next[index] = { field: slot.field, dir };
+                      return next;
+                    });
+                  }}
+                >
+                  <option value="asc">Ascendente</option>
+                  <option value="desc">Descendente</option>
+                </select>
+              )}
+            </div>
+          ))}
+
+          <div style={{ marginTop: 8 }}>
+            <select
+              aria-label="Agrupar por"
+              value={groupBy ?? ""}
+              onChange={(event) =>
+                setGroupBy(event.target.value ? (event.target.value as GroupField) : null)
+              }
+            >
+              <option value="">Sin agrupar</option>
+              <option value="era">Agrupar por era</option>
+              <option value="setName">Agrupar por set</option>
+            </select>
+          </div>
+
+          <label style={{ display: "block", marginTop: 4 }}>
+            <input
+              type="checkbox"
+              checked={startOnNewSide}
+              disabled={!groupBy}
+              onChange={(event) => setStartOnNewSide(event.target.checked)}
+            />{" "}
+            Empezar cada sección en cara nueva
+          </label>
+
+          {sortError && <p style={{ color: "#c00" }}>{sortError}</p>}
+
+          <button type="button" onClick={handleApplySort} disabled={isSorting || isPending}>
+            Aplicar orden
+          </button>
+        </div>
+      </details>
 
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
