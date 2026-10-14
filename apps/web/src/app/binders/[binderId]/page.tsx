@@ -4,18 +4,11 @@ import { notFound } from "next/navigation";
 import { FaceGrid } from "../../../components/binder/face-grid";
 import { getBinderWithLayout, getVariantDisplays } from "../../../lib/binders";
 import { getGoalProgress } from "../../../lib/goals";
+import { clampSpreadIndex } from "../../../lib/spreads";
 
 interface PageProps {
   params: Promise<{ binderId: string }>;
   searchParams: Promise<{ spread?: string }>;
-}
-
-function clampSpreadIndex(raw: string | undefined, max: number): number {
-  const parsed = raw ? Number.parseInt(raw, 10) : 0;
-  if (!Number.isFinite(parsed)) {
-    return 0;
-  }
-  return Math.min(Math.max(parsed, 0), max);
 }
 
 export default async function BinderViewerPage({ params, searchParams }: PageProps) {
@@ -55,6 +48,9 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
         <Link href="/binders">&larr; Mis binders</Link>
       </p>
       <h1>{binderData.name}</h1>
+      <p>
+        <Link href={`/binders/${binderId}/editar`}>Editar</Link>
+      </p>
       {progress && (
         <p>
           Avance del objetivo: {progress.owned} / {progress.total} ({progress.percentage}%)

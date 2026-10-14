@@ -74,7 +74,7 @@ interface StoredImages {
   r2?: { thumbnail: string; medium: string; high: string };
 }
 
-function extractImageUrl(images: unknown): string | null {
+export function extractImageUrl(images: unknown): string | null {
   const stored = images as StoredImages | null;
   return (
     stored?.r2?.high ?? stored?.["pokemontcg.io"]?.large ?? stored?.["pokemontcg.io"]?.small ?? null
