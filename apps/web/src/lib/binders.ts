@@ -71,6 +71,16 @@ export interface VariantDisplay {
   imageUrl: string | null;
 }
 
+export function collectVariantIds(pockets: Layout["pockets"]): string[] {
+  const ids = new Set<string>();
+  for (const content of Object.values(pockets)) {
+    if (content.kind === "card" || content.kind === "placeholder") {
+      ids.add(content.variant);
+    }
+  }
+  return [...ids];
+}
+
 interface StoredImages {
   "pokemontcg.io"?: { small?: string; large?: string };
   r2?: { thumbnail: string; medium: string; high: string };

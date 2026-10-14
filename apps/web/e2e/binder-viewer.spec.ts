@@ -127,6 +127,21 @@ test("viewer navigates to the next (and last) spread", async ({ page }) => {
   await expect(page.getByText("Spread 2 / 2")).toBeVisible();
 });
 
+test("viewer navigates spreads with the keyboard arrows, and URL stays in sync", async ({
+  page,
+}) => {
+  await page.goto(`/binders/${binderId}`);
+  await page.locator("h1").click();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByText("Hoja 1 · Reverso")).toBeVisible();
+  await expect(page.getByText("Spread 2 / 2")).toBeVisible();
+  await expect(page).toHaveURL(/[?&]spread=1(&|$)/);
+
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.getByText("Hoja 1 · Frente")).toBeVisible();
+  await expect(page.getByText("Spread 1 / 2")).toBeVisible();
+});
+
 test("viewer 404s on an unknown binder id", async ({ page }) => {
   const response = await page.goto("/binders/00000000-0000-0000-0000-000000000000");
   expect(response?.status()).toBe(404);

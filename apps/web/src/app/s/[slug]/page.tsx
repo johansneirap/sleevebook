@@ -1,10 +1,9 @@
-import { formatPocketCode, generateSpreads } from "@sleevebook/binder-core";
+import { generateSpreads } from "@sleevebook/binder-core";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BinderFaces } from "../../../components/binder/binder-faces";
+import { BinderPageTurner } from "../../../components/binder/binder-page-turner";
 import { ThemedMain } from "../../../components/binder/themed-main";
-import { getBinderWithLayout, getVariantDisplays } from "../../../lib/binders";
+import { collectVariantIds, getBinderWithLayout, getVariantDisplays } from "../../../lib/binders";
 import { getGoalProgress } from "../../../lib/goals";
 import { getPublishedBinderBySlug, incrementShareViews } from "../../../lib/share";
 import { clampSpreadIndex } from "../../../lib/spreads";
@@ -43,24 +42,13 @@ export default async function PublicBinderPage({ params, searchParams }: PagePro
 
   const spreads = generateSpreads(binderData.sheets);
   const index = clampSpreadIndex(spreadParam, spreads.length - 1);
-  const spread = spreads[index];
-  if (!spread) {
+  if (!spreads[index]) {
     notFound();
   }
 
   const { format, pockets } = binderData.layout;
 
-  const variantIds = new Set<string>();
-  for (const face of spread.faces) {
-    for (let i = 1; i <= format.rows * format.cols; i++) {
-      const code = formatPocketCode({ sheet: face.sheet, side: face.side, index: i });
-      const content = pockets[code];
-      if (content?.kind === "card" || content?.kind === "placeholder") {
-        variantIds.add(content.variant);
-      }
-    }
-  }
-  const displays = await getVariantDisplays([...variantIds]);
+  const displays = await getVariantDisplays(collectVariantIds(pockets));
   const progress = await getGoalProgress(publicBinder.id);
 
   return (
@@ -71,29 +59,17 @@ export default async function PublicBinderPage({ params, searchParams }: PagePro
           Avance del objetivo: {progress.owned} / {progress.total} ({progress.percentage}%)
         </p>
       )}
-      <BinderFaces
-        faces={spread.faces}
+      <BinderPageTurner
+        basePath={`/s/${slug}`}
+        initialIndex={index}
+        sheets={binderData.sheets}
+        opening={binderData.layout.opening}
         format={format}
         pockets={pockets}
         panels={binderData.layout.panels}
         displays={displays}
         sleeve={binderData.layout.theme.sleeve}
       />
-      <nav style={{ marginTop: 16, display: "flex", gap: 16, alignItems: "center" }}>
-        {index > 0 ? (
-          <Link href={`/s/${slug}?spread=${index - 1}`}>&larr; Anterior</Link>
-        ) : (
-          <span style={{ color: "#aaa" }}>&larr; Anterior</span>
-        )}
-        <span>
-          Spread {index + 1} / {spreads.length}
-        </span>
-        {index < spreads.length - 1 ? (
-          <Link href={`/s/${slug}?spread=${index + 1}`}>Siguiente &rarr;</Link>
-        ) : (
-          <span style={{ color: "#aaa" }}>Siguiente &rarr;</span>
-        )}
-      </nav>
     </ThemedMain>
   );
 }
