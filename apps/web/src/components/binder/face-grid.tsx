@@ -11,6 +11,7 @@ interface FaceGridProps {
 }
 
 const POCKET_STYLE: CSSProperties = {
+  position: "relative",
   aspectRatio: "63 / 88",
   border: "1px solid #ccc",
   display: "flex",
@@ -51,6 +52,22 @@ export function FaceGrid({ face, format, pockets, displays }: FaceGridProps) {
           if (content?.kind === "card") {
             return (
               <div key={code} style={POCKET_STYLE} title={display?.name}>
+                {content.count && content.count > 1 && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: 2,
+                      right: 2,
+                      background: "#06c",
+                      color: "white",
+                      borderRadius: 4,
+                      padding: "0 4px",
+                      fontSize: 10,
+                    }}
+                  >
+                    ×{content.count}
+                  </span>
+                )}
                 {display?.imageUrl ? (
                   // biome-ignore lint/performance/noImgElement: viewer MVP, no next/image config yet
                   <img

@@ -13,6 +13,14 @@ import type { Format, Layout, SheetFace } from "@sleevebook/binder-core";
 import { formatPocketCode } from "@sleevebook/binder-core";
 import { useRef, useState, useTransition } from "react";
 import type { VariantDisplay } from "../../lib/binders";
+import {
+  computeImportLayout,
+  type ImportDestination,
+  type ImportFormat,
+  type ImportMode,
+  type ImportPreview,
+  previewImport,
+} from "../../lib/import-actions";
 import { applyPocketChanges, type PocketChange, type PocketValue } from "../../lib/pocket-actions";
 import { searchCardVariants } from "../../lib/search";
 import {
@@ -31,6 +39,11 @@ const SORT_FIELD_OPTIONS: { value: SortableField; label: string }[] = [
   { value: "rarity", label: "Rareza" },
   { value: "variant", label: "Variante" },
 ];
+
+const IMPORT_PLACEHOLDER: Record<ImportFormat, string> = {
+  decklist: "4 Riolu MEG 76\n3 Mega Lucario ex MEG 77",
+  csv: "name,set,number,variant,qty\nRiolu,MEG,76,normal,4",
+};
 
 interface BinderEditorProps {
   binderId: string;
@@ -85,6 +98,7 @@ function Pocket({
       {...attributes}
       onClick={(event) => onSelect(code, event.shiftKey || event.metaKey || event.ctrlKey)}
       style={{
+        position: "relative",
         aspectRatio: "63 / 88",
         borderWidth: isSelected ? 2 : 1,
         borderColor: isSelected ? "#06c" : isOver ? "#0a0" : "#ccc",
@@ -101,6 +115,22 @@ function Pocket({
         overflow: "hidden",
       }}
     >
+      {content?.kind === "card" && content.count && content.count > 1 && (
+        <span
+          style={{
+            position: "absolute",
+            top: 2,
+            right: 2,
+            background: "#06c",
+            color: "white",
+            borderRadius: 4,
+            padding: "0 4px",
+            fontSize: 10,
+          }}
+        >
+          ×{content.count}
+        </span>
+      )}
       {content?.kind === "card" && display?.imageUrl ? (
         // biome-ignore lint/performance/noImgElement: editor MVP, no next/image config yet
         <img
@@ -138,6 +168,15 @@ export function BinderEditor({ binderId, faces, format, pockets, displays }: Bin
   const [startOnNewSide, setStartOnNewSide] = useState(false);
   const [sortError, setSortError] = useState<string | null>(null);
   const [isSorting, setIsSorting] = useState(false);
+  const [importFormat, setImportFormat] = useState<ImportFormat>("decklist");
+  const [importText, setImportText] = useState("");
+  const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
+  const [isPreviewingImport, setIsPreviewingImport] = useState(false);
+  const [importDestination, setImportDestination] = useState<ImportDestination>("end");
+  const [importDestinationPocket, setImportDestinationPocket] = useState("");
+  const [importMode, setImportMode] = useState<ImportMode>("perCopy");
+  const [importError, setImportError] = useState<string | null>(null);
+  const [isApplyingImport, setIsApplyingImport] = useState(false);
 
   function getContent(code: string): PocketValue {
     return pockets[code] ?? EMPTY_POCKET;
@@ -247,6 +286,76 @@ export function BinderEditor({ binderId, faces, format, pockets, displays }: Bin
     }
   }
 
+  async function handlePreviewImport() {
+    setImportError(null);
+    setIsPreviewingImport(true);
+    const result = await previewImport(importFormat, importText);
+    setIsPreviewingImport(false);
+    setImportPreview(result);
+  }
+
+  function handleSelectCandidate(index: number, variantId: string) {
+    setImportPreview((current) => {
+      if (!current) {
+        return current;
+      }
+      const lines = [...current.lines];
+      const line = lines[index];
+      if (!line) {
+        return current;
+      }
+      const display =
+        line.candidates.find((candidate) => candidate.id === variantId) ?? line.display;
+      lines[index] = { ...line, variantId, display };
+      return { ...current, lines };
+    });
+  }
+
+  async function handleApplyImport() {
+    if (!importPreview) {
+      return;
+    }
+    setImportError(null);
+    const importable = importPreview.lines.filter(
+      (line): line is (typeof importPreview.lines)[number] & { variantId: string } =>
+        line.status !== "not-found" && !!line.variantId,
+    );
+    if (importable.length === 0) {
+      setImportError("No hay cartas resueltas para importar");
+      return;
+    }
+
+    setIsApplyingImport(true);
+    const result = await computeImportLayout(
+      binderId,
+      importable.map((line) => ({ quantity: line.quantity, variantId: line.variantId })),
+      {
+        destination: importDestination,
+        destinationPocket: importDestination === "pocket" ? importDestinationPocket : null,
+        mode: importMode,
+      },
+    );
+    setIsApplyingImport(false);
+
+    if (!result.ok) {
+      setImportError(result.error);
+      return;
+    }
+
+    const changes: HistoryChange[] = [];
+    for (const [code, after] of Object.entries(result.pockets)) {
+      const before = getContent(code);
+      if (JSON.stringify(before) !== JSON.stringify(after)) {
+        changes.push({ pocketCode: code, before, after });
+      }
+    }
+    if (changes.length > 0) {
+      recordAndRun(changes);
+      setImportPreview(null);
+      setImportText("");
+    }
+  }
+
   function onSearchChange(value: string) {
     setQuery(value);
     if (debounceRef.current) {
@@ -351,6 +460,136 @@ export function BinderEditor({ binderId, faces, format, pockets, displays }: Bin
           <button type="button" onClick={handleApplySort} disabled={isSorting || isPending}>
             Aplicar orden
           </button>
+        </div>
+      </details>
+
+      <details style={{ marginBottom: 16, maxWidth: 480 }}>
+        <summary>Importar cartas</summary>
+        <div style={{ marginTop: 8 }}>
+          <select
+            aria-label="Formato de importación"
+            value={importFormat}
+            onChange={(event) => setImportFormat(event.target.value as ImportFormat)}
+          >
+            <option value="decklist">Lista PTCGL / Limitless</option>
+            <option value="csv">CSV (name,set,number,variant,qty)</option>
+          </select>
+          <textarea
+            aria-label="Texto a importar"
+            value={importText}
+            onChange={(event) => setImportText(event.target.value)}
+            rows={6}
+            style={{ width: "100%", marginTop: 4, fontFamily: "monospace", fontSize: 12 }}
+            placeholder={IMPORT_PLACEHOLDER[importFormat]}
+          />
+          <button
+            type="button"
+            onClick={handlePreviewImport}
+            disabled={isPreviewingImport || importText.trim().length === 0}
+          >
+            Previsualizar
+          </button>
+
+          {importPreview && (
+            <>
+              <p>
+                {importPreview.lines.filter((line) => line.status === "resolved").length} resueltas,{" "}
+                {importPreview.lines.filter((line) => line.status === "ambiguous").length} ambiguas,{" "}
+                {importPreview.lines.filter((line) => line.status === "not-found").length} no
+                encontradas
+                {importPreview.unparsed.length > 0 &&
+                  ` (${importPreview.unparsed.length} líneas no reconocidas)`}
+              </p>
+
+              <ul
+                style={{
+                  listStyle: "none",
+                  padding: 0,
+                  maxHeight: 240,
+                  overflowY: "auto",
+                  fontSize: 12,
+                }}
+              >
+                {importPreview.lines.map((line, index) => (
+                  <li
+                    // biome-ignore lint/suspicious/noArrayIndexKey: lines can repeat (same raw text, different row); index matches the preview array position used by handleSelectCandidate
+                    key={index}
+                    style={{ marginTop: 4, display: "flex", gap: 6, alignItems: "center" }}
+                  >
+                    <span style={{ fontFamily: "monospace" }}>×{line.quantity}</span>
+                    {line.status === "not-found" ? (
+                      <span style={{ color: "#c00" }}>
+                        {line.raw} — {line.error}
+                      </span>
+                    ) : line.status === "ambiguous" ? (
+                      <>
+                        <span>{line.raw}</span>
+                        <select
+                          aria-label={`Elegir impresión para ${line.raw}`}
+                          value={line.variantId ?? ""}
+                          onChange={(event) => handleSelectCandidate(index, event.target.value)}
+                        >
+                          {line.candidates.map((candidate) => (
+                            <option key={candidate.id} value={candidate.id}>
+                              {candidate.variant} ({candidate.setName})
+                            </option>
+                          ))}
+                        </select>
+                      </>
+                    ) : (
+                      <span>
+                        {line.display?.name} {line.display?.number} ({line.display?.variant})
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+
+              <div style={{ marginTop: 8 }}>
+                <select
+                  aria-label="Destino de importación"
+                  value={importDestination}
+                  onChange={(event) =>
+                    setImportDestination(event.target.value as ImportDestination)
+                  }
+                >
+                  <option value="end">Al final</option>
+                  <option value="pocket">Desde un bolsillo específico</option>
+                  <option value="newSide">Empezar en cara nueva</option>
+                </select>
+                {importDestination === "pocket" && (
+                  <input
+                    aria-label="Bolsillo de destino"
+                    type="text"
+                    placeholder="S1·F·1"
+                    value={importDestinationPocket}
+                    onChange={(event) => setImportDestinationPocket(event.target.value)}
+                  />
+                )}
+              </div>
+
+              <div style={{ marginTop: 4 }}>
+                <select
+                  aria-label="Modo de cantidad"
+                  value={importMode}
+                  onChange={(event) => setImportMode(event.target.value as ImportMode)}
+                >
+                  <option value="perCopy">Una copia por bolsillo</option>
+                  <option value="singleWithCount">Todas las copias en un bolsillo (×N)</option>
+                </select>
+              </div>
+
+              {importError && <p style={{ color: "#c00" }}>{importError}</p>}
+
+              <button
+                type="button"
+                onClick={handleApplyImport}
+                disabled={isApplyingImport || isPending}
+              >
+                Aplicar importación
+              </button>
+            </>
+          )}
         </div>
       </details>
 

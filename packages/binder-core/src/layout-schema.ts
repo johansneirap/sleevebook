@@ -51,6 +51,7 @@ const pocketContentSchema = z.discriminatedUnion("kind", [
     kind: z.literal("card"),
     variant: z.string(),
     instance: z.string().nullable(),
+    count: z.number().int().positive().optional(),
     locked: z.boolean().optional(),
   }),
   z.object({
