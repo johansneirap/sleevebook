@@ -2,7 +2,7 @@ import { formatPocketCode, generateSpreads } from "@sleevebook/binder-core";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { FaceGrid } from "../../../components/binder/face-grid";
+import { BinderFaces } from "../../../components/binder/binder-faces";
 import { getBinderWithLayout, getVariantDisplays } from "../../../lib/binders";
 import { getGoalProgress } from "../../../lib/goals";
 import { getPublishedBinderBySlug, incrementShareViews } from "../../../lib/share";
@@ -70,17 +70,7 @@ export default async function PublicBinderPage({ params, searchParams }: PagePro
           Avance del objetivo: {progress.owned} / {progress.total} ({progress.percentage}%)
         </p>
       )}
-      <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-        {spread.faces.map((face) => (
-          <FaceGrid
-            key={`${face.sheet}-${face.side}`}
-            face={face}
-            format={format}
-            pockets={pockets}
-            displays={displays}
-          />
-        ))}
-      </div>
+      <BinderFaces faces={spread.faces} format={format} pockets={pockets} displays={displays} />
       <nav style={{ marginTop: 16, display: "flex", gap: 16, alignItems: "center" }}>
         {index > 0 ? (
           <Link href={`/s/${slug}?spread=${index - 1}`}>&larr; Anterior</Link>

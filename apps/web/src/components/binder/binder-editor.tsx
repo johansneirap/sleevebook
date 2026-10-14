@@ -29,6 +29,7 @@ import {
   type SortableField,
   type SortCriterion,
 } from "../../lib/sort-actions";
+import { HoloCard } from "./holo-card";
 
 const SORT_FIELD_OPTIONS: { value: SortableField; label: string }[] = [
   { value: "era", label: "Era" },
@@ -708,6 +709,18 @@ export function BinderEditor({
             <p>
               Editando <strong>{singleSelectedCode}</strong>
             </p>
+
+            {selectedContent?.kind === "card" && displays[selectedContent.variant] && (
+              <div style={{ marginBottom: 8 }}>
+                <HoloCard
+                  imageUrl={displays[selectedContent.variant]?.imageUrl ?? null}
+                  name={displays[selectedContent.variant]?.name ?? ""}
+                  variant={displays[selectedContent.variant]?.variant ?? "normal"}
+                  width={180}
+                />
+              </div>
+            )}
+
             <button type="button" disabled={isPending} onClick={() => assignSingle(EMPTY_POCKET)}>
               Vaciar
             </button>

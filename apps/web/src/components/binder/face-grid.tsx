@@ -1,3 +1,5 @@
+"use client";
+
 import type { Format, Layout, SheetFace } from "@sleevebook/binder-core";
 import { formatPocketCode } from "@sleevebook/binder-core";
 import type { CSSProperties } from "react";
@@ -8,6 +10,7 @@ interface FaceGridProps {
   format: Format;
   pockets: Layout["pockets"];
   displays: Map<string, VariantDisplay>;
+  onCardClick?: (display: VariantDisplay) => void;
 }
 
 const POCKET_STYLE: CSSProperties = {
@@ -24,7 +27,7 @@ const POCKET_STYLE: CSSProperties = {
   overflow: "hidden",
 };
 
-export function FaceGrid({ face, format, pockets, displays }: FaceGridProps) {
+export function FaceGrid({ face, format, pockets, displays, onCardClick }: FaceGridProps) {
   const codes = Array.from({ length: format.rows * format.cols }, (_, i) =>
     formatPocketCode({ sheet: face.sheet, side: face.side, index: i + 1 }),
   );
@@ -51,7 +54,17 @@ export function FaceGrid({ face, format, pockets, displays }: FaceGridProps) {
 
           if (content?.kind === "card") {
             return (
-              <div key={code} style={POCKET_STYLE} title={display?.name}>
+              <button
+                key={code}
+                type="button"
+                onClick={() => display && onCardClick?.(display)}
+                style={{
+                  ...POCKET_STYLE,
+                  background: "white",
+                  cursor: display ? "pointer" : "default",
+                }}
+                title={display?.name}
+              >
                 {content.count && content.count > 1 && (
                   <span
                     style={{
@@ -80,7 +93,7 @@ export function FaceGrid({ face, format, pockets, displays }: FaceGridProps) {
                     {display?.name} {display?.number}
                   </span>
                 )}
-              </div>
+              </button>
             );
           }
 
