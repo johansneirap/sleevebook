@@ -5,6 +5,7 @@ import {
   capacity,
   formatPocketCode,
   layoutSchema,
+  panelCoverageMap,
   pocketCodeFromGlobalIndex,
   sectionize,
   sortPockets,
@@ -167,21 +168,33 @@ export async function computeSortedLayout(
     }
   }
 
+  // Art panels occupy fixed pockets that this rebuild must leave untouched,
+  // so they don't get silently overwritten by a sorted card or lost to
+  // padding -- the available capacity for cards is whatever's left after
+  // panels, not the binder's raw pocket count.
+  const panelCodes = new Set(panelCoverageMap(layout.panels, format).keys());
   const totalCapacity = capacity(format, sheets);
-  if (ordered.length > totalCapacity) {
+  const availableCapacity = totalCapacity - panelCodes.size;
+  if (ordered.length > availableCapacity) {
     return {
       ok: false,
-      error: `No entran todas las cartas con este agrupamiento: necesita ${ordered.length} bolsillos y el binder tiene ${totalCapacity}. Aumentá las hojas o desactivá "empezar en cara nueva".`,
+      error: `No entran todas las cartas con este agrupamiento: necesita ${ordered.length} bolsillos y el binder tiene ${availableCapacity} disponibles (descontando los paneles de arte). Aumentá las hojas o desactivá "empezar en cara nueva".`,
     };
   }
-  while (ordered.length < totalCapacity) {
+  while (ordered.length < availableCapacity) {
     ordered.push(EMPTY_POCKET);
   }
 
   const pockets: Record<string, PocketValue> = {};
+  let orderedIndex = 0;
   for (let i = 0; i < totalCapacity; i++) {
     const code = formatPocketCode(pocketCodeFromGlobalIndex(i, format));
-    pockets[code] = ordered[i] ?? EMPTY_POCKET;
+    if (panelCodes.has(code)) {
+      pockets[code] = layout.pockets[code] as PocketValue;
+      continue;
+    }
+    pockets[code] = ordered[orderedIndex] ?? EMPTY_POCKET;
+    orderedIndex++;
   }
 
   return { ok: true, pockets };

@@ -119,6 +119,7 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
         faces={spread.faces}
         format={format}
         pockets={pockets}
+        panels={binderData.layout.panels}
         displays={displays}
         sleeve={binderData.layout.theme.sleeve}
       />

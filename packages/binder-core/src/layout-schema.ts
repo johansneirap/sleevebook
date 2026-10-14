@@ -65,6 +65,11 @@ const pocketContentSchema = z.discriminatedUnion("kind", [
     kind: z.literal("empty"),
     locked: z.boolean().optional(),
   }),
+  z.object({
+    kind: z.literal("panel"),
+    panelId: z.string(),
+    locked: z.boolean().optional(),
+  }),
 ]);
 
 export const layoutSchema = z.object({

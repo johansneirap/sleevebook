@@ -1,15 +1,17 @@
 "use client";
 
 import type { Format, Layout, SheetFace } from "@sleevebook/binder-core";
-import { formatPocketCode } from "@sleevebook/binder-core";
+import { formatPocketCode, panelCoverageMap } from "@sleevebook/binder-core";
 import type { CSSProperties } from "react";
 import type { VariantDisplay } from "../../lib/binders";
 import { sleeveOverlayStyle } from "../../lib/theme-presets";
+import { PanelCell } from "./panel-cell";
 
 interface FaceGridProps {
   face: SheetFace;
   format: Format;
   pockets: Layout["pockets"];
+  panels: Layout["panels"];
   displays: Map<string, VariantDisplay>;
   sleeve: string;
   onCardClick?: (display: VariantDisplay) => void;
@@ -29,11 +31,20 @@ const POCKET_STYLE: CSSProperties = {
   overflow: "hidden",
 };
 
-export function FaceGrid({ face, format, pockets, displays, sleeve, onCardClick }: FaceGridProps) {
+export function FaceGrid({
+  face,
+  format,
+  pockets,
+  panels,
+  displays,
+  sleeve,
+  onCardClick,
+}: FaceGridProps) {
   const codes = Array.from({ length: format.rows * format.cols }, (_, i) =>
     formatPocketCode({ sheet: face.sheet, side: face.side, index: i + 1 }),
   );
   const overlayStyle = sleeveOverlayStyle(sleeve);
+  const coverage = panelCoverageMap(panels, format);
 
   return (
     <section>
@@ -48,7 +59,29 @@ export function FaceGrid({ face, format, pockets, displays, sleeve, onCardClick 
           width: 320,
         }}
       >
-        {codes.map((code) => {
+        {codes.map((code, i) => {
+          const gridPosition: CSSProperties = {
+            gridColumnStart: (i % format.cols) + 1,
+            gridRowStart: Math.floor(i / format.cols) + 1,
+          };
+
+          const coveredBy = coverage.get(code);
+          if (coveredBy) {
+            if (!coveredBy.isAnchor) {
+              return null;
+            }
+            return (
+              <PanelCell
+                key={code}
+                asset={coveredBy.panel.asset}
+                rows={coveredBy.panel.span.rows}
+                cols={coveredBy.panel.span.cols}
+                crop={coveredBy.panel.crop}
+                style={gridPosition}
+              />
+            );
+          }
+
           const content = pockets[code];
           const display =
             content?.kind === "card" || content?.kind === "placeholder"
@@ -63,6 +96,7 @@ export function FaceGrid({ face, format, pockets, displays, sleeve, onCardClick 
                 onClick={() => display && onCardClick?.(display)}
                 style={{
                   ...POCKET_STYLE,
+                  ...gridPosition,
                   background: "white",
                   cursor: display ? "pointer" : "default",
                 }}
@@ -114,7 +148,7 @@ export function FaceGrid({ face, format, pockets, displays, sleeve, onCardClick 
             return (
               <div
                 key={code}
-                style={{ ...POCKET_STYLE, borderStyle: "dashed", color: "#888" }}
+                style={{ ...POCKET_STYLE, ...gridPosition, borderStyle: "dashed", color: "#888" }}
                 title={display?.name}
               >
                 <span>Falta</span>
@@ -125,7 +159,7 @@ export function FaceGrid({ face, format, pockets, displays, sleeve, onCardClick 
             );
           }
 
-          return <div key={code} style={{ ...POCKET_STYLE, opacity: 0.3 }} />;
+          return <div key={code} style={{ ...POCKET_STYLE, ...gridPosition, opacity: 0.3 }} />;
         })}
       </div>
     </section>

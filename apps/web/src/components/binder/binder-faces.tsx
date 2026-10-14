@@ -10,12 +10,14 @@ export function BinderFaces({
   faces,
   format,
   pockets,
+  panels,
   displays,
   sleeve,
 }: {
   faces: SheetFace[];
   format: Format;
   pockets: Layout["pockets"];
+  panels: Layout["panels"];
   displays: Map<string, VariantDisplay>;
   sleeve: string;
 }) {
@@ -30,6 +32,7 @@ export function BinderFaces({
             face={face}
             format={format}
             pockets={pockets}
+            panels={panels}
             displays={displays}
             sleeve={sleeve}
             onCardClick={setFocusedDisplay}

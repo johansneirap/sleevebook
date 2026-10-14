@@ -65,6 +65,7 @@ export default async function BinderEditorPage({ params, searchParams }: PagePro
         faces={spread.faces}
         format={format}
         pockets={pockets}
+        panels={binderData.layout.panels}
         displays={displays}
         prices={prices}
         theme={binderData.layout.theme}

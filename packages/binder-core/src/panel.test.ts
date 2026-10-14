@@ -4,6 +4,7 @@ import {
   type Panel,
   PanelOutOfBoundsError,
   PanelOverlapError,
+  panelCoverageMap,
   validatePanels,
 } from "./panel";
 
@@ -61,5 +62,21 @@ describe("panel", () => {
       { id: "p2", anchor: { sheet: 1, side: "B", index: 1 }, span: { rows: 1, cols: 2 } },
     ];
     expect(() => validatePanels(panels, FORMAT_3X3)).not.toThrow();
+  });
+
+  describe("panelCoverageMap", () => {
+    it("marks every covered pocket, flagging only the anchor", () => {
+      const layoutPanels = [
+        { id: "p1", anchor: "S1·F·1", span: { rows: 1, cols: 2 }, asset: "https://x/img.png" },
+      ];
+      const map = panelCoverageMap(layoutPanels, FORMAT_3X3);
+      expect(map.get("S1·F·1")).toEqual({ panel: layoutPanels[0], isAnchor: true });
+      expect(map.get("S1·F·2")).toEqual({ panel: layoutPanels[0], isAnchor: false });
+      expect(map.has("S1·F·3")).toBe(false);
+    });
+
+    it("returns an empty map for no panels", () => {
+      expect(panelCoverageMap([], FORMAT_3X3).size).toBe(0);
+    });
   });
 });

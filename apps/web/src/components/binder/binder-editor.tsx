@@ -10,7 +10,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import type { Format, Layout, SheetFace } from "@sleevebook/binder-core";
-import { computeBinderValueUsd, formatPocketCode } from "@sleevebook/binder-core";
+import { computeBinderValueUsd, formatPocketCode, panelCoverageMap } from "@sleevebook/binder-core";
 import { useRef, useState, useTransition } from "react";
 import type { VariantDisplay } from "../../lib/binders";
 import {
@@ -21,6 +21,7 @@ import {
   type ImportPreview,
   previewImport,
 } from "../../lib/import-actions";
+import { addPanel, removePanel } from "../../lib/panel-actions";
 import { applyPocketChanges, type PocketChange, type PocketValue } from "../../lib/pocket-actions";
 import { searchCardVariants } from "../../lib/search";
 import {
@@ -32,6 +33,7 @@ import {
 import { type ThemeInput, updateBinderTheme } from "../../lib/theme-actions";
 import { SLEEVE_LABELS, sleeveOverlayStyle, THEME_PRESETS } from "../../lib/theme-presets";
 import { HoloCard } from "./holo-card";
+import { PanelCell } from "./panel-cell";
 
 const SORT_FIELD_OPTIONS: { value: SortableField; label: string }[] = [
   { value: "era", label: "Era" },
@@ -53,6 +55,7 @@ interface BinderEditorProps {
   faces: SheetFace[];
   format: Format;
   pockets: Layout["pockets"];
+  panels: Layout["panels"];
   displays: Record<string, VariantDisplay>;
   prices: Record<string, number>;
   theme: Layout["theme"];
@@ -77,6 +80,7 @@ function Pocket({
   display,
   isSelected,
   sleeve,
+  gridPosition,
   onSelect,
 }: {
   code: string;
@@ -84,6 +88,7 @@ function Pocket({
   display: VariantDisplay | undefined;
   isSelected: boolean;
   sleeve: string;
+  gridPosition: { gridColumnStart: number; gridRowStart: number };
   onSelect: (code: string, additive: boolean) => void;
 }) {
   const hasContent = !!content && content.kind !== "empty";
@@ -108,6 +113,7 @@ function Pocket({
       style={{
         position: "relative",
         aspectRatio: "63 / 88",
+        ...gridPosition,
         borderWidth: isSelected ? 2 : 1,
         borderColor: isSelected ? "#06c" : isOver ? "#0a0" : "#ccc",
         borderStyle: content?.kind === "placeholder" ? "dashed" : "solid",
@@ -165,6 +171,7 @@ export function BinderEditor({
   faces,
   format,
   pockets,
+  panels,
   displays,
   prices,
   theme,
@@ -201,6 +208,15 @@ export function BinderEditor({
   const [themeSleeve, setThemeSleeve] = useState(theme.sleeve);
   const [themeBg, setThemeBg] = useState(theme.bg ?? "");
   const [isSavingTheme, setIsSavingTheme] = useState(false);
+  const [panelAssetUrl, setPanelAssetUrl] = useState("");
+  const [panelAnchor, setPanelAnchor] = useState("");
+  const [panelRows, setPanelRows] = useState(1);
+  const [panelCols, setPanelCols] = useState(1);
+  const [panelZoom, setPanelZoom] = useState(100);
+  const [panelX, setPanelX] = useState(50);
+  const [panelY, setPanelY] = useState(50);
+  const [panelError, setPanelError] = useState<string | null>(null);
+  const [isAddingPanel, setIsAddingPanel] = useState(false);
 
   function getContent(code: string): PocketValue {
     return pockets[code] ?? EMPTY_POCKET;
@@ -283,7 +299,11 @@ export function BinderEditor({
     const toCode = String(over.id);
     const fromContent = getContent(fromCode);
     const toContent = getContent(toCode);
-    if (fromContent.kind === "empty") {
+    if (
+      fromContent.kind === "empty" ||
+      fromContent.kind === "panel" ||
+      toContent.kind === "panel"
+    ) {
       return;
     }
 
@@ -420,6 +440,43 @@ export function BinderEditor({
     });
   }
 
+  function handleUseSelectedPocketAsAnchor() {
+    if (singleSelectedCode) {
+      setPanelAnchor(singleSelectedCode);
+    }
+  }
+
+  async function handleAddPanel() {
+    setPanelError(null);
+    if (!panelAssetUrl.trim() || !panelAnchor.trim()) {
+      setPanelError("Hace falta una URL de imagen y un bolsillo de anclaje.");
+      return;
+    }
+    setIsAddingPanel(true);
+    const result = await addPanel(binderId, {
+      assetUrl: panelAssetUrl.trim(),
+      anchorCode: panelAnchor.trim(),
+      rows: panelRows,
+      cols: panelCols,
+      zoom: panelZoom,
+      x: panelX,
+      y: panelY,
+    });
+    setIsAddingPanel(false);
+    if (!result.ok) {
+      setPanelError(result.error);
+      return;
+    }
+    setPanelAssetUrl("");
+    setPanelAnchor("");
+  }
+
+  function handleRemovePanel(panelId: string) {
+    startTransition(async () => {
+      await removePanel(binderId, panelId);
+    });
+  }
+
   function onSearchChange(value: string) {
     setQuery(value);
     if (debounceRef.current) {
@@ -440,6 +497,7 @@ export function BinderEditor({
   const singleSelectedCode = selectedCodes.length === 1 ? selectedCodes[0] : null;
   const selectedContent = singleSelectedCode ? getContent(singleSelectedCode) : null;
   const totalValueUsd = computeBinderValueUsd(pockets, prices);
+  const panelCoverage = panelCoverageMap(panels, format);
 
   return (
     <div>
@@ -719,6 +777,162 @@ export function BinderEditor({
         </div>
       </details>
 
+      <details style={{ marginBottom: 16, maxWidth: 480 }}>
+        <summary>Paneles de arte</summary>
+        <div style={{ marginTop: 8 }}>
+          <label>
+            URL de la imagen:{" "}
+            <input
+              type="text"
+              aria-label="URL de la imagen del panel"
+              placeholder="https://..."
+              value={panelAssetUrl}
+              onChange={(event) => setPanelAssetUrl(event.target.value)}
+              style={{ width: "100%" }}
+            />
+          </label>
+
+          <div style={{ marginTop: 4, display: "flex", gap: 4, alignItems: "center" }}>
+            <label>
+              Bolsillo de anclaje:{" "}
+              <input
+                type="text"
+                aria-label="Bolsillo de anclaje del panel"
+                placeholder="S1·F·1"
+                value={panelAnchor}
+                onChange={(event) => setPanelAnchor(event.target.value)}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={handleUseSelectedPocketAsAnchor}
+              disabled={!singleSelectedCode}
+            >
+              Usar seleccionado
+            </button>
+          </div>
+
+          <div style={{ marginTop: 4, display: "flex", gap: 12 }}>
+            <label>
+              Filas:{" "}
+              <input
+                type="number"
+                aria-label="Filas del panel"
+                min={1}
+                max={format.rows}
+                value={panelRows}
+                onChange={(event) => setPanelRows(Number.parseInt(event.target.value, 10) || 1)}
+                style={{ width: 56 }}
+              />
+            </label>
+            <label>
+              Columnas:{" "}
+              <input
+                type="number"
+                aria-label="Columnas del panel"
+                min={1}
+                max={format.cols}
+                value={panelCols}
+                onChange={(event) => setPanelCols(Number.parseInt(event.target.value, 10) || 1)}
+                style={{ width: 56 }}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                setPanelRows(format.rows);
+                setPanelCols(format.cols);
+              }}
+            >
+              Página completa
+            </button>
+          </div>
+
+          <div style={{ marginTop: 8 }}>
+            <label>
+              Zoom: {panelZoom}%{" "}
+              <input
+                type="range"
+                aria-label="Zoom del panel"
+                min={100}
+                max={300}
+                value={panelZoom}
+                onChange={(event) => setPanelZoom(Number.parseInt(event.target.value, 10))}
+              />
+            </label>
+          </div>
+          <div>
+            <label>
+              Posición horizontal: {panelX}%{" "}
+              <input
+                type="range"
+                aria-label="Posición horizontal del panel"
+                min={0}
+                max={100}
+                value={panelX}
+                onChange={(event) => setPanelX(Number.parseInt(event.target.value, 10))}
+              />
+            </label>
+          </div>
+          <div>
+            <label>
+              Posición vertical: {panelY}%{" "}
+              <input
+                type="range"
+                aria-label="Posición vertical del panel"
+                min={0}
+                max={100}
+                value={panelY}
+                onChange={(event) => setPanelY(Number.parseInt(event.target.value, 10))}
+              />
+            </label>
+          </div>
+
+          {panelAssetUrl.trim() && (
+            <div style={{ marginTop: 8 }}>
+              <p style={{ fontSize: 12, color: "#888" }}>
+                Previsualización (sin cortar por bolsillo):
+              </p>
+              <PanelCell
+                asset={panelAssetUrl.trim()}
+                rows={1}
+                cols={1}
+                crop={{ x: panelX, y: panelY, zoom: panelZoom }}
+                style={{ width: 120, aspectRatio: `${panelCols} / ${panelRows}` }}
+              />
+            </div>
+          )}
+
+          {panelError && <p style={{ color: "#c00" }}>{panelError}</p>}
+
+          <button
+            type="button"
+            onClick={handleAddPanel}
+            disabled={isAddingPanel || isPending}
+            style={{ marginTop: 8 }}
+          >
+            Agregar panel
+          </button>
+
+          {panels.length > 0 && (
+            <ul style={{ listStyle: "none", padding: 0, marginTop: 8 }}>
+              {panels.map((panel) => (
+                <li key={panel.id} style={{ marginTop: 4, fontSize: 12 }}>
+                  {panel.anchor} ({panel.span.rows}×{panel.span.cols}){" "}
+                  <button
+                    type="button"
+                    disabled={isPending}
+                    onClick={() => handleRemovePanel(panel.id)}
+                  >
+                    Quitar panel
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </details>
+
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
           {faces.map((face) => (
@@ -740,6 +954,28 @@ export function BinderEditor({
                     side: face.side,
                     index: i + 1,
                   });
+                  const gridPosition = {
+                    gridColumnStart: (i % format.cols) + 1,
+                    gridRowStart: Math.floor(i / format.cols) + 1,
+                  };
+
+                  const coveredBy = panelCoverage.get(code);
+                  if (coveredBy) {
+                    if (!coveredBy.isAnchor) {
+                      return null;
+                    }
+                    return (
+                      <PanelCell
+                        key={code}
+                        asset={coveredBy.panel.asset}
+                        rows={coveredBy.panel.span.rows}
+                        cols={coveredBy.panel.span.cols}
+                        crop={coveredBy.panel.crop}
+                        style={gridPosition}
+                      />
+                    );
+                  }
+
                   const content = pockets[code];
                   const display =
                     content?.kind === "card" || content?.kind === "placeholder"
@@ -753,6 +989,7 @@ export function BinderEditor({
                       display={display}
                       isSelected={selectedCodes.includes(code)}
                       sleeve={theme.sleeve}
+                      gridPosition={gridPosition}
                       onSelect={handleSelect}
                     />
                   );

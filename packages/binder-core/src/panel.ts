@@ -1,5 +1,5 @@
 import type { Format } from "./format";
-import type { PocketCode } from "./pocket-code";
+import { formatPocketCode, type PocketCode, parsePocketCode } from "./pocket-code";
 
 export interface PanelSpan {
   rows: number;
@@ -80,4 +80,29 @@ export function validatePanels(panels: Panel[], format: Format): void {
       }
     }
   }
+}
+
+// The app's persisted layout stores a panel's anchor as a pocket code string
+// (what the Zod schema validates), not the parsed PocketCode object this
+// module works with internally. This bridges the two: accepts any panel-like
+// shape with a string anchor, parses it just to compute coverage, and hands
+// back the original (richer) objects -- so callers rendering a binder don't
+// need to know about the string/object split at all.
+export function panelCoverageMap<P extends { id: string; anchor: string; span: PanelSpan }>(
+  panels: P[],
+  format: Format,
+): Map<string, { panel: P; isAnchor: boolean }> {
+  const map = new Map<string, { panel: P; isAnchor: boolean }>();
+  for (const layoutPanel of panels) {
+    const panel: Panel = {
+      id: layoutPanel.id,
+      anchor: parsePocketCode(layoutPanel.anchor),
+      span: layoutPanel.span,
+    };
+    for (const pocket of coveredPockets(panel, format)) {
+      const code = formatPocketCode(pocket);
+      map.set(code, { panel: layoutPanel, isAnchor: code === layoutPanel.anchor });
+    }
+  }
+  return map;
 }
