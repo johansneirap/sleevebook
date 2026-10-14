@@ -68,4 +68,4 @@ Verificado en el dashboard actual (Workspace → Usage):
 1. Cloudflare dashboard → R2 → **Create bucket** (ej. `sleevebook-prod`).
 2. R2 → **Manage API tokens** → crear un token con permisos **solo sobre ese bucket** (no "todos los buckets de la cuenta"). Copiá `Access Key ID` y `Secret Access Key`.
 3. El **endpoint S3** de R2 tiene la forma `https://<account-id>.r2.cloudflarestorage.com`.
-4. Para `PUBLIC_ASSETS_URL`: conectá un dominio público al bucket (R2 → bucket → Settings → Custom Domains) o usá el `*.r2.dev` que da R2 mientras no haya uno propio.
+4. Para `PUBLIC_ASSETS_URL`, usá un **subdominio dedicado, no el dominio raíz**: `assets.sleevebook.com`. El raíz (`sleevebook.com`) queda libre para la app del paso 5. R2 → bucket → **Settings → Custom Domains → Connect Domain** → `assets.sleevebook.com` (como el dominio ya está en tu Cloudflare, el DNS y el certificado se crean solos). Queda `PUBLIC_ASSETS_URL=https://assets.sleevebook.com`.
