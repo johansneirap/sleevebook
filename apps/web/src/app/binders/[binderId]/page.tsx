@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FaceGrid } from "../../../components/binder/face-grid";
 import { getBinderWithLayout, getVariantDisplays } from "../../../lib/binders";
+import { getGoalProgress } from "../../../lib/goals";
 
 interface PageProps {
   params: Promise<{ binderId: string }>;
@@ -46,6 +47,7 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
     }
   }
   const displays = await getVariantDisplays([...variantIds]);
+  const progress = await getGoalProgress(binderId);
 
   return (
     <main style={{ padding: 24, fontFamily: "sans-serif" }}>
@@ -53,6 +55,17 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
         <Link href="/binders">&larr; Mis binders</Link>
       </p>
       <h1>{binderData.name}</h1>
+      {progress && (
+        <p>
+          Avance del objetivo: {progress.owned} / {progress.total} ({progress.percentage}%)
+          {progress.missingVariantIds.length > 0 && (
+            <>
+              {" — "}
+              <Link href={`/binders/${binderId}/faltan`}>Ver lo que falta</Link>
+            </>
+          )}
+        </p>
+      )}
       <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
         {spread.faces.map((face) => (
           <FaceGrid

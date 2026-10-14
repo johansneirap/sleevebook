@@ -16,7 +16,7 @@ import {
   goal,
   set,
 } from "@sleevebook/db";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ilike, or } from "drizzle-orm";
 import { ensurePokemonGame, findExternalEntityId, linkExternalId } from "../upsert";
 import type { SeedCard, SeedFile, SeedGoal } from "./seed-schema";
 import { parseCatalogKey, slugifySpecialVariant } from "./variant-mapping";
@@ -146,6 +146,19 @@ function buildPockets(
   return pockets;
 }
 
+// The master-set target is every catalog variant whose card name matches one
+// of the species (e.g. "Zoroark-GX", "Hisuian Zoroark VSTAR" both match
+// "Zoroark"), not just whatever the seed currently has placed in a pocket —
+// so a future catalog ingest can grow the target before the binder catches up.
+async function computeMasterSetTarget(db: Database, species: string[]): Promise<string[]> {
+  const rows = await db
+    .select({ id: cardVariant.id })
+    .from(cardVariant)
+    .innerJoin(card, eq(card.id, cardVariant.cardId))
+    .where(or(...species.map((name) => ilike(card.name, `%${name}%`))));
+  return rows.map((row) => row.id);
+}
+
 async function upsertGoal(
   db: Database,
   seedGoal: SeedGoal,
@@ -240,7 +253,8 @@ export async function migrateTracker(
     });
 
     const species = seedGoal.name.split("/").map((part) => part.trim());
-    const goalId = await upsertGoal(db, seedGoal, [...cardsByPocket.values()], species);
+    const targetVariantIds = await computeMasterSetTarget(db, species);
+    const goalId = await upsertGoal(db, seedGoal, targetVariantIds, species);
     summary.goalsUpserted++;
 
     const binderId = await upsertBinder(db, seedGoal, goalId);

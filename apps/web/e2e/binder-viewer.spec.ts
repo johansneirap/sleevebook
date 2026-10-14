@@ -9,6 +9,7 @@ import {
   DEV_USER_ID,
   ensureDevUser,
   game,
+  goal,
   set,
 } from "@sleevebook/db";
 import { eq } from "drizzle-orm";
@@ -23,6 +24,8 @@ let gameId: string;
 let setId: string;
 let cardId: string;
 let variantId: string;
+let missingVariantId: string;
+let goalId: string;
 let binderId: string;
 
 test.beforeAll(async () => {
@@ -54,6 +57,18 @@ test.beforeAll(async () => {
     .returning({ id: cardVariant.id });
   variantId = (variantRow as { id: string }).id;
 
+  const [missingVariantRow] = await db
+    .insert(cardVariant)
+    .values({ cardId, variant: "holo" })
+    .returning({ id: cardVariant.id });
+  missingVariantId = (missingVariantRow as { id: string }).id;
+
+  const [goalRow] = await db
+    .insert(goal)
+    .values({ type: "master-set", rules: {}, variantIds: [variantId, missingVariantId] })
+    .returning({ id: goal.id });
+  goalId = (goalRow as { id: string }).id;
+
   const layout = layoutSchema.parse({
     format: { rows: 3, cols: 3 },
     opening: "side",
@@ -72,6 +87,7 @@ test.beforeAll(async () => {
       formatRows: 3,
       formatCols: 3,
       sheets: 1,
+      goalId,
       status: "draft",
     })
     .returning({ id: binder.id });
@@ -82,7 +98,9 @@ test.beforeAll(async () => {
 
 test.afterAll(async () => {
   await db.delete(binder).where(eq(binder.id, binderId));
+  await db.delete(goal).where(eq(goal.id, goalId));
   await db.delete(cardVariant).where(eq(cardVariant.id, variantId));
+  await db.delete(cardVariant).where(eq(cardVariant.id, missingVariantId));
   await db.delete(card).where(eq(card.id, cardId));
   await db.delete(set).where(eq(set.id, setId));
   await db.delete(game).where(eq(game.id, gameId));
@@ -112,4 +130,17 @@ test("viewer navigates to the next (and last) spread", async ({ page }) => {
 test("viewer 404s on an unknown binder id", async ({ page }) => {
   const response = await page.goto("/binders/00000000-0000-0000-0000-000000000000");
   expect(response?.status()).toBe(404);
+});
+
+test("viewer shows goal progress and a link to the missing cards", async ({ page }) => {
+  await page.goto(`/binders/${binderId}`);
+  await expect(page.getByText("Avance del objetivo: 1 / 2 (50%)")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Ver lo que falta" })).toBeVisible();
+});
+
+test("missing-cards page lists only the unowned variant", async ({ page }) => {
+  await page.goto(`/binders/${binderId}/faltan`);
+  await expect(page.getByRole("heading", { name: "Me faltan (1)" })).toBeVisible();
+  await expect(page.getByText(/E2E Test Card 1 \(holo\)/)).toBeVisible();
+  await expect(page.getByText(/E2E Test Card 1 \(normal\)/)).toHaveCount(0);
 });
