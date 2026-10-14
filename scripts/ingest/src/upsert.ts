@@ -1,12 +1,18 @@
 import { deriveVariants } from "@sleevebook/catalog";
 import type { Database } from "@sleevebook/db";
 import { card, cardVariant, externalId, game, pricePoint, set } from "@sleevebook/db";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { ImagePipelineConfig } from "./images/pipeline";
 import { processVariantImage } from "./images/pipeline";
 import type { CatalogSource, RawCard, RawSet } from "./source";
 
 export const PROVIDER = "pokemontcg.io";
+
+// The query-builder surface shared by a plain Database handle and the `tx`
+// passed into db.transaction()'s callback -- lets the per-set upsert helpers
+// run against either, so they can be used transactionally.
+type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
+type Queryable = Database | Tx;
 
 // Maps our derived variant names to the tcgplayer price bucket that prices
 // that exact printing. Vintage-only buckets (1stEditionHolofoil, etc.) are
@@ -102,8 +108,8 @@ async function upsertSet(db: Database, gameId: string, raw: RawSet): Promise<str
   return setId;
 }
 
-async function upsertCard(db: Database, setId: string, raw: RawCard): Promise<string> {
-  const values = {
+function cardValues(setId: string, raw: RawCard) {
+  return {
     setId,
     number: raw.number,
     name: raw.name,
@@ -114,17 +120,6 @@ async function upsertCard(db: Database, setId: string, raw: RawCard): Promise<st
     illustrator: raw.artist ?? null,
     language: "en",
   };
-
-  const existingId = await findExternalEntityId(db, "card", PROVIDER, raw.id);
-  if (existingId) {
-    await db.update(card).set(values).where(eq(card.id, existingId));
-    return existingId;
-  }
-
-  const [created] = await db.insert(card).values(values).returning({ id: card.id });
-  const cardId = (created as { id: string }).id;
-  await linkExternalId(db, "card", cardId, PROVIDER, raw.id);
-  return cardId;
 }
 
 async function resolveImages(
@@ -143,35 +138,162 @@ async function resolveImages(
   return { [PROVIDER]: images, r2 };
 }
 
-async function upsertVariant(
-  db: Database,
-  cardId: string,
-  variant: string,
-  variantKey: string,
-  images: RawCard["images"],
-  needsReview: boolean,
-  imagePipeline: ImagePipelineConfig | undefined,
-): Promise<string> {
-  const [existing] = await db
-    .select({ id: cardVariant.id })
-    .from(cardVariant)
-    .where(and(eq(cardVariant.cardId, cardId), eq(cardVariant.variant, variant)));
-
-  const imagesJson = await resolveImages(imagePipeline, variantKey, images);
-
-  if (existing) {
-    await db
-      .update(cardVariant)
-      .set({ images: imagesJson, needsReview })
-      .where(eq(cardVariant.id, existing.id));
-    return existing.id;
+// Upserts every card of one set in a handful of round trips instead of one
+// (or several) per card: a query-per-row approach is invisible against a
+// local database but makes a full catalog ingest take hours against any
+// connection with real network latency (a remote proxy, or the daily
+// GitHub Actions job hitting production). Returns raw external id -> our
+// card id for every card in the set, whether it was just inserted or
+// already existed.
+async function upsertCardsForSet(
+  db: Queryable,
+  setId: string,
+  rawCards: RawCard[],
+): Promise<Map<string, string>> {
+  if (rawCards.length === 0) {
+    return new Map();
   }
 
-  const [created] = await db
-    .insert(cardVariant)
-    .values({ cardId, variant, images: imagesJson, needsReview })
-    .returning({ id: cardVariant.id });
-  return (created as { id: string }).id;
+  const rawIds = rawCards.map((raw) => raw.id);
+  const existingRows = await db
+    .select({ externalId: externalId.externalId, entityId: externalId.entityId })
+    .from(externalId)
+    .where(
+      and(
+        eq(externalId.entityType, "card"),
+        eq(externalId.provider, PROVIDER),
+        inArray(externalId.externalId, rawIds),
+      ),
+    );
+  const cardIdByRawId = new Map(existingRows.map((row) => [row.externalId, row.entityId]));
+
+  const toUpdate: RawCard[] = [];
+  const toInsert: RawCard[] = [];
+  for (const raw of rawCards) {
+    (cardIdByRawId.has(raw.id) ? toUpdate : toInsert).push(raw);
+  }
+
+  for (const raw of toUpdate) {
+    const cardId = cardIdByRawId.get(raw.id) as string;
+    await db.update(card).set(cardValues(setId, raw)).where(eq(card.id, cardId));
+  }
+
+  if (toInsert.length > 0) {
+    const inserted = await db
+      .insert(card)
+      .values(toInsert.map((raw) => cardValues(setId, raw)))
+      .returning({ id: card.id });
+    toInsert.forEach((raw, index) => {
+      const insertedRow = inserted[index] as { id: string };
+      cardIdByRawId.set(raw.id, insertedRow.id);
+    });
+    await db.insert(externalId).values(
+      toInsert.map((raw) => ({
+        entityType: "card",
+        entityId: cardIdByRawId.get(raw.id) as string,
+        provider: PROVIDER,
+        externalId: raw.id,
+      })),
+    );
+  }
+
+  return cardIdByRawId;
+}
+
+interface PlannedVariant {
+  cardId: string;
+  variant: string;
+  variantKey: string;
+  images: RawCard["images"];
+  needsReview: boolean;
+  rawCard: RawCard;
+}
+
+// Same round-trip-minimizing idea as upsertCardsForSet, applied to
+// card_variant + price_point for every variant of every card in a set.
+async function upsertVariantsForSet(
+  db: Queryable,
+  planned: PlannedVariant[],
+  imagePipeline: ImagePipelineConfig | undefined,
+): Promise<{ variantsUpserted: number; pricesIngested: number }> {
+  if (planned.length === 0) {
+    return { variantsUpserted: 0, pricesIngested: 0 };
+  }
+
+  const cardIds = [...new Set(planned.map((item) => item.cardId))];
+  const existingRows = await db
+    .select({ id: cardVariant.id, cardId: cardVariant.cardId, variant: cardVariant.variant })
+    .from(cardVariant)
+    .where(inArray(cardVariant.cardId, cardIds));
+  const existingIdByKey = new Map(
+    existingRows.map((row) => [`${row.cardId}:${row.variant}`, row.id]),
+  );
+
+  // Sequential on purpose: when imagePipeline is configured this fetches and
+  // uploads to R2 per variant, and running a whole set's worth of those
+  // concurrently would spike outbound requests well beyond what the ingest
+  // has ever done before. Batching below targets DB round trips only.
+  const resolvedImages: Array<Record<string, unknown> | null> = [];
+  for (const item of planned) {
+    resolvedImages.push(await resolveImages(imagePipeline, item.variantKey, item.images));
+  }
+
+  const toUpdate: Array<{
+    id: string;
+    item: PlannedVariant;
+    images: Record<string, unknown> | null;
+  }> = [];
+  const toInsert: Array<{ item: PlannedVariant; images: Record<string, unknown> | null }> = [];
+  planned.forEach((item, index) => {
+    const key = `${item.cardId}:${item.variant}`;
+    const existingId = existingIdByKey.get(key);
+    const images = resolvedImages[index] ?? null;
+    if (existingId) {
+      toUpdate.push({ id: existingId, item, images });
+    } else {
+      toInsert.push({ item, images });
+    }
+  });
+
+  for (const { id, item, images } of toUpdate) {
+    await db
+      .update(cardVariant)
+      .set({ images, needsReview: item.needsReview })
+      .where(eq(cardVariant.id, id));
+  }
+
+  const variantIdByKey = new Map(existingIdByKey);
+  if (toInsert.length > 0) {
+    const inserted = await db
+      .insert(cardVariant)
+      .values(
+        toInsert.map(({ item, images }) => ({
+          cardId: item.cardId,
+          variant: item.variant,
+          images,
+          needsReview: item.needsReview,
+        })),
+      )
+      .returning({ id: cardVariant.id });
+    toInsert.forEach(({ item }, index) => {
+      const insertedRow = inserted[index] as { id: string };
+      variantIdByKey.set(`${item.cardId}:${item.variant}`, insertedRow.id);
+    });
+  }
+
+  const priceRows = planned.flatMap((item) => {
+    const amount = extractTcgplayerPriceUsd(item.rawCard, item.variant);
+    const variantId = variantIdByKey.get(`${item.cardId}:${item.variant}`);
+    if (!amount || !variantId) {
+      return [];
+    }
+    return [{ variantId, source: "tcgplayer", currency: "USD", amount }];
+  });
+  if (priceRows.length > 0) {
+    await db.insert(pricePoint).values(priceRows);
+  }
+
+  return { variantsUpserted: planned.length, pricesIngested: priceRows.length };
 }
 
 export async function upsertCatalog(
@@ -192,44 +314,49 @@ export async function upsertCatalog(
     const setId = await upsertSet(db, gameId, rawSet);
     summary.setsUpserted++;
 
-    for (const rawCard of source.cardsBySetId.get(rawSet.id) ?? []) {
-      const cardId = await upsertCard(db, setId, rawCard);
-      summary.cardsUpserted++;
+    const rawCards = source.cardsBySetId.get(rawSet.id) ?? [];
 
-      const { variants, needsReview } = deriveVariants({
-        rarity: rawCard.rarity,
-        setName: rawSet.name,
-        releasedAt: rawSet.releaseDate,
-      });
-      if (needsReview) {
-        summary.needsReview++;
-      }
+    // Everything for this set's cards + variants + prices happens inside one
+    // transaction: either it all commits or it all rolls back. Without this,
+    // a card insert that commits followed by a failing external_id insert
+    // (e.g. a stale prefetch racing a concurrent run) leaves orphaned card
+    // rows with no external_id and no variants behind -- exactly the bug
+    // that corrupted 6 sets in production before this fix.
+    const result = await db.transaction(async (tx) => {
+      const cardIdByRawId = await upsertCardsForSet(tx, setId, rawCards);
 
-      for (const variant of variants) {
-        const variantKey = `${rawCard.id}-${variant}`;
-        const variantId = await upsertVariant(
-          db,
-          cardId,
-          variant,
-          variantKey,
-          rawCard.images,
-          needsReview,
-          imagePipeline,
-        );
-        summary.variantsUpserted++;
-
-        const amount = extractTcgplayerPriceUsd(rawCard, variant);
-        if (amount) {
-          await db.insert(pricePoint).values({
-            variantId,
-            source: "tcgplayer",
-            currency: "USD",
-            amount,
+      const planned: PlannedVariant[] = [];
+      let needsReviewCount = 0;
+      for (const rawCard of rawCards) {
+        const cardId = cardIdByRawId.get(rawCard.id) as string;
+        const { variants, needsReview } = deriveVariants({
+          rarity: rawCard.rarity,
+          setName: rawSet.name,
+          releasedAt: rawSet.releaseDate,
+        });
+        if (needsReview) {
+          needsReviewCount++;
+        }
+        for (const variant of variants) {
+          planned.push({
+            cardId,
+            variant,
+            variantKey: `${rawCard.id}-${variant}`,
+            images: rawCard.images,
+            needsReview,
+            rawCard,
           });
-          summary.pricesIngested++;
         }
       }
-    }
+
+      const variantSummary = await upsertVariantsForSet(tx, planned, imagePipeline);
+      return { needsReviewCount, ...variantSummary };
+    });
+
+    summary.cardsUpserted += rawCards.length;
+    summary.variantsUpserted += result.variantsUpserted;
+    summary.pricesIngested += result.pricesIngested;
+    summary.needsReview += result.needsReviewCount;
   }
 
   return summary;
