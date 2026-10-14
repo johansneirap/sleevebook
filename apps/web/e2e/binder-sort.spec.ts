@@ -12,6 +12,7 @@ import {
   set,
 } from "@sleevebook/db";
 import { eq } from "drizzle-orm";
+import { computeSortedLayout } from "../src/lib/sort-actions";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
@@ -201,6 +202,30 @@ test("sorts by set name ascending, independent of number", async ({ page }) => {
     expect(layout.pockets["S1·B·1"]).toEqual({ kind: "card", variant: variantZId, instance: null });
     expect(layout.pockets["S1·B·2"]).toEqual({ kind: "empty" });
   }).toPass();
+});
+
+test("computeSortedLayout reports the from->to moves needed for the FLIP animation", async () => {
+  await resetLayout();
+  const result = await computeSortedLayout(binderId, {
+    criteria: [{ field: "number", dir: "asc" }],
+    groupBy: null,
+    startOnNewSide: false,
+  });
+  if (!result.ok) {
+    throw new Error(result.error);
+  }
+  // X (number 2) was at S1·F·2, now first (S1·F·1); Y (number 10) was at
+  // S1·F·1, now last occupied slot (S1·B·1); Z (number 5) was already at
+  // S1·B·1, moves to the middle (S1·F·2). The untouched empty S1·B·2 pocket
+  // contributes no move.
+  expect(result.moves).toEqual(
+    expect.arrayContaining([
+      { from: "S1·F·2", to: "S1·F·1" },
+      { from: "S1·B·1", to: "S1·F·2" },
+      { from: "S1·F·1", to: "S1·B·1" },
+    ]),
+  );
+  expect(result.moves).toHaveLength(3);
 });
 
 test("grouping by era with start-on-new-side reports a capacity error instead of corrupting the layout", async ({

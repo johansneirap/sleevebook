@@ -387,12 +387,12 @@ Seis fases; cada una termina con algo usable. La fase 1 tiene que poder reproduc
 
 ### Fase 2 — Experiencia visual
 
-- [ ] Holo por rareza y variante (nivel N2) con inclinación por puntero y giroscopio
+- [x] Holo por rareza y variante (nivel N2) con inclinación por puntero (sin giroscopio en mobile ni heurística por texto de rareza — ver registro)
 - [ ] Pasar página con curvatura 3D (lateral y vertical)
 - [ ] Sacar, insertar y voltear carta; girar binder
-- [ ] Paneles de arte (fila, par, bloque, página completa, spread) con recorte y zoom
-- [ ] Temas: colores, fondos, textura de fundas, portadas
-- [ ] Reordenamiento animado (FLIP)
+- [x] Paneles de arte (fila, par, bloque, página completa) con recorte y zoom (sin spread entre dos caras, solo URL pegada — ver registro)
+- [x] Temas: colores, fondos, textura de fundas (portadas resueltas como panel de página completa, ver registro)
+- [x] Reordenamiento animado (FLIP) (solo en "Aplicar orden" — ver registro)
 
 ### Fase 3 — Vendedores y salida física
 
@@ -457,3 +457,7 @@ Alcance, backend y hosting quedaron decididos el 13-10-2026; antes del primer li
 | 2026-10-14 | Precios: solo snapshot de tcgplayer (USD) ya embebido en el dump de pokemontcg.io; sin CLP/EUR con tipo de cambio diario, sin precio por estado/gradeo, sin historial con gráfico | Ninguno de estos está marcado [MVP] en la spec; el historial con gráfico la spec lo marca explícitamente como fase posterior; Scrydex/JustTCG/PriceCharting quedan como pregunta abierta (ver tabla de Datos externos) |
 | 2026-10-14 | Publicar un binder no congela una versión inmutable: la página pública (`/s/[slug]`) muestra el layout en vivo, igual que la vista del dueño, no una copia fijada al momento de publicar | La nota de arquitectura "Publicar = copiar la versión" implicaría que `pocket-actions.ts`/`sort-actions.ts`/`import-actions.ts` dejen de pisar la única fila de `binder_version` y empiecen a insertar versiones nuevas; ese refactor quedó fuera de alcance del bloque. Efecto: editar después de publicar se ve al instante en el link público, sin "republicar" |
 | 2026-10-14 | Compartir sin modo vendedor (precio visible, estados disponible/reservado/vendido, contacto), sin iframe+QR, sin exportar PDF/imagen | El usuario aprobó cortar las 3 vía pregunta directa; ninguna está marcada [MVP] en la spec |
+| 2026-10-14 | Holo/foil (Fase 2, bloque 1): efecto dirigido solo por `card_variant.variant`, sin heurística de rareza (rainbow/cosmos/galaxy) por texto; sin tilt por giroscopio en mobile, solo pointer/touch move | Rareza en texto es inconsistente entre sets/eras; giroscopio necesitaría un flujo de permiso de `DeviceOrientation`. Ambos recortes aprobados por el usuario vía pregunta directa |
+| 2026-10-14 | Temas (Fase 2, bloque 2): portada/contraportada se posponen al bloque de paneles de arte, no se implementan como feature aparte | Una portada es en realidad un panel de página completa; necesita la infraestructura de upload+recorte/zoom que construye ese bloque. Confirmado con el usuario vía pregunta directa |
+| 2026-10-14 | Paneles de arte (Fase 2, bloque 3): imágenes solo por URL pegada (sin subida a R2); sin paneles que crucen dos caras (spread); sin overlay de texto sobre el panel | Subida a R2 implicaría agregar credenciales S3 y una ruta API por primera vez en `apps/web`, un salto mayor al que ameritaba el bloque; `Panel`/`coveredPockets` de binder-core hoy solo soporta spans dentro de una cara; overlay de texto queda como pulido posterior. Los 3 recortes aprobados por el usuario vía pregunta directa |
+| 2026-10-14 | Reordenamiento animado FLIP (Fase 2, bloque 4): animación real (shared-element "flying card") solo en "Aplicar orden"; drag & drop, importar y deshacer/rehacer siguen con el snap instantáneo de siempre, sin animación especial | El usuario eligió esta opción vía pregunta directa; "Aplicar orden" es el caso con más movimientos simultáneos y el que más se beneficia de ver a dónde va cada carta, mientras que drag&drop ya tiene feedback visual inmediato del propio gesto |

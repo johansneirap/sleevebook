@@ -36,11 +36,17 @@ export interface SortOptions {
   startOnNewSide: boolean;
 }
 
+export interface SortMove {
+  from: string;
+  to: string;
+}
+
 export type SortResult =
-  | { ok: true; pockets: Record<string, PocketValue> }
+  | { ok: true; pockets: Record<string, PocketValue>; moves: SortMove[] }
   | { ok: false; error: string };
 
 interface SortableItem {
+  pocketCode: string;
   content: PocketValue;
   era: string;
   releasedAt: string;
@@ -129,9 +135,10 @@ export async function computeSortedLayout(
     }
   }
 
-  const items: SortableItem[] = occupied.map(([, content]) => {
+  const items: SortableItem[] = occupied.map(([pocketCode, content]) => {
     const info = infoById.get(content.variant);
     return {
+      pocketCode,
       content,
       era: info?.era ?? "",
       releasedAt: info?.releasedAt ?? "",
@@ -156,15 +163,21 @@ export async function computeSortedLayout(
 
   const pocketsPerFace = format.rows * format.cols;
   const ordered: PocketValue[] = [];
+  // Parallel to `ordered`: which pocket each entry's content came from, so
+  // the final rebuild loop below can report a from -> to move list for the
+  // editor to animate (FLIP). null for padding (nothing to animate from).
+  const orderedFrom: Array<string | null> = [];
   for (const section of sections) {
     if (section.startOnNewSide && ordered.length > 0 && ordered.length % pocketsPerFace !== 0) {
       const padCount = pocketsPerFace - (ordered.length % pocketsPerFace);
       for (let i = 0; i < padCount; i++) {
         ordered.push(EMPTY_POCKET);
+        orderedFrom.push(null);
       }
     }
     for (const item of section.items) {
       ordered.push(item.content);
+      orderedFrom.push(item.pocketCode);
     }
   }
 
@@ -183,9 +196,11 @@ export async function computeSortedLayout(
   }
   while (ordered.length < availableCapacity) {
     ordered.push(EMPTY_POCKET);
+    orderedFrom.push(null);
   }
 
   const pockets: Record<string, PocketValue> = {};
+  const moves: SortMove[] = [];
   let orderedIndex = 0;
   for (let i = 0; i < totalCapacity; i++) {
     const code = formatPocketCode(pocketCodeFromGlobalIndex(i, format));
@@ -193,9 +208,13 @@ export async function computeSortedLayout(
       pockets[code] = layout.pockets[code] as PocketValue;
       continue;
     }
+    const fromCode = orderedFrom[orderedIndex];
     pockets[code] = ordered[orderedIndex] ?? EMPTY_POCKET;
+    if (fromCode && fromCode !== code) {
+      moves.push({ from: fromCode, to: code });
+    }
     orderedIndex++;
   }
 
-  return { ok: true, pockets };
+  return { ok: true, pockets, moves };
 }

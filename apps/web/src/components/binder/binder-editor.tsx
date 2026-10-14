@@ -11,7 +11,9 @@ import {
 } from "@dnd-kit/core";
 import type { Format, Layout, SheetFace } from "@sleevebook/binder-core";
 import { computeBinderValueUsd, formatPocketCode, panelCoverageMap } from "@sleevebook/binder-core";
+import { motion } from "motion/react";
 import { useRef, useState, useTransition } from "react";
+import { flushSync } from "react-dom";
 import type { VariantDisplay } from "../../lib/binders";
 import {
   computeImportLayout,
@@ -32,6 +34,7 @@ import {
 } from "../../lib/sort-actions";
 import { type ThemeInput, updateBinderTheme } from "../../lib/theme-actions";
 import { SLEEVE_LABELS, sleeveOverlayStyle, THEME_PRESETS } from "../../lib/theme-presets";
+import { usePrefersReducedMotion } from "../../lib/use-prefers-reduced-motion";
 import { HoloCard } from "./holo-card";
 import { PanelCell } from "./panel-cell";
 
@@ -81,6 +84,7 @@ function Pocket({
   isSelected,
   sleeve,
   gridPosition,
+  layoutId,
   onSelect,
 }: {
   code: string;
@@ -89,6 +93,7 @@ function Pocket({
   isSelected: boolean;
   sleeve: string;
   gridPosition: { gridColumnStart: number; gridRowStart: number };
+  layoutId?: string;
   onSelect: (code: string, additive: boolean) => void;
 }) {
   const hasContent = !!content && content.kind !== "empty";
@@ -129,39 +134,54 @@ function Pocket({
         overflow: "hidden",
       }}
     >
-      {content?.kind === "card" && content.count && content.count > 1 && (
-        <span
-          style={{
-            position: "absolute",
-            top: 2,
-            right: 2,
-            background: "#06c",
-            color: "white",
-            borderRadius: 4,
-            padding: "0 4px",
-            fontSize: 10,
-          }}
-        >
-          ×{content.count}
-        </span>
-      )}
-      {content?.kind === "card" && overlayStyle && (
-        <span style={{ position: "absolute", inset: 0, pointerEvents: "none", ...overlayStyle }} />
-      )}
-      {content?.kind === "card" && display?.imageUrl ? (
-        // biome-ignore lint/performance/noImgElement: editor MVP, no next/image config yet
-        <img
-          src={display.imageUrl}
-          alt={display.name}
-          style={{ maxWidth: "100%", maxHeight: "100%" }}
-        />
-      ) : display ? (
-        <span>
-          {display.name} {display.number}
-        </span>
-      ) : (
-        <span>{code}</span>
-      )}
+      <motion.div
+        key={layoutId ?? code}
+        layoutId={layoutId}
+        style={{
+          position: "relative",
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {content?.kind === "card" && content.count && content.count > 1 && (
+          <span
+            style={{
+              position: "absolute",
+              top: 2,
+              right: 2,
+              background: "#06c",
+              color: "white",
+              borderRadius: 4,
+              padding: "0 4px",
+              fontSize: 10,
+            }}
+          >
+            ×{content.count}
+          </span>
+        )}
+        {content?.kind === "card" && overlayStyle && (
+          <span
+            style={{ position: "absolute", inset: 0, pointerEvents: "none", ...overlayStyle }}
+          />
+        )}
+        {content?.kind === "card" && display?.imageUrl ? (
+          // biome-ignore lint/performance/noImgElement: editor MVP, no next/image config yet
+          <img
+            src={display.imageUrl}
+            alt={display.name}
+            style={{ maxWidth: "100%", maxHeight: "100%" }}
+          />
+        ) : display ? (
+          <span>
+            {display.name} {display.number}
+          </span>
+        ) : (
+          <span>{code}</span>
+        )}
+      </motion.div>
     </button>
   );
 }
@@ -217,9 +237,16 @@ export function BinderEditor({
   const [panelY, setPanelY] = useState(50);
   const [panelError, setPanelError] = useState<string | null>(null);
   const [isAddingPanel, setIsAddingPanel] = useState(false);
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const [optimisticPockets, setOptimisticPockets] = useState<Record<string, PocketValue> | null>(
+    null,
+  );
+  const [activeMoveIds, setActiveMoveIds] = useState<Map<string, string> | null>(null);
+  const flipTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const effectivePockets = optimisticPockets ?? pockets;
 
   function getContent(code: string): PocketValue {
-    return pockets[code] ?? EMPTY_POCKET;
+    return effectivePockets[code] ?? EMPTY_POCKET;
   }
 
   function runChanges(changes: PocketChange[]) {
@@ -352,9 +379,39 @@ export function BinderEditor({
         changes.push({ pocketCode: code, before, after });
       }
     }
-    if (changes.length > 0) {
-      recordAndRun(changes);
+    if (changes.length === 0) {
+      return;
     }
+
+    if (prefersReducedMotion || result.moves.length === 0) {
+      recordAndRun(changes);
+      return;
+    }
+
+    // Manual FLIP: paint the "before" frame (layoutIds on the old pocket
+    // codes) synchronously so Motion can snapshot it, then on the next frame
+    // move the layoutIds + optimistic pockets to their final codes. Without
+    // flushSync here, React 18 would batch both updates into a single commit
+    // and Motion would never see an intermediate state to animate from.
+    const beforeMoveIds = new Map(result.moves.map((move) => [move.from, `move:${move.from}`]));
+    flushSync(() => {
+      setActiveMoveIds(beforeMoveIds);
+    });
+    requestAnimationFrame(() => {
+      const afterMoveIds = new Map(result.moves.map((move) => [move.to, `move:${move.from}`]));
+      setActiveMoveIds(afterMoveIds);
+      setOptimisticPockets(result.pockets);
+    });
+
+    recordAndRun(changes);
+
+    if (flipTimeoutRef.current) {
+      clearTimeout(flipTimeoutRef.current);
+    }
+    flipTimeoutRef.current = setTimeout(() => {
+      setOptimisticPockets(null);
+      setActiveMoveIds(null);
+    }, 500);
   }
 
   async function handlePreviewImport() {
@@ -496,7 +553,7 @@ export function BinderEditor({
 
   const singleSelectedCode = selectedCodes.length === 1 ? selectedCodes[0] : null;
   const selectedContent = singleSelectedCode ? getContent(singleSelectedCode) : null;
-  const totalValueUsd = computeBinderValueUsd(pockets, prices);
+  const totalValueUsd = computeBinderValueUsd(effectivePockets, prices);
   const panelCoverage = panelCoverageMap(panels, format);
 
   return (
@@ -976,7 +1033,7 @@ export function BinderEditor({
                     );
                   }
 
-                  const content = pockets[code];
+                  const content = effectivePockets[code];
                   const display =
                     content?.kind === "card" || content?.kind === "placeholder"
                       ? displays[content.variant]
@@ -990,6 +1047,7 @@ export function BinderEditor({
                       isSelected={selectedCodes.includes(code)}
                       sleeve={theme.sleeve}
                       gridPosition={gridPosition}
+                      layoutId={activeMoveIds?.get(code)}
                       onSelect={handleSelect}
                     />
                   );

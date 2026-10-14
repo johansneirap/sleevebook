@@ -1,8 +1,9 @@
 "use client";
 
 import { motion, useMotionTemplate, useSpring } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { sleeveOverlayStyle } from "../../lib/theme-presets";
+import { usePrefersReducedMotion } from "../../lib/use-prefers-reduced-motion";
 
 export interface HoloCardProps {
   imageUrl: string | null;
@@ -32,18 +33,6 @@ const FOIL_GRADIENTS: Record<string, string> = {
 };
 
 const REVERSE_MASK = "radial-gradient(ellipse 58% 58% at center, transparent 55%, black 72%)";
-
-function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(query.matches);
-    const handler = (event: MediaQueryListEvent) => setReduced(event.matches);
-    query.addEventListener("change", handler);
-    return () => query.removeEventListener("change", handler);
-  }, []);
-  return reduced;
-}
 
 export function HoloCard({
   imageUrl,
