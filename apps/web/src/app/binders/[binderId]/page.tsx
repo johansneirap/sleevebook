@@ -5,6 +5,8 @@ import { FaceGrid } from "../../../components/binder/face-grid";
 import { getBinderWithLayout, getVariantDisplays } from "../../../lib/binders";
 import { getGoalProgress } from "../../../lib/goals";
 import { getLatestPrices } from "../../../lib/pricing";
+import { getShareLinkForBinder, getSiteUrl } from "../../../lib/share";
+import { publishBinder, unpublishBinder } from "../../../lib/share-actions";
 import { clampSpreadIndex } from "../../../lib/spreads";
 
 interface PageProps {
@@ -55,6 +57,9 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
   );
   const totalValueUsd = computeBinderValueUsd(pockets, priceLookup);
 
+  const shareInfo = await getShareLinkForBinder(binderId);
+  const siteUrl = getSiteUrl();
+
   return (
     <main style={{ padding: 24, fontFamily: "sans-serif" }}>
       <p>
@@ -65,6 +70,39 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
         <Link href={`/binders/${binderId}/editar`}>Editar</Link>
       </p>
       {totalValueUsd > 0 && <p>Valor total: ${totalValueUsd.toFixed(2)} USD</p>}
+
+      {binderData.status === "published" && shareInfo ? (
+        <div style={{ fontSize: 13, marginBottom: 12 }}>
+          <p>
+            Publicado ({shareInfo.visibility === "public" ? "público" : "no listado"}) —{" "}
+            <a href={`${siteUrl}/s/${shareInfo.slug}`} target="_blank" rel="noreferrer">
+              {siteUrl}/s/{shareInfo.slug}
+            </a>{" "}
+            ({shareInfo.views} vistas)
+          </p>
+          <form action={publishBinder} style={{ display: "inline" }}>
+            <input type="hidden" name="binderId" value={binderId} />
+            <select aria-label="Visibilidad" name="visibility" defaultValue={shareInfo.visibility}>
+              <option value="unlisted">No listado</option>
+              <option value="public">Público</option>
+            </select>
+            <button type="submit">Actualizar</button>
+          </form>{" "}
+          <form action={unpublishBinder} style={{ display: "inline" }}>
+            <input type="hidden" name="binderId" value={binderId} />
+            <button type="submit">Despublicar</button>
+          </form>
+        </div>
+      ) : (
+        <form action={publishBinder} style={{ fontSize: 13, marginBottom: 12 }}>
+          <input type="hidden" name="binderId" value={binderId} />
+          <select aria-label="Visibilidad" name="visibility" defaultValue="unlisted">
+            <option value="unlisted">No listado</option>
+            <option value="public">Público</option>
+          </select>
+          <button type="submit">Publicar</button>
+        </form>
+      )}
       {progress && (
         <p>
           Avance del objetivo: {progress.owned} / {progress.total} ({progress.percentage}%)

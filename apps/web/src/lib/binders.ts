@@ -32,6 +32,7 @@ export interface BinderWithLayout {
   id: string;
   name: string;
   sheets: number;
+  status: string;
   layout: Layout;
 }
 
@@ -55,6 +56,7 @@ export async function getBinderWithLayout(binderId: string): Promise<BinderWithL
     id: binderRow.id,
     name: binderRow.name,
     sheets: binderRow.sheets,
+    status: binderRow.status,
     layout: layoutSchema.parse(versionRow.layout),
   };
 }
