@@ -1,6 +1,6 @@
 import { deriveVariants } from "@sleevebook/catalog";
 import type { Database } from "@sleevebook/db";
-import { card, cardVariant, externalId, game, set } from "@sleevebook/db";
+import { card, cardVariant, externalId, game, pricePoint, set } from "@sleevebook/db";
 import { and, eq } from "drizzle-orm";
 import type { ImagePipelineConfig } from "./images/pipeline";
 import { processVariantImage } from "./images/pipeline";
@@ -8,10 +8,29 @@ import type { CatalogSource, RawCard, RawSet } from "./source";
 
 export const PROVIDER = "pokemontcg.io";
 
+// Maps our derived variant names to the tcgplayer price bucket that prices
+// that exact printing. Vintage-only buckets (1stEditionHolofoil, etc.) are
+// intentionally not modeled here.
+const TCGPLAYER_PRICE_KEY: Record<string, string> = {
+  normal: "normal",
+  holo: "holofoil",
+  reverse: "reverseHolofoil",
+  pokeball: "pokeball",
+  masterball: "masterball",
+};
+
+function extractTcgplayerPriceUsd(rawCard: RawCard, variant: string): string | null {
+  const key = TCGPLAYER_PRICE_KEY[variant];
+  const priceData = key ? rawCard.tcgplayer?.prices?.[key] : undefined;
+  const amount = priceData?.market ?? priceData?.mid;
+  return typeof amount === "number" && amount > 0 ? amount.toFixed(2) : null;
+}
+
 export interface IngestSummary {
   setsUpserted: number;
   cardsUpserted: number;
   variantsUpserted: number;
+  pricesIngested: number;
   needsReview: number;
 }
 
@@ -132,7 +151,7 @@ async function upsertVariant(
   images: RawCard["images"],
   needsReview: boolean,
   imagePipeline: ImagePipelineConfig | undefined,
-): Promise<void> {
+): Promise<string> {
   const [existing] = await db
     .select({ id: cardVariant.id })
     .from(cardVariant)
@@ -145,10 +164,14 @@ async function upsertVariant(
       .update(cardVariant)
       .set({ images: imagesJson, needsReview })
       .where(eq(cardVariant.id, existing.id));
-    return;
+    return existing.id;
   }
 
-  await db.insert(cardVariant).values({ cardId, variant, images: imagesJson, needsReview });
+  const [created] = await db
+    .insert(cardVariant)
+    .values({ cardId, variant, images: imagesJson, needsReview })
+    .returning({ id: cardVariant.id });
+  return (created as { id: string }).id;
 }
 
 export async function upsertCatalog(
@@ -161,6 +184,7 @@ export async function upsertCatalog(
     setsUpserted: 0,
     cardsUpserted: 0,
     variantsUpserted: 0,
+    pricesIngested: 0,
     needsReview: 0,
   };
 
@@ -183,7 +207,7 @@ export async function upsertCatalog(
 
       for (const variant of variants) {
         const variantKey = `${rawCard.id}-${variant}`;
-        await upsertVariant(
+        const variantId = await upsertVariant(
           db,
           cardId,
           variant,
@@ -193,6 +217,17 @@ export async function upsertCatalog(
           imagePipeline,
         );
         summary.variantsUpserted++;
+
+        const amount = extractTcgplayerPriceUsd(rawCard, variant);
+        if (amount) {
+          await db.insert(pricePoint).values({
+            variantId,
+            source: "tcgplayer",
+            currency: "USD",
+            amount,
+          });
+          summary.pricesIngested++;
+        }
       }
     }
   }

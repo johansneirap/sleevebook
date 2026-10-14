@@ -9,6 +9,7 @@ export interface GoalProgress {
   total: number;
   owned: number;
   percentage: number;
+  allVariantIds: string[];
   missingVariantIds: string[];
 }
 
@@ -55,6 +56,7 @@ export async function getGoalProgress(binderId: string): Promise<GoalProgress | 
     total,
     owned: ownedCount,
     percentage: total === 0 ? 0 : Math.round((ownedCount / total) * 100),
+    allVariantIds: target,
     missingVariantIds,
   };
 }

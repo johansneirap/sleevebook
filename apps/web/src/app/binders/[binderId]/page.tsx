@@ -1,9 +1,10 @@
-import { formatPocketCode, generateSpreads } from "@sleevebook/binder-core";
+import { computeBinderValueUsd, formatPocketCode, generateSpreads } from "@sleevebook/binder-core";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FaceGrid } from "../../../components/binder/face-grid";
 import { getBinderWithLayout, getVariantDisplays } from "../../../lib/binders";
 import { getGoalProgress } from "../../../lib/goals";
+import { getLatestPrices } from "../../../lib/pricing";
 import { clampSpreadIndex } from "../../../lib/spreads";
 
 interface PageProps {
@@ -42,6 +43,18 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
   const displays = await getVariantDisplays([...variantIds]);
   const progress = await getGoalProgress(binderId);
 
+  const allVariantIds = new Set<string>();
+  for (const content of Object.values(pockets)) {
+    if (content.kind === "card") {
+      allVariantIds.add(content.variant);
+    }
+  }
+  const prices = await getLatestPrices([...allVariantIds]);
+  const priceLookup = Object.fromEntries(
+    Object.entries(prices).map(([id, price]) => [id, price.amountUsd]),
+  );
+  const totalValueUsd = computeBinderValueUsd(pockets, priceLookup);
+
   return (
     <main style={{ padding: 24, fontFamily: "sans-serif" }}>
       <p>
@@ -51,6 +64,7 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
       <p>
         <Link href={`/binders/${binderId}/editar`}>Editar</Link>
       </p>
+      {totalValueUsd > 0 && <p>Valor total: ${totalValueUsd.toFixed(2)} USD</p>}
       {progress && (
         <p>
           Avance del objetivo: {progress.owned} / {progress.total} ({progress.percentage}%)

@@ -13,6 +13,13 @@ const rawSetSchema = z
   })
   .loose();
 
+const tcgplayerPriceSchema = z
+  .object({
+    market: z.number().nullable().optional(),
+    mid: z.number().nullable().optional(),
+  })
+  .loose();
+
 const rawCardSchema = z
   .object({
     id: z.string(),
@@ -27,6 +34,12 @@ const rawCardSchema = z
         small: z.string().optional(),
         large: z.string().optional(),
       })
+      .optional(),
+    tcgplayer: z
+      .object({
+        prices: z.record(z.string(), tcgplayerPriceSchema).optional(),
+      })
+      .loose()
       .optional(),
   })
   .loose();

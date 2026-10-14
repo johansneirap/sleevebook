@@ -3,6 +3,7 @@ export * from "./format";
 export * from "./layout-schema";
 export * from "./panel";
 export * from "./pocket-code";
+export * from "./pricing";
 export * from "./reflow";
 export * from "./sectionize";
 export * from "./slice-panel";

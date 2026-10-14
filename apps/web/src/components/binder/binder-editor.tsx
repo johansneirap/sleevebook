@@ -10,7 +10,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import type { Format, Layout, SheetFace } from "@sleevebook/binder-core";
-import { formatPocketCode } from "@sleevebook/binder-core";
+import { computeBinderValueUsd, formatPocketCode } from "@sleevebook/binder-core";
 import { useRef, useState, useTransition } from "react";
 import type { VariantDisplay } from "../../lib/binders";
 import {
@@ -51,6 +51,7 @@ interface BinderEditorProps {
   format: Format;
   pockets: Layout["pockets"];
   displays: Record<string, VariantDisplay>;
+  prices: Record<string, number>;
 }
 
 interface HistoryChange {
@@ -149,7 +150,14 @@ function Pocket({
   );
 }
 
-export function BinderEditor({ binderId, faces, format, pockets, displays }: BinderEditorProps) {
+export function BinderEditor({
+  binderId,
+  faces,
+  format,
+  pockets,
+  displays,
+  prices,
+}: BinderEditorProps) {
   const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<VariantDisplay[]>([]);
@@ -158,6 +166,7 @@ export function BinderEditor({ binderId, faces, format, pockets, displays }: Bin
   const [undoStack, setUndoStack] = useState<HistoryEntry[]>([]);
   const [redoStack, setRedoStack] = useState<HistoryEntry[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const priceInputRef = useRef<HTMLInputElement>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const [criteriaSlots, setCriteriaSlots] = useState<(SortCriterion | null)[]>([
     { field: "setName", dir: "asc" },
@@ -211,6 +220,33 @@ export function BinderEditor({ binderId, faces, format, pockets, displays }: Bin
     }
     const code = selectedCodes[0] as string;
     recordAndRun([{ pocketCode: code, before: getContent(code), after: content }]);
+  }
+
+  function handleSetPriceOverride() {
+    if (!singleSelectedCode) {
+      return;
+    }
+    const content = getContent(singleSelectedCode);
+    if (content.kind !== "card") {
+      return;
+    }
+    const amount = Number.parseFloat(priceInputRef.current?.value ?? "");
+    if (!Number.isFinite(amount) || amount < 0) {
+      return;
+    }
+    assignSingle({ ...content, priceOverrideUsd: amount });
+  }
+
+  function handleClearPriceOverride() {
+    if (!singleSelectedCode) {
+      return;
+    }
+    const content = getContent(singleSelectedCode);
+    if (content.kind !== "card" || content.priceOverrideUsd === undefined) {
+      return;
+    }
+    const { priceOverrideUsd, ...rest } = content;
+    assignSingle(rest);
   }
 
   function bulkClear() {
@@ -374,16 +410,19 @@ export function BinderEditor({ binderId, faces, format, pockets, displays }: Bin
   }
 
   const singleSelectedCode = selectedCodes.length === 1 ? selectedCodes[0] : null;
+  const selectedContent = singleSelectedCode ? getContent(singleSelectedCode) : null;
+  const totalValueUsd = computeBinderValueUsd(pockets, prices);
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, alignItems: "center" }}>
         <button type="button" onClick={handleUndo} disabled={undoStack.length === 0 || isPending}>
           Deshacer
         </button>
         <button type="button" onClick={handleRedo} disabled={redoStack.length === 0 || isPending}>
           Rehacer
         </button>
+        {totalValueUsd > 0 && <span>Valor total del binder: ${totalValueUsd.toFixed(2)} USD</span>}
       </div>
 
       <details style={{ marginBottom: 16, maxWidth: 420 }}>
@@ -672,6 +711,39 @@ export function BinderEditor({ binderId, faces, format, pockets, displays }: Bin
             <button type="button" disabled={isPending} onClick={() => assignSingle(EMPTY_POCKET)}>
               Vaciar
             </button>
+
+            {selectedContent?.kind === "card" && (
+              <div style={{ marginTop: 8 }}>
+                <p>
+                  Precio de mercado:{" "}
+                  {prices[selectedContent.variant] !== undefined
+                    ? `$${(prices[selectedContent.variant] as number).toFixed(2)} USD`
+                    : "sin dato"}
+                  {selectedContent.priceOverrideUsd !== undefined &&
+                    ` — Precio propio: $${selectedContent.priceOverrideUsd.toFixed(2)} USD`}
+                </p>
+                <label>
+                  Precio propio (USD):{" "}
+                  <input
+                    key={singleSelectedCode}
+                    ref={priceInputRef}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    aria-label="Precio propio en dólares"
+                    defaultValue={selectedContent.priceOverrideUsd ?? ""}
+                  />
+                </label>{" "}
+                <button type="button" disabled={isPending} onClick={handleSetPriceOverride}>
+                  Guardar precio propio
+                </button>{" "}
+                {selectedContent.priceOverrideUsd !== undefined && (
+                  <button type="button" disabled={isPending} onClick={handleClearPriceOverride}>
+                    Quitar precio propio
+                  </button>
+                )}
+              </div>
+            )}
 
             <div style={{ marginTop: 8 }}>
               <input

@@ -52,6 +52,7 @@ const pocketContentSchema = z.discriminatedUnion("kind", [
     variant: z.string(),
     instance: z.string().nullable(),
     count: z.number().int().positive().optional(),
+    priceOverrideUsd: z.number().nonnegative().optional(),
     locked: z.boolean().optional(),
   }),
   z.object({

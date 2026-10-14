@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BinderEditor } from "../../../../components/binder/binder-editor";
 import { getBinderWithLayout, getVariantDisplays } from "../../../../lib/binders";
+import { getLatestPrices } from "../../../../lib/pricing";
 import { clampSpreadIndex } from "../../../../lib/spreads";
 
 interface PageProps {
@@ -41,6 +42,17 @@ export default async function BinderEditorPage({ params, searchParams }: PagePro
   const displaysMap = await getVariantDisplays([...variantIds]);
   const displays = Object.fromEntries(displaysMap);
 
+  const allVariantIds = new Set<string>();
+  for (const content of Object.values(pockets)) {
+    if (content.kind === "card") {
+      allVariantIds.add(content.variant);
+    }
+  }
+  const pricesMap = await getLatestPrices([...allVariantIds]);
+  const prices = Object.fromEntries(
+    Object.entries(pricesMap).map(([id, price]) => [id, price.amountUsd]),
+  );
+
   return (
     <main style={{ padding: 24, fontFamily: "sans-serif" }}>
       <p>
@@ -53,6 +65,7 @@ export default async function BinderEditorPage({ params, searchParams }: PagePro
         format={format}
         pockets={pockets}
         displays={displays}
+        prices={prices}
       />
       <nav style={{ marginTop: 16, display: "flex", gap: 16, alignItems: "center" }}>
         {index > 0 ? (
