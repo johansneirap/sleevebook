@@ -2,6 +2,7 @@ import { formatPocketCode, generateSpreads } from "@sleevebook/binder-core";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BinderEditor } from "../../../../components/binder/binder-editor";
+import { ThemedMain } from "../../../../components/binder/themed-main";
 import { getBinderWithLayout, getVariantDisplays } from "../../../../lib/binders";
 import { getLatestPrices } from "../../../../lib/pricing";
 import { clampSpreadIndex } from "../../../../lib/spreads";
@@ -54,7 +55,7 @@ export default async function BinderEditorPage({ params, searchParams }: PagePro
   );
 
   return (
-    <main style={{ padding: 24, fontFamily: "sans-serif" }}>
+    <ThemedMain theme={binderData.layout.theme}>
       <p>
         <Link href={`/binders/${binderId}`}>&larr; Ver binder</Link>
       </p>
@@ -66,6 +67,7 @@ export default async function BinderEditorPage({ params, searchParams }: PagePro
         pockets={pockets}
         displays={displays}
         prices={prices}
+        theme={binderData.layout.theme}
       />
       <nav style={{ marginTop: 16, display: "flex", gap: 16, alignItems: "center" }}>
         {index > 0 ? (
@@ -82,6 +84,6 @@ export default async function BinderEditorPage({ params, searchParams }: PagePro
           <span style={{ color: "#aaa" }}>Siguiente &rarr;</span>
         )}
       </nav>
-    </main>
+    </ThemedMain>
   );
 }

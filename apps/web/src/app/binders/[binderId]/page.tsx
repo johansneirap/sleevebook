@@ -2,6 +2,7 @@ import { computeBinderValueUsd, formatPocketCode, generateSpreads } from "@sleev
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BinderFaces } from "../../../components/binder/binder-faces";
+import { ThemedMain } from "../../../components/binder/themed-main";
 import { getBinderWithLayout, getVariantDisplays } from "../../../lib/binders";
 import { getGoalProgress } from "../../../lib/goals";
 import { getLatestPrices } from "../../../lib/pricing";
@@ -61,7 +62,7 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
   const siteUrl = getSiteUrl();
 
   return (
-    <main style={{ padding: 24, fontFamily: "sans-serif" }}>
+    <ThemedMain theme={binderData.layout.theme}>
       <p>
         <Link href="/binders">&larr; Mis binders</Link>
       </p>
@@ -114,7 +115,13 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
           )}
         </p>
       )}
-      <BinderFaces faces={spread.faces} format={format} pockets={pockets} displays={displays} />
+      <BinderFaces
+        faces={spread.faces}
+        format={format}
+        pockets={pockets}
+        displays={displays}
+        sleeve={binderData.layout.theme.sleeve}
+      />
       <nav style={{ marginTop: 16, display: "flex", gap: 16, alignItems: "center" }}>
         {index > 0 ? (
           <Link href={`/binders/${binderId}?spread=${index - 1}`}>&larr; Anterior</Link>
@@ -130,6 +137,6 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
           <span style={{ color: "#aaa" }}>Siguiente &rarr;</span>
         )}
       </nav>
-    </main>
+    </ThemedMain>
   );
 }

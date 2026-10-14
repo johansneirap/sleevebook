@@ -29,6 +29,8 @@ import {
   type SortableField,
   type SortCriterion,
 } from "../../lib/sort-actions";
+import { type ThemeInput, updateBinderTheme } from "../../lib/theme-actions";
+import { SLEEVE_LABELS, sleeveOverlayStyle, THEME_PRESETS } from "../../lib/theme-presets";
 import { HoloCard } from "./holo-card";
 
 const SORT_FIELD_OPTIONS: { value: SortableField; label: string }[] = [
@@ -53,6 +55,7 @@ interface BinderEditorProps {
   pockets: Layout["pockets"];
   displays: Record<string, VariantDisplay>;
   prices: Record<string, number>;
+  theme: Layout["theme"];
 }
 
 interface HistoryChange {
@@ -73,15 +76,18 @@ function Pocket({
   content,
   display,
   isSelected,
+  sleeve,
   onSelect,
 }: {
   code: string;
   content: PocketValue | undefined;
   display: VariantDisplay | undefined;
   isSelected: boolean;
+  sleeve: string;
   onSelect: (code: string, additive: boolean) => void;
 }) {
   const hasContent = !!content && content.kind !== "empty";
+  const overlayStyle = sleeveOverlayStyle(sleeve);
   // Not disabling useDraggable for empty pockets on purpose: dnd-kit marks a
   // disabled draggable aria-disabled, which also blocks Playwright's (and a
   // screen reader's) click on it. handleDragEnd already ignores drags that
@@ -133,6 +139,9 @@ function Pocket({
           ×{content.count}
         </span>
       )}
+      {content?.kind === "card" && overlayStyle && (
+        <span style={{ position: "absolute", inset: 0, pointerEvents: "none", ...overlayStyle }} />
+      )}
       {content?.kind === "card" && display?.imageUrl ? (
         // biome-ignore lint/performance/noImgElement: editor MVP, no next/image config yet
         <img
@@ -158,6 +167,7 @@ export function BinderEditor({
   pockets,
   displays,
   prices,
+  theme,
 }: BinderEditorProps) {
   const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
   const [query, setQuery] = useState("");
@@ -187,6 +197,10 @@ export function BinderEditor({
   const [importMode, setImportMode] = useState<ImportMode>("perCopy");
   const [importError, setImportError] = useState<string | null>(null);
   const [isApplyingImport, setIsApplyingImport] = useState(false);
+  const [themePreset, setThemePreset] = useState(theme.preset);
+  const [themeSleeve, setThemeSleeve] = useState(theme.sleeve);
+  const [themeBg, setThemeBg] = useState(theme.bg ?? "");
+  const [isSavingTheme, setIsSavingTheme] = useState(false);
 
   function getContent(code: string): PocketValue {
     return pockets[code] ?? EMPTY_POCKET;
@@ -391,6 +405,19 @@ export function BinderEditor({
       setImportPreview(null);
       setImportText("");
     }
+  }
+
+  function handleSaveTheme() {
+    const input: ThemeInput = {
+      preset: themePreset,
+      sleeve: themeSleeve,
+      ...(themeBg.trim() ? { bg: themeBg.trim() } : {}),
+    };
+    setIsSavingTheme(true);
+    startTransition(async () => {
+      await updateBinderTheme(binderId, input);
+      setIsSavingTheme(false);
+    });
   }
 
   function onSearchChange(value: string) {
@@ -633,6 +660,65 @@ export function BinderEditor({
         </div>
       </details>
 
+      <details style={{ marginBottom: 16, maxWidth: 420 }}>
+        <summary>Tema</summary>
+        <div style={{ marginTop: 8 }}>
+          <label>
+            Preset:{" "}
+            <select
+              aria-label="Preset de tema"
+              value={themePreset}
+              onChange={(event) => setThemePreset(event.target.value)}
+            >
+              {Object.entries(THEME_PRESETS).map(([key, preset]) => (
+                <option key={key} value={key}>
+                  {preset.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div style={{ marginTop: 4 }}>
+            <label>
+              Funda:{" "}
+              <select
+                aria-label="Textura de funda"
+                value={themeSleeve}
+                onChange={(event) => setThemeSleeve(event.target.value)}
+              >
+                {Object.entries(SLEEVE_LABELS).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div style={{ marginTop: 4 }}>
+            <label>
+              Fondo personalizado (opcional):{" "}
+              <input
+                type="text"
+                aria-label="Color de fondo personalizado"
+                placeholder="#223344"
+                value={themeBg}
+                onChange={(event) => setThemeBg(event.target.value)}
+              />
+            </label>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSaveTheme}
+            disabled={isSavingTheme || isPending}
+            style={{ marginTop: 8 }}
+          >
+            Guardar tema
+          </button>
+        </div>
+      </details>
+
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
           {faces.map((face) => (
@@ -666,6 +752,7 @@ export function BinderEditor({
                       content={content}
                       display={display}
                       isSelected={selectedCodes.includes(code)}
+                      sleeve={theme.sleeve}
                       onSelect={handleSelect}
                     />
                   );
@@ -716,6 +803,7 @@ export function BinderEditor({
                   imageUrl={displays[selectedContent.variant]?.imageUrl ?? null}
                   name={displays[selectedContent.variant]?.name ?? ""}
                   variant={displays[selectedContent.variant]?.variant ?? "normal"}
+                  sleeve={theme.sleeve}
                   width={180}
                 />
               </div>

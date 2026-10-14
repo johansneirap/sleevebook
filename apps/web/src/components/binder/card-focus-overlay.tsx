@@ -6,9 +6,11 @@ import { HoloCard } from "./holo-card";
 
 export function CardFocusOverlay({
   display,
+  sleeve,
   onClose,
 }: {
   display: VariantDisplay;
+  sleeve: string;
   onClose: () => void;
 }) {
   useEffect(() => {
@@ -52,6 +54,7 @@ export function CardFocusOverlay({
             imageUrl={display.imageUrl}
             name={display.name}
             variant={display.variant}
+            sleeve={sleeve}
             width={320}
           />
         </div>

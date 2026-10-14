@@ -11,11 +11,13 @@ export function BinderFaces({
   format,
   pockets,
   displays,
+  sleeve,
 }: {
   faces: SheetFace[];
   format: Format;
   pockets: Layout["pockets"];
   displays: Map<string, VariantDisplay>;
+  sleeve: string;
 }) {
   const [focusedDisplay, setFocusedDisplay] = useState<VariantDisplay | null>(null);
 
@@ -29,12 +31,17 @@ export function BinderFaces({
             format={format}
             pockets={pockets}
             displays={displays}
+            sleeve={sleeve}
             onCardClick={setFocusedDisplay}
           />
         ))}
       </div>
       {focusedDisplay && (
-        <CardFocusOverlay display={focusedDisplay} onClose={() => setFocusedDisplay(null)} />
+        <CardFocusOverlay
+          display={focusedDisplay}
+          sleeve={sleeve}
+          onClose={() => setFocusedDisplay(null)}
+        />
       )}
     </>
   );

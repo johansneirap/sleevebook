@@ -2,11 +2,13 @@
 
 import { motion, useMotionTemplate, useSpring } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { sleeveOverlayStyle } from "../../lib/theme-presets";
 
 export interface HoloCardProps {
   imageUrl: string | null;
   name: string;
   variant: string;
+  sleeve?: string;
   width?: number;
 }
 
@@ -43,9 +45,16 @@ function usePrefersReducedMotion(): boolean {
   return reduced;
 }
 
-export function HoloCard({ imageUrl, name, variant, width = 260 }: HoloCardProps) {
+export function HoloCard({
+  imageUrl,
+  name,
+  variant,
+  sleeve = "clear",
+  width = 260,
+}: HoloCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
+  const sleeveStyle = sleeveOverlayStyle(sleeve);
 
   const rotateX = useSpring(0, { stiffness: 300, damping: 24 });
   const rotateY = useSpring(0, { stiffness: 300, damping: 24 });
@@ -103,6 +112,10 @@ export function HoloCard({ imageUrl, name, variant, width = 260 }: HoloCardProps
           />
         ) : (
           <div style={{ width: "100%", height: "100%", background: "#ddd" }} />
+        )}
+
+        {sleeveStyle && (
+          <div style={{ position: "absolute", inset: 0, pointerEvents: "none", ...sleeveStyle }} />
         )}
 
         {!prefersReducedMotion && (

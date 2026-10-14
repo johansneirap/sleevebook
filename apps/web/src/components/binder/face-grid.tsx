@@ -4,12 +4,14 @@ import type { Format, Layout, SheetFace } from "@sleevebook/binder-core";
 import { formatPocketCode } from "@sleevebook/binder-core";
 import type { CSSProperties } from "react";
 import type { VariantDisplay } from "../../lib/binders";
+import { sleeveOverlayStyle } from "../../lib/theme-presets";
 
 interface FaceGridProps {
   face: SheetFace;
   format: Format;
   pockets: Layout["pockets"];
   displays: Map<string, VariantDisplay>;
+  sleeve: string;
   onCardClick?: (display: VariantDisplay) => void;
 }
 
@@ -27,10 +29,11 @@ const POCKET_STYLE: CSSProperties = {
   overflow: "hidden",
 };
 
-export function FaceGrid({ face, format, pockets, displays, onCardClick }: FaceGridProps) {
+export function FaceGrid({ face, format, pockets, displays, sleeve, onCardClick }: FaceGridProps) {
   const codes = Array.from({ length: format.rows * format.cols }, (_, i) =>
     formatPocketCode({ sheet: face.sheet, side: face.side, index: i + 1 }),
   );
+  const overlayStyle = sleeveOverlayStyle(sleeve);
 
   return (
     <section>
@@ -80,6 +83,16 @@ export function FaceGrid({ face, format, pockets, displays, onCardClick }: FaceG
                   >
                     ×{content.count}
                   </span>
+                )}
+                {overlayStyle && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      pointerEvents: "none",
+                      ...overlayStyle,
+                    }}
+                  />
                 )}
                 {display?.imageUrl ? (
                   // biome-ignore lint/performance/noImgElement: viewer MVP, no next/image config yet
