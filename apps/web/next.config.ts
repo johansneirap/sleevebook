@@ -9,6 +9,7 @@ config({ path: fileURLToPath(new URL("../../.env", import.meta.url)) });
 const nextConfig: NextConfig = {
   output: "standalone",
   transpilePackages: ["@sleevebook/binder-core", "@sleevebook/db"],
+  outputFileTracingRoot: fileURLToPath(new URL("../../", import.meta.url)),
 };
 
 export default nextConfig;
