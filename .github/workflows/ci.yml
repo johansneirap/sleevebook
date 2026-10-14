@@ -30,4 +30,19 @@ jobs:
 
       - run: pnpm typecheck
 
+      - name: Install Playwright browsers
+        run: pnpm --filter @sleevebook/web exec playwright install --with-deps chromium
+
       - run: pnpm test
+        env:
+          # apps/web validates these at startup (src/env.ts); the demo page
+          # Playwright exercises never touches Postgres/S3, so placeholders
+          # are enough to let the dev server boot in CI.
+          DATABASE_URL: postgres://ci:ci@localhost:5432/ci
+          S3_ENDPOINT: http://localhost:9000
+          S3_BUCKET: ci
+          S3_ACCESS_KEY_ID: ci
+          S3_SECRET_ACCESS_KEY: ci
+          PUBLIC_ASSETS_URL: http://localhost:9000/ci
+          BETTER_AUTH_SECRET: ci-placeholder
+          BETTER_AUTH_URL: http://localhost:3000
