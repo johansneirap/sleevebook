@@ -6,8 +6,8 @@ const CORNER_RATIO = 0.045;
 // Original Sleevebook card back: a warm velvet-and-leather field, a thin
 // champagne-gold filete and a small-caps wordmark. Deliberately unrelated to
 // any third-party card back design (no ball motif, no swirl, no logos).
-const GOLD = "#d9b979";
-const GOLD_SOFT = "rgba(217, 185, 121, 0.45)";
+const GOLD = "var(--foil)";
+const GOLD_SOFT = "color-mix(in srgb, var(--foil) 45%, transparent)";
 
 export function CardBack({ width }: { width: number }) {
   const height = Math.round(width * ASPECT_RATIO);
@@ -19,7 +19,7 @@ export function CardBack({ width }: { width: number }) {
     height,
     borderRadius: radius,
     overflow: "hidden",
-    boxShadow: "0 12px 30px rgba(0,0,0,0.35)",
+    boxShadow: "0 18px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255, 255, 255, 0.07)",
     background: [
       // soft warm light falling from the upper left
       "radial-gradient(ellipse 80% 60% at 28% 18%, rgba(255, 226, 190, 0.10), transparent 70%)",

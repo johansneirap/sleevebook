@@ -1,7 +1,7 @@
 "use client";
 
 import { animate, type MotionValue, motion, useMotionValue, useTransform } from "motion/react";
-import { type ReactNode, useEffect } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import { usePrefersReducedMotion } from "../../lib/use-prefers-reduced-motion";
 
 export interface FlipCardProps {
@@ -31,12 +31,23 @@ export function FlipCard({ front, back, flipped, width }: FlipCardProps) {
   const rotation = useMotionValue(flipped ? 180 : 0);
   // Slight lift at mid-flip, back to rest when the card lands.
   const scale = useTransform(rotation, [0, 90, 180], [1, LIFT_SCALE, 1]);
-  const frontOpacity = useMotionValue(1);
-  const backOpacity = useMotionValue(1);
+  // Initial opacities already match `flipped`, so under reduced motion (where
+  // the hook resolves after mount) the two faces never show overlapped.
+  const frontOpacity = useMotionValue(flipped ? 0 : 1);
+  const backOpacity = useMotionValue(flipped ? 1 : 0);
+  const reducedApplied = useRef(false);
 
   useEffect(() => {
     if (reduced) {
       rotation.set(0);
+      if (!reducedApplied.current) {
+        // First reduced-motion pass after mount: the hook resolves after the
+        // first render, so snap to the resting state instead of fading in.
+        reducedApplied.current = true;
+        frontOpacity.set(flipped ? 0 : 1);
+        backOpacity.set(flipped ? 1 : 0);
+        return;
+      }
       const controls = [
         animate(frontOpacity, flipped ? 0 : 1, { duration: FADE_DURATION, ease: "linear" }),
         animate(backOpacity, flipped ? 1 : 0, { duration: FADE_DURATION, ease: "linear" }),
