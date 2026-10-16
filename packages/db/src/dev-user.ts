@@ -13,10 +13,14 @@ export async function ensureDevUser(db: Database): Promise<void> {
   if (existing) {
     return;
   }
-  await db.insert(user).values({
-    id: DEV_USER_ID,
-    name: "Johans",
-    email: "dev@sleevebook.local",
-    handle: "johans",
-  });
+  // Parallel e2e workers can all see it missing on a fresh database.
+  await db
+    .insert(user)
+    .values({
+      id: DEV_USER_ID,
+      name: "Johans",
+      email: "dev@sleevebook.local",
+      handle: "johans",
+    })
+    .onConflictDoNothing();
 }
