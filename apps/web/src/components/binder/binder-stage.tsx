@@ -9,6 +9,28 @@ import { ClosedBinder } from "./closed-binder";
 
 type BinderPageTurnerProps = ComponentProps<typeof BinderPageTurner>;
 
+const CLOSE_CSS = `
+.sb-close {
+  background: none;
+  border: 0;
+  padding: 4px 0;
+  font-size: 11px;
+  color: var(--smoke);
+  opacity: 0.7;
+  cursor: pointer;
+  transition: color 240ms var(--ease-out-expo), opacity 240ms var(--ease-out-expo);
+}
+.sb-close:hover,
+.sb-close:focus-visible {
+  color: var(--foil);
+  opacity: 1;
+}
+.sb-close:focus-visible {
+  outline: 1px solid var(--foil);
+  outline-offset: 4px;
+}
+`;
+
 export interface BinderStageProps extends BinderPageTurnerProps {
   name: string;
   theme: Layout["theme"];
@@ -107,8 +129,9 @@ export function BinderStage({
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
-        <button type="button" onClick={() => setClosed(true)}>
+      <style>{CLOSE_CSS}</style>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+        <button type="button" className="sb-label sb-close" onClick={() => setClosed(true)}>
           Cerrar binder
         </button>
       </div>
