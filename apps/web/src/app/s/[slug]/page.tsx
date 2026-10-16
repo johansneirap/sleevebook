@@ -1,7 +1,7 @@
 import { generateSpreads } from "@sleevebook/binder-core";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { BinderPageTurner } from "../../../components/binder/binder-page-turner";
+import { BinderStage } from "../../../components/binder/binder-stage";
 import { ThemedMain } from "../../../components/binder/themed-main";
 import { collectVariantIds, getBinderWithLayout, getVariantDisplays } from "../../../lib/binders";
 import { getGoalProgress } from "../../../lib/goals";
@@ -59,7 +59,10 @@ export default async function PublicBinderPage({ params, searchParams }: PagePro
           Avance del objetivo: {progress.owned} / {progress.total} ({progress.percentage}%)
         </p>
       )}
-      <BinderPageTurner
+      <BinderStage
+        name={binderData.name}
+        theme={binderData.layout.theme}
+        startClosed={spreadParam === undefined}
         basePath={`/s/${slug}`}
         initialIndex={index}
         sheets={binderData.sheets}

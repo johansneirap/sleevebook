@@ -1,7 +1,7 @@
 import { computeBinderValueUsd, generateSpreads } from "@sleevebook/binder-core";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BinderPageTurner } from "../../../components/binder/binder-page-turner";
+import { BinderStage } from "../../../components/binder/binder-stage";
 import { ThemedMain } from "../../../components/binder/themed-main";
 import { collectVariantIds, getBinderWithLayout, getVariantDisplays } from "../../../lib/binders";
 import { getGoalProgress } from "../../../lib/goals";
@@ -104,7 +104,10 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
           )}
         </p>
       )}
-      <BinderPageTurner
+      <BinderStage
+        name={binderData.name}
+        theme={binderData.layout.theme}
+        startClosed={spreadParam === undefined}
         basePath={`/binders/${binderId}`}
         initialIndex={index}
         sheets={binderData.sheets}

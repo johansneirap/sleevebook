@@ -113,7 +113,7 @@ test("binders list shows the fixture binder", async ({ page }) => {
 });
 
 test("viewer renders the first spread with the fixture card", async ({ page }) => {
-  await page.goto(`/binders/${binderId}`);
+  await page.goto(`/binders/${binderId}?spread=0`);
   await expect(page.getByRole("heading", { name: "E2E Fixture Binder" })).toBeVisible();
   await expect(page.getByText("Hoja 1 · Frente")).toBeVisible();
   await expect(page.getByText("E2E Test Card 1")).toBeVisible();
@@ -121,7 +121,7 @@ test("viewer renders the first spread with the fixture card", async ({ page }) =
 });
 
 test("viewer navigates to the next (and last) spread", async ({ page }) => {
-  await page.goto(`/binders/${binderId}`);
+  await page.goto(`/binders/${binderId}?spread=0`);
   await page.getByRole("link", { name: /Siguiente/ }).click();
   await expect(page.getByText("Hoja 1 · Reverso")).toBeVisible();
   await expect(page.getByText("Spread 2 / 2")).toBeVisible();
@@ -130,7 +130,7 @@ test("viewer navigates to the next (and last) spread", async ({ page }) => {
 test("viewer navigates spreads with the keyboard arrows, and URL stays in sync", async ({
   page,
 }) => {
-  await page.goto(`/binders/${binderId}`);
+  await page.goto(`/binders/${binderId}?spread=0`);
   await page.locator("h1").click();
   await page.keyboard.press("ArrowRight");
   await expect(page.getByText("Hoja 1 · Reverso")).toBeVisible();
@@ -148,7 +148,7 @@ test("viewer 404s on an unknown binder id", async ({ page }) => {
 });
 
 test("viewer shows goal progress and a link to the missing cards", async ({ page }) => {
-  await page.goto(`/binders/${binderId}`);
+  await page.goto(`/binders/${binderId}?spread=0`);
   await expect(page.getByText("Avance del objetivo: 1 / 2 (50%)")).toBeVisible();
   await expect(page.getByRole("link", { name: "Ver lo que falta" })).toBeVisible();
 });
