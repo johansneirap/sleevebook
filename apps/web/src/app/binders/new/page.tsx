@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { createBinder } from "../../../lib/binder-actions";
+import { NewBinderForm } from "../../../components/library/new-binder-form";
+import "../../../components/library/catalog.css";
 
 interface PageProps {
   searchParams: Promise<{ rows?: string; cols?: string }>;
@@ -18,57 +19,37 @@ export default async function NewBinderPage({ searchParams }: PageProps) {
   const defaultCols = cols ?? "3";
 
   return (
-    <main style={{ padding: 24, fontFamily: "sans-serif", maxWidth: 420 }}>
-      <p>
-        <Link href="/binders">&larr; Mis binders</Link>
+    <main className="sb-catalog-page" style={{ maxWidth: 620 }}>
+      <p style={{ margin: 0 }}>
+        <Link href="/binders" className="sb-catalog-eyebrow" style={{ textDecoration: "none" }}>
+          &larr; Mis binders
+        </Link>
       </p>
-      <h1>Crear binder</h1>
+      <h1 className="sb-catalog-title" style={{ marginTop: 28 }}>
+        Crear binder
+      </h1>
 
-      <p>Formatos estándar:</p>
-      <p style={{ display: "flex", gap: 8 }}>
-        {PRESETS.map((preset) => (
-          <Link key={preset.label} href={`/binders/new?rows=${preset.rows}&cols=${preset.cols}`}>
-            {preset.label}
-          </Link>
-        ))}
-      </p>
+      <div style={{ marginTop: 36 }}>
+        <p className="sb-catalog-eyebrow">Formatos estándar</p>
+        <ul className="sb-preset-row">
+          {PRESETS.map((preset) => (
+            <li key={preset.label}>
+              <Link
+                className="sb-preset-link"
+                href={`/binders/new?rows=${preset.rows}&cols=${preset.cols}`}
+              >
+                {preset.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
 
-      <form action={createBinder} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <label>
-          Nombre
-          <br />
-          <input type="text" name="name" placeholder="Mi binder" required />
-        </label>
-
-        <div style={{ display: "flex", gap: 12 }}>
-          <label>
-            Filas
-            <br />
-            <input type="number" name="rows" min={1} max={6} defaultValue={defaultRows} />
-          </label>
-          <label>
-            Columnas
-            <br />
-            <input type="number" name="cols" min={1} max={6} defaultValue={defaultCols} />
-          </label>
-          <label>
-            Hojas
-            <br />
-            <input type="number" name="sheets" min={1} max={200} defaultValue={20} />
-          </label>
-        </div>
-
-        <label>
-          Apertura
-          <br />
-          <select name="opening" defaultValue="side">
-            <option value="side">Lateral</option>
-            <option value="top">Vertical</option>
-          </select>
-        </label>
-
-        <button type="submit">Crear</button>
-      </form>
+      <NewBinderForm
+        key={`${defaultRows}x${defaultCols}`}
+        defaultRows={defaultRows}
+        defaultCols={defaultCols}
+      />
     </main>
   );
 }
