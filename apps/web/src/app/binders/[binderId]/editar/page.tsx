@@ -56,10 +56,18 @@ export default async function BinderEditorPage({ params, searchParams }: PagePro
 
   return (
     <ThemedMain theme={binderData.layout.theme}>
-      <p>
+      <p style={{ margin: "0 0 8px", fontSize: 12, letterSpacing: "0.1em" }}>
         <Link href={`/binders/${binderId}`}>&larr; Ver binder</Link>
       </p>
-      <h1>Editar: {binderData.name}</h1>
+      <h1
+        style={{
+          fontSize: "clamp(28px, 4vw, 40px)",
+          margin: "0 0 28px",
+          lineHeight: 1.1,
+        }}
+      >
+        Editar: {binderData.name}
+      </h1>
       <BinderEditor
         binderId={binderId}
         faces={spread.faces}
@@ -70,19 +78,32 @@ export default async function BinderEditorPage({ params, searchParams }: PagePro
         prices={prices}
         theme={binderData.layout.theme}
       />
-      <nav style={{ marginTop: 16, display: "flex", gap: 16, alignItems: "center" }}>
+      <nav
+        style={{
+          marginTop: 32,
+          paddingTop: 16,
+          borderTop: "1px solid var(--rule)",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 16,
+          alignItems: "center",
+          justifyContent: "space-between",
+          fontSize: 12,
+          letterSpacing: "0.08em",
+        }}
+      >
         {index > 0 ? (
           <Link href={`/binders/${binderId}/editar?spread=${index - 1}`}>&larr; Anterior</Link>
         ) : (
-          <span style={{ color: "#aaa" }}>&larr; Anterior</span>
+          <span style={{ color: "var(--smoke)", opacity: 0.45 }}>&larr; Anterior</span>
         )}
-        <span>
+        <span className="sb-data" style={{ color: "var(--smoke)" }}>
           Spread {index + 1} / {spreads.length}
         </span>
         {index < spreads.length - 1 ? (
           <Link href={`/binders/${binderId}/editar?spread=${index + 1}`}>Siguiente &rarr;</Link>
         ) : (
-          <span style={{ color: "#aaa" }}>Siguiente &rarr;</span>
+          <span style={{ color: "var(--smoke)", opacity: 0.45 }}>Siguiente &rarr;</span>
         )}
       </nav>
     </ThemedMain>
