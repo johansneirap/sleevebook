@@ -1,4 +1,5 @@
 import { formatPocketCode } from "@sleevebook/binder-core";
+import { FlippableCardDemo } from "../../components/binder/flippable-card-demo";
 import { demoImageUrls, sampleLayout } from "../../sample-layout";
 
 export default function DemoPage() {
@@ -50,6 +51,7 @@ export default function DemoPage() {
           );
         })}
       </div>
+      <FlippableCardDemo />
     </main>
   );
 }
