@@ -7,14 +7,23 @@ export function ThemedMain({ theme, children }: { theme: Layout["theme"]; childr
   return (
     <main
       style={{
-        padding: 24,
-        fontFamily: tokens.fontFamily,
+        minHeight: "100vh",
+        boxSizing: "border-box",
         background: tokens.background,
         color: tokens.foreground,
-        minHeight: "100vh",
+        fontFamily: tokens.fontFamily,
       }}
     >
-      {children}
+      <div
+        style={{
+          maxWidth: 1120,
+          marginInline: "auto",
+          paddingBlock: "clamp(20px, 4vw, 56px)",
+          paddingInline: "clamp(16px, 4vw, 48px)",
+        }}
+      >
+        {children}
+      </div>
     </main>
   );
 }

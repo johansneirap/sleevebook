@@ -39,6 +39,58 @@ const OPEN_SWING_SECONDS = 0.6;
 const OPEN_DONE_MS = 1050;
 const FADE_MS = 150;
 const SERIF = "var(--font-display)";
+const UI = "var(--font-ui)";
+
+// Controls: quiet small-caps buttons for the views, one foil-hairline primary action.
+const CONTROL_CSS = `
+.sb-cover-quiet,
+.sb-cover-open {
+  font-family: var(--font-ui);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  transition:
+    color 260ms var(--ease-out-expo),
+    background-color 260ms var(--ease-out-expo),
+    box-shadow 260ms var(--ease-out-expo);
+}
+.sb-cover-quiet {
+  padding: 8px 10px;
+  border: 0;
+  background: none;
+  color: var(--smoke);
+  font-size: 12px;
+}
+.sb-cover-quiet:hover,
+.sb-cover-quiet:focus-visible {
+  color: var(--linen);
+}
+.sb-cover-open {
+  padding: 13px 40px;
+  border: 1px solid var(--foil);
+  background: color-mix(in srgb, var(--velvet) 60%, transparent);
+  color: var(--linen);
+  font-size: 13px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--foil) 0%, transparent);
+}
+.sb-cover-open:hover:not(:disabled),
+.sb-cover-open:focus-visible {
+  color: var(--foil);
+  background: color-mix(in srgb, var(--foil) 9%, transparent);
+  box-shadow: 0 0 28px 0 color-mix(in srgb, var(--foil) 18%, transparent);
+}
+.sb-cover-open:disabled {
+  opacity: 0.5;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sb-cover-quiet,
+  .sb-cover-open {
+    transition: none;
+  }
+}
+`;
 
 // Board width drives everything else: the cover is 0.82 w/h (3x3 binder),
 // and the thickness is ~9% of the width. The stage also sets the perspective.
@@ -255,16 +307,33 @@ export function ClosedBinder({
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
       >
+        {/* Spotlight: a soft pool of warm light behind the binder, like a vitrine lamp. */}
         <div
           aria-hidden
           style={{
             position: "absolute",
             left: "50%",
-            bottom: 0,
+            top: "46%",
+            transform: "translate(-50%, -50%)",
+            width: "calc(var(--w) * 2.1)",
+            height: "calc(var(--h) * 1.2)",
+            pointerEvents: "none",
+            background:
+              "radial-gradient(closest-side, color-mix(in srgb, var(--foil) 16%, transparent), transparent 100%)",
+          }}
+        />
+        {/* Floor shadow: soft contact shadow under the binder. */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            left: "50%",
+            bottom: 2,
             transform: "translateX(-50%)",
-            width: "calc(var(--w) * 0.92)",
-            height: 18,
-            background: "radial-gradient(closest-side, rgba(0,0,0,0.55), transparent)",
+            width: "calc(var(--w) * 1.08)",
+            height: 26,
+            pointerEvents: "none",
+            background: "radial-gradient(closest-side, rgba(0,0,0,0.7), transparent)",
           }}
         />
         <motion.div
@@ -503,43 +572,44 @@ export function ClosedBinder({
         </motion.div>
       </div>
 
+      <style>{CONTROL_CSS}</style>
       <div
         style={{
           display: "flex",
           flexWrap: "wrap",
-          gap: 8,
+          gap: 4,
           justifyContent: "center",
-          marginTop: 16,
+          marginTop: 14,
         }}
       >
-        <button type="button" onClick={() => rotateTo(FRONT_ANGLE)}>
+        <button type="button" className="sb-cover-quiet" onClick={() => rotateTo(FRONT_ANGLE)}>
           Ver tapa
         </button>
-        <button type="button" onClick={() => rotateTo(SPINE_ANGLE)}>
+        <button type="button" className="sb-cover-quiet" onClick={() => rotateTo(SPINE_ANGLE)}>
           Ver lomo
         </button>
-        <button type="button" onClick={() => rotateTo(BACK_ANGLE)}>
+        <button type="button" className="sb-cover-quiet" onClick={() => rotateTo(BACK_ANGLE)}>
           Ver contratapa
         </button>
       </div>
-      <p style={{ textAlign: "center", fontSize: 12, color: "#8a8a8a", margin: "10px 0 0" }}>
+      <p
+        style={{
+          textAlign: "center",
+          fontFamily: UI,
+          fontSize: 12,
+          color: "var(--smoke)",
+          margin: "10px 0 0",
+        }}
+      >
         {reduced ? "Usa los botones para girar" : "Arrastra o usa ← → para girar"}
       </p>
-      <div style={{ textAlign: "center", marginTop: 20 }}>
+      <div style={{ textAlign: "center", marginTop: 24 }}>
         <button
           type="button"
+          className="sb-cover-open"
           onClick={handleOpen}
           disabled={phase !== "idle"}
-          style={{
-            padding: "10px 28px",
-            border: `1px solid ${accentColor}`,
-            background: "transparent",
-            color: accentColor,
-            letterSpacing: "0.16em",
-            textTransform: "uppercase",
-            fontSize: 12,
-            cursor: phase === "idle" ? "pointer" : "default",
-          }}
+          style={{ cursor: phase === "idle" ? "pointer" : "default" }}
         >
           Abrir binder
         </button>

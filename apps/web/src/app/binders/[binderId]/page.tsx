@@ -1,13 +1,13 @@
 import { computeBinderValueUsd, generateSpreads } from "@sleevebook/binder-core";
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BinderTitle, ProgressFigure, ValueFigure } from "../../../components/binder/binder-header";
 import { BinderStage } from "../../../components/binder/binder-stage";
+import { OwnerToolbar } from "../../../components/binder/owner-toolbar";
 import { ThemedMain } from "../../../components/binder/themed-main";
 import { collectVariantIds, getBinderWithLayout, getVariantDisplays } from "../../../lib/binders";
 import { getGoalProgress } from "../../../lib/goals";
 import { getLatestPrices } from "../../../lib/pricing";
 import { getShareLinkForBinder, getSiteUrl } from "../../../lib/share";
-import { publishBinder, unpublishBinder } from "../../../lib/share-actions";
 import { clampSpreadIndex } from "../../../lib/spreads";
 
 interface PageProps {
@@ -49,61 +49,45 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
 
   const shareInfo = await getShareLinkForBinder(binderId);
   const siteUrl = getSiteUrl();
+  const isPublished = binderData.status === "published";
 
   return (
     <ThemedMain theme={binderData.layout.theme}>
-      <p>
-        <Link href="/binders">&larr; Mis binders</Link>
-      </p>
-      <h1>{binderData.name}</h1>
-      <p>
-        <Link href={`/binders/${binderId}/editar`}>Editar</Link>
-      </p>
-      {totalValueUsd > 0 && <p>Valor total: ${totalValueUsd.toFixed(2)} USD</p>}
+      <OwnerToolbar
+        binderId={binderId}
+        isPublished={isPublished}
+        shareInfo={isPublished ? shareInfo : null}
+        siteUrl={siteUrl}
+        missingHref={
+          progress && progress.missingVariantIds.length > 0
+            ? `/binders/${binderId}/faltan`
+            : undefined
+        }
+      />
 
-      {binderData.status === "published" && shareInfo ? (
-        <div style={{ fontSize: 13, marginBottom: 12 }}>
-          <p>
-            Publicado ({shareInfo.visibility === "public" ? "público" : "no listado"}) —{" "}
-            <a href={`${siteUrl}/s/${shareInfo.slug}`} target="_blank" rel="noreferrer">
-              {siteUrl}/s/{shareInfo.slug}
-            </a>{" "}
-            ({shareInfo.views} vistas)
-          </p>
-          <form action={publishBinder} style={{ display: "inline" }}>
-            <input type="hidden" name="binderId" value={binderId} />
-            <select aria-label="Visibilidad" name="visibility" defaultValue={shareInfo.visibility}>
-              <option value="unlisted">No listado</option>
-              <option value="public">Público</option>
-            </select>
-            <button type="submit">Actualizar</button>
-          </form>{" "}
-          <form action={unpublishBinder} style={{ display: "inline" }}>
-            <input type="hidden" name="binderId" value={binderId} />
-            <button type="submit">Despublicar</button>
-          </form>
-        </div>
-      ) : (
-        <form action={publishBinder} style={{ fontSize: 13, marginBottom: 12 }}>
-          <input type="hidden" name="binderId" value={binderId} />
-          <select aria-label="Visibilidad" name="visibility" defaultValue="unlisted">
-            <option value="unlisted">No listado</option>
-            <option value="public">Público</option>
-          </select>
-          <button type="submit">Publicar</button>
-        </form>
-      )}
-      {progress && (
-        <p>
-          Avance del objetivo: {progress.owned} / {progress.total} ({progress.percentage}%)
-          {progress.missingVariantIds.length > 0 && (
-            <>
-              {" — "}
-              <Link href={`/binders/${binderId}/faltan`}>Ver lo que falta</Link>
-            </>
-          )}
-        </p>
-      )}
+      <header style={{ display: "flex", flexDirection: "column", gap: 22, marginBottom: 40 }}>
+        <BinderTitle>{binderData.name}</BinderTitle>
+        {(totalValueUsd > 0 || progress) && (
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "flex-end",
+              gap: "16px 48px",
+            }}
+          >
+            {progress && (
+              <ProgressFigure
+                owned={progress.owned}
+                total={progress.total}
+                percentage={progress.percentage}
+              />
+            )}
+            {totalValueUsd > 0 && <ValueFigure valueUsd={totalValueUsd} />}
+          </div>
+        )}
+      </header>
+
       <BinderStage
         name={binderData.name}
         theme={binderData.layout.theme}
