@@ -798,7 +798,10 @@ export function BinderEditor({
                   background: "color-mix(in srgb, var(--leather) 88%, transparent)",
                   border: "1px solid color-mix(in srgb, var(--linen) 9%, transparent)",
                   borderRadius: 6,
-                  width: "min(100%, 400px)",
+                  // Two faces side by side whenever the column fits them, like the open binder.
+                  boxSizing: "border-box",
+                  flex: "1 1 300px",
+                  maxWidth: 400,
                   padding: "14px 18px 20px",
                   boxShadow: "inset 0 0 56px rgba(0, 0, 0, 0.38)",
                 }}
