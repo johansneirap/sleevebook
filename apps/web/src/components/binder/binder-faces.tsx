@@ -2,7 +2,7 @@
 
 import type { Format, Layout, SheetFace } from "@sleevebook/binder-core";
 import { AnimatePresence } from "motion/react";
-import { useCallback, useState } from "react";
+import { Fragment, useCallback, useState } from "react";
 import type { VariantDisplay } from "../../lib/binders";
 import { CardFocusOverlay, type FocusOrigin, measureFocusOrigin } from "./card-focus-overlay";
 import { FaceGrid } from "./face-grid";
@@ -15,12 +15,15 @@ interface FocusedCard {
 }
 
 // The open binder lies on the leather: its spine/gutter shadow sits between
-// the two faces. "side" opening puts faces in a row, "top" opening stacks
-// them with a horizontal gutter. Phones always stack.
+// the two slots. Each spread always has two slots -- the first and last show
+// the inside cover opposite their single face -- so the spine never moves and
+// a turning sheet lands exactly on the opposite slot. "side" opening puts the
+// slots in a row, "top" stacks them with a horizontal gutter. Phones always
+// stack and drop the empty inside cover.
 const SPREAD_CSS = `
 .sb-spread {
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: auto 28px auto;
   align-items: stretch;
   justify-content: center;
   box-sizing: border-box;
@@ -32,12 +35,7 @@ const SPREAD_CSS = `
     0 18px 30px -18px rgba(0, 0, 0, 0.6),
     inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
-.sb-spread[data-axis="top"] {
-  flex-direction: column;
-}
 .sb-spine {
-  flex: 0 0 auto;
-  width: 28px;
   background: linear-gradient(
     90deg,
     rgba(0, 0, 0, 0) 0%,
@@ -47,9 +45,20 @@ const SPREAD_CSS = `
     rgba(0, 0, 0, 0) 100%
   );
 }
+.sb-cover {
+  box-sizing: border-box;
+  border-radius: 2px;
+  background:
+    radial-gradient(ellipse at 70% 0%, rgba(255, 240, 210, 0.05), transparent 60%),
+    linear-gradient(180deg, color-mix(in srgb, var(--leather-deep) 80%, #000), var(--leather-deep));
+  outline: 1px solid color-mix(in srgb, var(--foil) 10%, transparent);
+  outline-offset: -8px;
+}
+.sb-spread[data-axis="top"] {
+  grid-template-columns: auto;
+  grid-template-rows: 1fr 28px 1fr;
+}
 .sb-spread[data-axis="top"] .sb-spine {
-  width: auto;
-  height: 28px;
   background: linear-gradient(
     180deg,
     rgba(0, 0, 0, 0) 0%,
@@ -61,12 +70,11 @@ const SPREAD_CSS = `
 }
 @media (max-width: 640px) {
   .sb-spread {
-    flex-direction: column;
+    grid-template-columns: auto;
+    grid-template-rows: 1fr 28px 1fr;
     padding: 14px;
   }
   .sb-spine {
-    width: auto;
-    height: 28px;
     background: linear-gradient(
       180deg,
       rgba(0, 0, 0, 0) 0%,
@@ -76,8 +84,33 @@ const SPREAD_CSS = `
       rgba(0, 0, 0, 0) 100%
     );
   }
+  .sb-spread[data-cover] {
+    grid-template-rows: auto;
+  }
+  .sb-spread[data-cover] .sb-cover,
+  .sb-spread[data-cover] .sb-spine {
+    display: none;
+  }
 }
 `;
+
+/**
+ * The two slots of a spread: the opening spread pairs the inside front cover
+ * (null) with sheet 1's front, the closing one sheet N's back with the inside
+ * back cover.
+ */
+export function spreadSlots(faces: SheetFace[]): [SheetFace | null, SheetFace | null] {
+  if (faces.length >= 2) {
+    return [faces[0] ?? null, faces[1] ?? null];
+  }
+  const only = faces[0] ?? null;
+  return only?.side === "B" ? [only, null] : [null, only];
+}
+
+/** The bare inside of the cover, opposite the first/last face. */
+export function InsideCover({ turnSlot }: { turnSlot?: number }) {
+  return <div aria-hidden className="sb-face sb-cover" data-turn-slot={turnSlot} />;
+}
 
 export function BinderFaces({
   faces,
@@ -105,24 +138,31 @@ export function BinderFaces({
   }, []);
 
   const handleClose = useCallback(() => setFocused(null), []);
+  const slots = spreadSlots(faces);
 
   return (
     <>
-      <div className="sb-spread" data-axis={opening}>
+      <div className="sb-spread" data-axis={opening} data-cover={slots.includes(null) || undefined}>
         <style>{SPREAD_CSS}</style>
-        {faces.map((face, i) => (
-          <FaceGridWithSpine
-            key={`${face.sheet}-${face.side}`}
-            face={face}
-            format={format}
-            pockets={pockets}
-            panels={panels}
-            displays={displays}
-            sleeve={sleeve}
-            focusedCode={focused?.code ?? null}
-            onCardClick={handleCardClick}
-            spineBefore={i === 1}
-          />
+        {slots.map((face, i) => (
+          <Fragment key={face ? `${face.sheet}-${face.side}` : `cover-${i}`}>
+            {i === 1 && <div className="sb-spine" aria-hidden />}
+            {face ? (
+              <FaceGrid
+                face={face}
+                format={format}
+                pockets={pockets}
+                panels={panels}
+                displays={displays}
+                sleeve={sleeve}
+                focusedCode={focused?.code ?? null}
+                onCardClick={handleCardClick}
+                turnSlot={i}
+              />
+            ) : (
+              <InsideCover turnSlot={i} />
+            )}
+          </Fragment>
         ))}
       </div>
       <AnimatePresence>
@@ -136,18 +176,6 @@ export function BinderFaces({
           />
         )}
       </AnimatePresence>
-    </>
-  );
-}
-
-function FaceGridWithSpine({
-  spineBefore,
-  ...props
-}: Parameters<typeof FaceGrid>[0] & { spineBefore: boolean }) {
-  return (
-    <>
-      {spineBefore && <div className="sb-spine" aria-hidden />}
-      <FaceGrid {...props} />
     </>
   );
 }

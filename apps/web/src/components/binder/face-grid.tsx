@@ -22,6 +22,10 @@ interface FaceGridProps {
   /** Pocket code of the card currently taken out of the sleeve, if any. */
   focusedCode?: string | null;
   onCardClick?: (code: string, display: VariantDisplay, rect: DOMRect) => void;
+  /** Marks the face as a page-turn slot (0 = left/top, 1 = right/bottom). */
+  turnSlot?: number;
+  /** Decorative copy for the page-turn overlay: inert, label drawn by CSS. */
+  ghost?: boolean;
 }
 
 // Page styles shared by every face. Width is fluid: two faces fit side by
@@ -54,6 +58,9 @@ export const FACE_CSS = `
 .sb-pocket--card:focus-visible {
   outline: 1px solid var(--foil);
   outline-offset: 2px;
+}
+.sb-ghost-label::before {
+  content: attr(data-label);
 }
 @media (prefers-reduced-motion: reduce) {
   .sb-pocket::after {
@@ -105,6 +112,8 @@ export function FaceGrid({
   sleeve,
   focusedCode = null,
   onCardClick,
+  turnSlot,
+  ghost = false,
 }: FaceGridProps) {
   const reducedMotion = usePrefersReducedMotion();
   const codes = Array.from({ length: format.rows * format.cols }, (_, i) =>
@@ -112,10 +121,14 @@ export function FaceGrid({
   );
   const overlayStyle = sleeveOverlayStyle(sleeve);
   const coverage = panelCoverageMap(panels, format);
+  const label = `Hoja ${face.sheet} · ${face.side === "F" ? "Frente" : "Reverso"}`;
 
   return (
     <section
       className="sb-face"
+      data-turn-slot={turnSlot}
+      inert={ghost || undefined}
+      aria-hidden={ghost || undefined}
       style={{
         position: "relative",
         boxSizing: "border-box",
@@ -141,7 +154,12 @@ export function FaceGrid({
           gap: 10,
         }}
       >
-        Hoja {face.sheet} · {face.side === "F" ? "Frente" : "Reverso"}
+        {ghost ? (
+          // Drawn via CSS so text queries only ever find the real face.
+          <span className="sb-ghost-label" data-label={label} />
+        ) : (
+          label
+        )}
         <span aria-hidden style={{ flex: 1, height: 1, background: "var(--rule)", opacity: 0.6 }} />
       </h2>
       <div

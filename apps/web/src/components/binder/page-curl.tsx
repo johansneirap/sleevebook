@@ -6,181 +6,232 @@ import type { CSSProperties, ReactNode } from "react";
 export type TurnDirection = "forward" | "backward";
 export type OpeningAxis = "side" | "top";
 
-interface PageCurlProps {
-  opening: OpeningAxis;
-  direction: TurnDirection;
-  children: ReactNode;
+/** A box in the turn overlay's coordinate space (relative to its container). */
+export interface SlotRect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
 }
 
-// A page is split into two segments along the hinge axis: a larger "flat"
-// segment near the hinge that barely bends, and a smaller "tip" segment at
-// the free edge that curls further -- the classic cheap approximation of a
-// paper curl without a mesh/canvas deformation. The tip is a DOM child of
-// the flat segment (not a sibling) so its own rotation composes with the
-// flat segment's rotation in the same 3D space (transform-style: preserve-3d
-// makes CSS 3D transforms nest instead of flatten).
-const FLAT_FRACTION = 0.6;
-const TIP_FRACTION = 1 - FLAT_FRACTION;
-const FLAT_ROTATION_DEG = 130;
-const TIP_EXTRA_ROTATION_DEG = 55;
-const DURATION_S = 0.55;
-const TIP_DELAY_S = 0.07;
+/**
+ * Measures the `[data-turn-slot]` children of `container` (slot 0 is the
+ * left/top face, slot 1 the right/bottom one) relative to the container.
+ * Hidden slots (e.g. the inside cover on phones) come back as null.
+ */
+export function measureTurnSlots(container: HTMLElement): Array<SlotRect | null> {
+  const base = container.getBoundingClientRect();
+  const slots: Array<SlotRect | null> = [null, null];
+  for (const el of container.querySelectorAll<HTMLElement>("[data-turn-slot]")) {
+    const index = Number(el.dataset.turnSlot);
+    const r = el.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0 && (index === 0 || index === 1)) {
+      slots[index] = {
+        left: r.left - base.left,
+        top: r.top - base.top,
+        width: r.width,
+        height: r.height,
+      };
+    }
+  }
+  return slots;
+}
 
-const shadowLayerStyle: CSSProperties = {
+/**
+ * Where a turning sheet starts and lands: forward lifts the right/bottom face
+ * (slot 1) over the spine onto slot 0, backward the reverse. When one slot is
+ * hidden the sheet flips in place over the visible one.
+ */
+export function turnGeometry(
+  slots: Array<SlotRect | null>,
+  direction: TurnDirection,
+): { src: SlotRect; dest: SlotRect } | null {
+  const [start, end] = slots;
+  const src = direction === "forward" ? (end ?? start) : (start ?? end);
+  const dest = direction === "forward" ? (start ?? end) : (end ?? start);
+  return src && dest ? { src, dest } : null;
+}
+
+// The sheet is split into two segments: a "flat" one at the spine and a
+// "tip" at the free edge that is a DOM child of the flat one, so its own
+// rotation composes on top (transform-style: preserve-3d). The tip runs ahead
+// mid-turn -- the paper wave -- and settles back to 0 so the sheet lands flat,
+// exactly over the opposite face.
+const FLAT_FRACTION = 0.6;
+const TURN_DEG = 180;
+const TIP_BEND_DEG = 38;
+const DURATION_S = 0.75;
+const EASE = [0.42, 0.04, 0.2, 1] as const;
+export const PAGE_TURN_MS = DURATION_S * 1000;
+
+const BACKFACE: CSSProperties = {
   position: "absolute",
   inset: 0,
-  pointerEvents: "none",
+  overflow: "hidden",
+  backfaceVisibility: "hidden",
+  WebkitBackfaceVisibility: "hidden",
 };
 
-function flatBoxStyle(isSide: boolean, hingeAtEnd: boolean): CSSProperties {
-  if (isSide) {
-    return {
-      position: "absolute",
-      top: 0,
-      height: "100%",
-      width: `${FLAT_FRACTION * 100}%`,
-      transformStyle: "preserve-3d",
-      transformOrigin: hingeAtEnd ? "100% 50%" : "0% 50%",
-      ...(hingeAtEnd ? { right: 0 } : { left: 0 }),
-    };
-  }
-  return {
+interface PageTurnProps {
+  src: SlotRect;
+  dest: SlotRect;
+  /** The face that lifts off `src` (front of the turning sheet). */
+  front: ReactNode;
+  /** The other side of the sheet, which ends up face-up over `dest`. */
+  back: ReactNode;
+  /** What `dest` showed before the turn; the sheet comes to rest over it. */
+  under?: ReactNode;
+}
+
+export function PageTurn({ src, dest, front, back, under }: PageTurnProps) {
+  const dx = dest.left + dest.width / 2 - (src.left + src.width / 2);
+  const dy = dest.top + dest.height / 2 - (src.top + src.height / 2);
+  const horizontal = Math.abs(dx) >= Math.abs(dy);
+  const toStart = (horizontal ? dx : dy) <= 0;
+
+  const size = horizontal ? src.width : src.height;
+  const srcPos = horizontal ? src.left : src.top;
+  const destPos = horizontal ? dest.left : dest.top;
+  const destSize = horizontal ? dest.width : dest.height;
+  // Half the spine gap; negative when the sheet flips in place.
+  const halfGap = toStart ? (srcPos - (destPos + destSize)) / 2 : (destPos - (srcPos + size)) / 2;
+  const inPlace = halfGap < 0;
+  const flat = inPlace ? size : size * FLAT_FRACTION;
+  const tip = size - flat;
+
+  // Positive rotateY lifts the left edge toward the viewer, positive rotateX
+  // the bottom edge; pick the sign that brings the free edge up off the page.
+  const sign = horizontal ? (toStart ? -1 : 1) : toStart ? 1 : -1;
+  const rotate = horizontal ? "rotateY" : "rotateX";
+  const pos = horizontal ? "left" : "top";
+  const len = horizontal ? "width" : "height";
+  const hinge = toStart ? srcPos - halfGap : srcPos + size + halfGap;
+
+  const origin = (offset: number) => (horizontal ? `${offset}px 50%` : `50% ${offset}px`);
+  const segment = (at: number, length: number, originAt: number): CSSProperties => ({
     position: "absolute",
-    left: 0,
-    width: "100%",
-    height: `${FLAT_FRACTION * 100}%`,
+    [pos]: at,
+    [len]: length,
+    ...(horizontal ? { top: 0, height: src.height } : { left: 0, width: src.width }),
     transformStyle: "preserve-3d",
-    transformOrigin: hingeAtEnd ? "50% 100%" : "50% 0%",
-    ...(hingeAtEnd ? { bottom: 0 } : { top: 0 }),
-  };
-}
+    transformOrigin: origin(originAt),
+  });
+  // A window onto the full face, shifted so the segment shows its own strip.
+  const face = (node: ReactNode, offset: number, isBack: boolean) => (
+    <div style={{ ...BACKFACE, transform: isBack ? `${rotate}(180deg)` : undefined }}>
+      <div
+        style={{
+          position: "absolute",
+          display: "flex",
+          [pos]: offset,
+          ...(horizontal ? { top: 0 } : { left: 0 }),
+          width: src.width,
+          height: src.height,
+        }}
+      >
+        {node}
+      </div>
+      <motion.div
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          background: `linear-gradient(${horizontal ? (toStart !== isBack ? "to right" : "to left") : toStart !== isBack ? "to bottom" : "to top"}, rgba(0,0,0,0.45), rgba(0,0,0,0) 75%)`,
+        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0, 0.8, 0] }}
+        transition={{ duration: DURATION_S, times: [0, 0.5, 1] }}
+      />
+    </div>
+  );
 
-function flatContentStyle(isSide: boolean, hingeAtEnd: boolean): CSSProperties {
-  const shiftPct = (-(1 - FLAT_FRACTION) / FLAT_FRACTION) * 100;
-  if (isSide) {
-    return {
-      position: "relative",
-      width: `${(1 / FLAT_FRACTION) * 100}%`,
-      height: "100%",
-      left: hingeAtEnd ? `${shiftPct}%` : "0%",
-    };
-  }
-  return {
-    position: "relative",
-    height: `${(1 / FLAT_FRACTION) * 100}%`,
-    width: "100%",
-    top: hingeAtEnd ? `${shiftPct}%` : "0%",
-  };
-}
+  // Strip offsets along the turn axis, measured from the src face's start.
+  const flatAt = toStart ? 0 : size - flat;
+  const flatFrontOffset = -flatAt;
+  // Mirrored by the turn: the flat strip lands on the inner (spine) side of dest.
+  const flatBackOffset = toStart ? -(size - flat) : 0;
+  const tipAt = toStart ? flat : -tip;
+  const tipFrontOffset = toStart ? -flat : 0;
+  const tipBackOffset = toStart ? 0 : -flat;
 
-function tipBoxStyle(isSide: boolean, hingeAtEnd: boolean): CSSProperties {
-  if (isSide) {
-    return {
-      position: "absolute",
-      top: 0,
-      height: "100%",
-      width: `${TIP_FRACTION * 100}%`,
-      transformStyle: "preserve-3d",
-      transformOrigin: hingeAtEnd ? "100% 50%" : "0% 50%",
-      ...(hingeAtEnd ? { right: "100%" } : { left: "100%" }),
-    };
-  }
-  return {
-    position: "absolute",
-    left: 0,
-    width: "100%",
-    height: `${TIP_FRACTION * 100}%`,
-    transformStyle: "preserve-3d",
-    transformOrigin: hingeAtEnd ? "50% 100%" : "50% 0%",
-    ...(hingeAtEnd ? { bottom: "100%" } : { top: "100%" }),
-  };
-}
-
-function tipContentStyle(isSide: boolean, hingeAtEnd: boolean): CSSProperties {
-  const shiftPct = (-FLAT_FRACTION / TIP_FRACTION) * 100;
-  if (isSide) {
-    return {
-      position: "relative",
-      width: `${(1 / TIP_FRACTION) * 100}%`,
-      height: "100%",
-      left: hingeAtEnd ? "0%" : `${shiftPct}%`,
-    };
-  }
-  return {
-    position: "relative",
-    height: `${(1 / TIP_FRACTION) * 100}%`,
-    width: "100%",
-    top: hingeAtEnd ? "0%" : `${shiftPct}%`,
-  };
-}
-
-function shadeGradient(isSide: boolean, towardStart: boolean): string {
-  const toward = isSide
-    ? towardStart
-      ? "to left"
-      : "to right"
-    : towardStart
-      ? "to top"
-      : "to bottom";
-  return `linear-gradient(${toward}, rgba(0,0,0,0.5), rgba(0,0,0,0) 70%)`;
-}
-
-export function PageCurl({ opening, direction, children }: PageCurlProps) {
-  const isSide = opening === "side";
-  // Forward hinges at the trailing edge (right for side, bottom for top),
-  // matching the familiar e-reader "swipe forward" convention; backward
-  // hinges at the opposite (leading) edge.
-  const hingeAtEnd = direction === "forward";
-  const sign = hingeAtEnd ? -1 : 1;
-  const flatRotate = isSide
-    ? { rotateY: sign * FLAT_ROTATION_DEG }
-    : { rotateX: sign * FLAT_ROTATION_DEG };
-  const tipRotate = isSide
-    ? { rotateY: sign * TIP_EXTRA_ROTATION_DEG }
-    : { rotateX: sign * TIP_EXTRA_ROTATION_DEG };
-  const rotateInitial = isSide ? { rotateY: 0 } : { rotateX: 0 };
+  const shade = (rect: SlotRect, keyframes: number[], times: number[]) => (
+    <motion.div
+      style={{
+        position: "absolute",
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height,
+        pointerEvents: "none",
+        background: "rgba(0,0,0,0.5)",
+      }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: keyframes }}
+      transition={{ duration: DURATION_S, times }}
+    />
+  );
 
   return (
-    <div style={{ position: "relative", display: "inline-block" }}>
-      {/* Invisible, normal-flow copy: sizes this wrapper to the outgoing
-          spread's own natural dimensions (which can differ from the new
-          spread's, e.g. a 1-face spread turning into a 2-face one), so the
-          flat/tip segments' percentage-based geometry below resolves
-          against the right box instead of stretching to match whatever the
-          real (already-updated) content now measures. */}
-      <div style={{ visibility: "hidden" }}>{children}</div>
-      <motion.div
-        style={flatBoxStyle(isSide, hingeAtEnd)}
-        initial={rotateInitial}
-        animate={flatRotate}
-        transition={{ duration: DURATION_S, ease: "easeIn" }}
-      >
-        <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
-          <div style={flatContentStyle(isSide, hingeAtEnd)}>{children}</div>
-        </div>
-        <motion.div
-          style={{ ...shadowLayerStyle, background: shadeGradient(isSide, !hingeAtEnd) }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 0.55, 0] }}
-          transition={{ duration: DURATION_S, times: [0, 0.55, 1] }}
-        />
-        <motion.div
-          style={tipBoxStyle(isSide, hingeAtEnd)}
-          initial={rotateInitial}
-          animate={tipRotate}
-          transition={{ duration: DURATION_S, delay: TIP_DELAY_S, ease: "easeIn" }}
+    <div
+      aria-hidden
+      style={{
+        position: "absolute",
+        inset: 0,
+        pointerEvents: "none",
+        perspective: 2000,
+        perspectiveOrigin: horizontal
+          ? `${hinge}px ${src.top + src.height / 2}px`
+          : `${src.left + src.width / 2}px ${hinge}px`,
+      }}
+    >
+      {under !== undefined && !inPlace && (
+        <div
+          style={{
+            position: "absolute",
+            left: dest.left,
+            top: dest.top,
+            width: dest.width,
+            height: dest.height,
+            display: "flex",
+          }}
         >
-          <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
-            <div style={tipContentStyle(isSide, hingeAtEnd)}>{children}</div>
-          </div>
-          <motion.div
-            style={{ ...shadowLayerStyle, background: shadeGradient(isSide, hingeAtEnd) }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 0.65, 0] }}
-            transition={{ duration: DURATION_S, delay: TIP_DELAY_S, times: [0, 0.55, 1] }}
-          />
+          {under}
+        </div>
+      )}
+      {/* The page being uncovered starts in the sheet's shadow; dest darkens as it lands. */}
+      {shade(src, [0.55, 0.25, 0], [0, 0.5, 1])}
+      {!inPlace && shade(dest, [0, 0, 0.35, 0], [0, 0.45, 0.85, 1])}
+      <div
+        style={{
+          position: "absolute",
+          left: src.left,
+          top: src.top,
+          width: src.width,
+          height: src.height,
+          transformStyle: "preserve-3d",
+        }}
+      >
+        <motion.div
+          style={segment(flatAt, flat, toStart ? -halfGap : flat + halfGap)}
+          initial={{ [rotate]: 0 }}
+          animate={{ [rotate]: sign * TURN_DEG }}
+          transition={{ duration: DURATION_S, ease: EASE }}
+        >
+          {face(front, flatFrontOffset, false)}
+          {face(back, flatBackOffset, true)}
+          {tip > 0 && (
+            <motion.div
+              style={segment(tipAt, tip, toStart ? 0 : tip)}
+              initial={{ [rotate]: 0 }}
+              animate={{ [rotate]: [0, sign * TIP_BEND_DEG, 0] }}
+              transition={{ duration: DURATION_S, times: [0, 0.4, 1], ease: "easeInOut" }}
+            >
+              {face(front, tipFrontOffset, false)}
+              {face(back, tipBackOffset, true)}
+            </motion.div>
+          )}
         </motion.div>
-      </motion.div>
+      </div>
     </div>
   );
 }

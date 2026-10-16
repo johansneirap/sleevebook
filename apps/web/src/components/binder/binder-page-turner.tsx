@@ -1,15 +1,32 @@
 "use client";
 
-import type { Format, Layout } from "@sleevebook/binder-core";
-import { generateSpreads } from "@sleevebook/binder-core";
+import type { Format, Layout, SheetFace } from "@sleevebook/binder-core";
+import { formatPocketCode, generateSpreads } from "@sleevebook/binder-core";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { VariantDisplay } from "../../lib/binders";
 import { usePrefersReducedMotion } from "../../lib/use-prefers-reduced-motion";
-import { BinderFaces } from "./binder-faces";
-import { type OpeningAxis, PageCurl, type TurnDirection } from "./page-curl";
+import { BinderFaces, InsideCover, spreadSlots } from "./binder-faces";
+import { FaceGrid } from "./face-grid";
+import {
+  measureTurnSlots,
+  type OpeningAxis,
+  PAGE_TURN_MS,
+  PageTurn,
+  type SlotRect,
+  type TurnDirection,
+  turnGeometry,
+} from "./page-curl";
 
-const TURN_CLEANUP_MS = 750;
+const TURN_CLEANUP_MS = PAGE_TURN_MS + 50;
 
 // Navigation lives at the edges and stays quiet: foil only on hover/focus.
 const NAV_CSS = `
@@ -64,7 +81,9 @@ export function BinderPageTurner({
   const spreads = useMemo(() => generateSpreads(sheets), [sheets]);
   const [index, setIndex] = useState(initialIndex);
   const [turn, setTurn] = useState<{ direction: TurnDirection; fromIndex: number } | null>(null);
+  const [geometry, setGeometry] = useState<{ src: SlotRect; dest: SlotRect } | null>(null);
   const cleanupRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const stageRef = useRef<HTMLDivElement>(null);
 
   useEffect(
     () => () => {
@@ -96,6 +115,31 @@ export function BinderPageTurner({
     [spreads.length, index, prefersReducedMotion, router, basePath],
   );
 
+  // Warm the image cache for the neighbouring spreads so the sheet that turns
+  // in already shows its cards.
+  useEffect(() => {
+    for (const neighbour of [spreads[index - 1], spreads[index + 1]]) {
+      for (const face of neighbour?.faces ?? []) {
+        for (let i = 1; i <= format.rows * format.cols; i++) {
+          const content =
+            pockets[formatPocketCode({ sheet: face.sheet, side: face.side, index: i })];
+          const url =
+            content?.kind === "card" ? displays.get(content.variant)?.imageUrl : undefined;
+          if (url) {
+            new Image().src = url;
+          }
+        }
+      }
+    }
+  }, [spreads, index, format, pockets, displays]);
+
+  // Measured after the new spread commits and before paint, so the sheet
+  // starts and lands on the slots the faces actually occupy.
+  useLayoutEffect(() => {
+    const stage = stageRef.current;
+    setGeometry(turn && stage ? turnGeometry(measureTurnSlots(stage), turn.direction) : null);
+  }, [turn]);
+
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "ArrowRight") {
@@ -118,7 +162,7 @@ export function BinderPageTurner({
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
       <style>{NAV_CSS}</style>
-      <div style={{ position: "relative", width: "100%", isolation: "isolate" }}>
+      <div ref={stageRef} style={{ position: "relative", width: "100%", isolation: "isolate" }}>
         {/* Vitrine spotlight: a soft halo of light behind the open binder. */}
         <div
           aria-hidden
@@ -145,25 +189,26 @@ export function BinderPageTurner({
             opening={opening}
           />
         </div>
-        {turn && outgoingSpread && (
-          <div
-            aria-hidden
-            style={{ position: "absolute", inset: 0, pointerEvents: "none", perspective: 1800 }}
-          >
-            <PageCurl opening={opening} direction={turn.direction}>
-              <div style={{ display: "flex", justifyContent: "center" }}>
-                <BinderFaces
-                  faces={outgoingSpread.faces}
+        {turn && outgoingSpread && geometry && (
+          <PageTurn
+            src={geometry.src}
+            dest={geometry.dest}
+            {...turnFaces(outgoingSpread.faces, spread.faces, turn.direction, (face) =>
+              face ? (
+                <FaceGrid
+                  ghost
+                  face={face}
                   format={format}
                   pockets={pockets}
                   panels={panels}
                   displays={displays}
                   sleeve={sleeve}
-                  opening={opening}
                 />
-              </div>
-            </PageCurl>
-          </div>
+              ) : (
+                <InsideCover />
+              ),
+            )}
+          />
         )}
       </div>
       <nav
@@ -212,4 +257,22 @@ export function BinderPageTurner({
       </nav>
     </div>
   );
+}
+
+// Forward turns sheet k+1: its front leaves slot 1 and its back lands on
+// slot 0, over the old left face. Backward is the mirror image.
+function turnFaces(
+  outgoing: SheetFace[],
+  incoming: SheetFace[],
+  direction: TurnDirection,
+  render: (face: SheetFace | null) => ReactNode,
+) {
+  const [from, to] = direction === "forward" ? [1, 0] : [0, 1];
+  const before = spreadSlots(outgoing);
+  const after = spreadSlots(incoming);
+  return {
+    front: render(before[from] ?? null),
+    back: render(after[to] ?? null),
+    under: render(before[to] ?? null),
+  };
 }

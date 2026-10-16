@@ -2,13 +2,19 @@
 
 import Link from "next/link";
 import type { CSSProperties } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePrefersReducedMotion } from "../../lib/use-prefers-reduced-motion";
 import { demoImageUrls } from "../../sample-layout";
-import { PageCurl } from "../binder/page-curl";
+import {
+  measureTurnSlots,
+  PAGE_TURN_MS,
+  PageTurn,
+  type SlotRect,
+  turnGeometry,
+} from "../binder/page-curl";
 
 const TURN_INTERVAL_MS = 4000;
-const TURN_DURATION_MS = 750;
+const TURN_DURATION_MS = PAGE_TURN_MS + 50;
 const ROWS = 3;
 const COLS = 3;
 
@@ -155,9 +161,9 @@ function Pocket({ url }: { url: string | null }) {
   );
 }
 
-function FaceGrid({ cells }: { cells: Face }) {
+function FaceGrid({ cells, turnSlot }: { cells: Face; turnSlot?: number }) {
   return (
-    <div style={FACE}>
+    <div style={FACE} data-turn-slot={turnSlot}>
       {cells.map((url, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: fixed 3x3 grid, position is the identity
         <Pocket key={i} url={url} />
@@ -169,9 +175,9 @@ function FaceGrid({ cells }: { cells: Face }) {
 function SpreadView({ spread }: { spread: Spread }) {
   return (
     <div style={SPREAD_FRAME}>
-      <FaceGrid cells={spread[0]} />
+      <FaceGrid cells={spread[0]} turnSlot={0} />
       <span aria-hidden style={GUTTER} />
-      <FaceGrid cells={spread[1]} />
+      <FaceGrid cells={spread[1]} turnSlot={1} />
     </div>
   );
 }
@@ -191,6 +197,8 @@ export function LandingHero() {
     return () => document.removeEventListener("visibilitychange", sync);
   }, []);
 
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [geometry, setGeometry] = useState<{ src: SlotRect; dest: SlotRect } | null>(null);
   const autoTurn = !prefersReducedMotion && !hidden;
 
   useEffect(() => {
@@ -212,6 +220,14 @@ export function LandingHero() {
       TURN_DURATION_MS,
     );
     return () => window.clearTimeout(id);
+  }, [turn]);
+
+  // Measured before paint so the sheet lifts off the right face and lands on the left one.
+  useLayoutEffect(() => {
+    const stage = stageRef.current;
+    setGeometry(
+      turn.from !== null && stage ? turnGeometry(measureTurnSlots(stage), "forward") : null,
+    );
   }, [turn]);
 
   const spread = spreadAt(turn.index);
@@ -251,17 +267,16 @@ export function LandingHero() {
       </div>
 
       <div style={{ minWidth: 0 }}>
-        <div style={{ position: "relative" }}>
+        <div ref={stageRef} style={{ position: "relative" }}>
           <SpreadView spread={spread} />
-          {outgoing ? (
-            <div
-              aria-hidden
-              style={{ position: "absolute", inset: 0, pointerEvents: "none", perspective: 1800 }}
-            >
-              <PageCurl opening="side" direction="forward">
-                <SpreadView spread={outgoing} />
-              </PageCurl>
-            </div>
+          {outgoing && geometry ? (
+            <PageTurn
+              src={geometry.src}
+              dest={geometry.dest}
+              front={<FaceGrid cells={outgoing[1]} />}
+              back={<FaceGrid cells={spread[0]} />}
+              under={<FaceGrid cells={outgoing[0]} />}
+            />
           ) : null}
         </div>
         <p
