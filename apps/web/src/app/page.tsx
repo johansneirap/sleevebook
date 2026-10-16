@@ -1,10 +1,11 @@
+import { LandingFeatures } from "../components/landing/landing-features";
+import { LandingHero } from "../components/landing/landing-hero";
+
 export default function HomePage() {
   return (
-    <main>
-      <h1>Sleevebook</h1>
-      <p>
-        Fase 0 en construcción. Visitá <a href="/demo">/demo</a> para ver una cara de ejemplo.
-      </p>
+    <main style={{ minHeight: "100dvh", background: "var(--velvet)" }}>
+      <LandingHero />
+      <LandingFeatures />
     </main>
   );
 }
