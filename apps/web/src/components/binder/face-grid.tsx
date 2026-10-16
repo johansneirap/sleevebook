@@ -24,10 +24,52 @@ interface FaceGridProps {
   onCardClick?: (code: string, display: VariantDisplay, rect: DOMRect) => void;
 }
 
+// Page styles shared by every face. Width is fluid: two faces fit side by
+// side on desktop and the spread stacks on phones (see binder-faces.tsx).
+export const FACE_CSS = `
+.sb-face {
+  width: clamp(200px, 34vw, 320px);
+}
+@media (max-width: 640px) {
+  .sb-face { width: min(320px, calc(100vw - 80px)); }
+}
+.sb-pocket {
+  position: relative;
+  overflow: hidden;
+  border-radius: 3px;
+}
+.sb-pocket::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 30%, rgba(255, 246, 225, 0.22) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 280ms var(--ease-out-expo);
+}
+.sb-pocket--card:hover::after,
+.sb-pocket--card:focus-visible::after {
+  transform: translateX(100%);
+}
+.sb-pocket--card:focus-visible {
+  outline: 1px solid var(--foil);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sb-pocket::after {
+    transform: none !important;
+    opacity: 0;
+    transition: opacity 200ms linear;
+  }
+  .sb-pocket--card:hover::after {
+    opacity: 1;
+  }
+}
+`;
+
 const POCKET_STYLE: CSSProperties = {
   position: "relative",
   aspectRatio: "63 / 88",
-  border: "1px solid #ccc",
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
@@ -36,6 +78,22 @@ const POCKET_STYLE: CSSProperties = {
   padding: 4,
   fontSize: 11,
   overflow: "hidden",
+  borderRadius: 3,
+  // Empty sleeve: a faint outline and a barely lighter film.
+  background: "linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01) 60%)",
+  boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.08)",
+};
+
+const CARD_POCKET_STYLE: CSSProperties = {
+  ...POCKET_STYLE,
+  background: "transparent",
+  boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.14), 0 1px 2px rgba(0,0,0,0.35)",
+};
+
+const PLACEHOLDER_LABEL_STYLE: CSSProperties = {
+  fontSize: 9,
+  color: "var(--smoke)",
+  opacity: 0.8,
 };
 
 export function FaceGrid({
@@ -56,16 +114,41 @@ export function FaceGrid({
   const coverage = panelCoverageMap(panels, format);
 
   return (
-    <section>
-      <h2 style={{ fontSize: 14, fontWeight: "normal" }}>
+    <section
+      className="sb-face"
+      style={{
+        position: "relative",
+        boxSizing: "border-box",
+        padding: "18px 20px 22px",
+        borderRadius: 2,
+        background:
+          "radial-gradient(ellipse at 30% 0%, rgba(255,240,210,0.07), transparent 60%), repeating-linear-gradient(0deg, rgba(255,255,255,0.012) 0 1px, transparent 1px 3px), linear-gradient(180deg, var(--leather), var(--leather-deep))",
+        // Fine inner rule, like the edge of a printed leaf.
+        outline: "1px solid color-mix(in srgb, var(--foil) 16%, transparent)",
+        outlineOffset: -8,
+      }}
+    >
+      <style>{FACE_CSS}</style>
+      <h2
+        className="sb-label"
+        style={{
+          margin: "0 0 14px",
+          fontSize: 11,
+          fontWeight: "normal",
+          color: "var(--smoke)",
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+        }}
+      >
         Hoja {face.sheet} · {face.side === "F" ? "Frente" : "Reverso"}
+        <span aria-hidden style={{ flex: 1, height: 1, background: "var(--rule)", opacity: 0.6 }} />
       </h2>
       <div
         style={{
           display: "grid",
           gridTemplateColumns: `repeat(${format.cols}, 1fr)`,
           gap: 6,
-          width: 320,
         }}
       >
         {codes.map((code, i) => {
@@ -114,25 +197,33 @@ export function FaceGrid({
                   display &&
                   onCardClick?.(code, display, event.currentTarget.getBoundingClientRect())
                 }
+                className={isOut ? "sb-pocket" : "sb-pocket sb-pocket--card"}
                 style={{
-                  ...POCKET_STYLE,
+                  ...CARD_POCKET_STYLE,
                   ...gridPosition,
-                  background: "white",
+                  padding: 0,
+                  color: "inherit",
+                  font: "inherit",
                   cursor: display ? "pointer" : "default",
                 }}
                 title={display?.name}
               >
                 {content.count && content.count > 1 && (
                   <span
+                    className="sb-data"
                     style={{
                       position: "absolute",
-                      top: 2,
-                      right: 2,
-                      background: "#06c",
-                      color: "white",
-                      borderRadius: 4,
+                      top: 4,
+                      right: 4,
+                      zIndex: 1,
+                      background: "rgba(10,8,7,0.7)",
+                      color: "var(--linen)",
+                      border: "1px solid var(--rule)",
+                      borderRadius: 2,
                       padding: "0 4px",
                       fontSize: 10,
+                      lineHeight: "16px",
+                      letterSpacing: "0.04em",
                       ...contentStyle,
                     }}
                   >
@@ -155,10 +246,17 @@ export function FaceGrid({
                   <img
                     src={display.imageUrl}
                     alt={display.name}
-                    style={{ maxWidth: "100%", maxHeight: "100%", ...contentStyle }}
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      ...contentStyle,
+                    }}
                   />
                 ) : (
-                  <span style={contentStyle}>
+                  <span style={{ ...contentStyle, padding: 4 }}>
                     {display?.name} {display?.number}
                   </span>
                 )}
@@ -170,18 +268,28 @@ export function FaceGrid({
             return (
               <div
                 key={code}
-                style={{ ...POCKET_STYLE, ...gridPosition, borderStyle: "dashed", color: "#888" }}
+                style={{
+                  ...POCKET_STYLE,
+                  ...gridPosition,
+                  background: "transparent",
+                  boxShadow: "none",
+                  outline: "1px dashed color-mix(in srgb, var(--smoke) 40%, transparent)",
+                  outlineOffset: -1,
+                  color: "var(--smoke)",
+                }}
                 title={display?.name}
               >
-                <span>Falta</span>
-                <span>
+                <span className="sb-label" style={PLACEHOLDER_LABEL_STYLE}>
+                  Falta
+                </span>
+                <span style={PLACEHOLDER_LABEL_STYLE}>
                   {display?.name} {display?.number}
                 </span>
               </div>
             );
           }
 
-          return <div key={code} style={{ ...POCKET_STYLE, ...gridPosition, opacity: 0.3 }} />;
+          return <div key={code} style={{ ...POCKET_STYLE, ...gridPosition, opacity: 0.6 }} />;
         })}
       </div>
     </section>

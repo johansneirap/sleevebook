@@ -16,7 +16,10 @@ export function PanelCell({ asset, rows, cols, crop, style }: PanelCellProps) {
         gridRow: `span ${rows}`,
         position: "relative",
         overflow: "hidden",
-        border: "1px solid #ccc",
+        borderRadius: 3,
+        // Hairline drawn over the art (inset shadows would sit under the image).
+        outline: "1px solid rgba(255,255,255,0.1)",
+        outlineOffset: -1,
         ...style,
       }}
     >
