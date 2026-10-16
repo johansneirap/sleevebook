@@ -94,7 +94,7 @@ test.afterAll(async () => {
 });
 
 test("clicking a card opens a focused holo view, closing via the backdrop", async ({ page }) => {
-  await page.goto(`/binders/${binderId}`);
+  await page.goto(`/binders/${binderId}?spread=0`);
   await page.getByRole("button", { name: /E2E Holo Card/ }).click();
 
   await expect(page.getByText(/E2E Holo Fixture Set — E2E Holo Card 1 \(holo\)/)).toBeVisible();
@@ -110,7 +110,7 @@ test("clicking a card opens a focused holo view, closing via the backdrop", asyn
 });
 
 test("pressing Escape closes the focused view", async ({ page }) => {
-  await page.goto(`/binders/${binderId}`);
+  await page.goto(`/binders/${binderId}?spread=0`);
   await page.getByRole("button", { name: /E2E Holo Card/ }).click();
   await expect(page.getByText(/E2E Holo Fixture Set — E2E Holo Card 1 \(holo\)/)).toBeVisible();
 
