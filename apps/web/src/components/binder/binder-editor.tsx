@@ -76,6 +76,10 @@ interface HistoryEntry {
 
 const SEARCH_DEBOUNCE_MS = 300;
 const EMPTY_POCKET: PocketValue = { kind: "empty" };
+// Critically-damped-ish spring (damping ratio ~1.0): settles without visible bounce.
+const INSERT_SPRING = { type: "spring", stiffness: 150, damping: 25, mass: 1 } as const;
+const INSERT_OFFSCREEN = { x: "80%", opacity: 0.6, scale: 1.02 } as const;
+const INSERT_REST = { x: 0, opacity: 1, scale: 1 } as const;
 
 function Pocket({
   code,
@@ -85,6 +89,8 @@ function Pocket({
   sleeve,
   gridPosition,
   layoutId,
+  insertNonce,
+  reduceMotion,
   onSelect,
 }: {
   code: string;
@@ -94,9 +100,18 @@ function Pocket({
   sleeve: string;
   gridPosition: { gridColumnStart: number; gridRowStart: number };
   layoutId?: string;
+  // Set only for the pocket that received a card through the search "add card" path.
+  insertNonce?: number;
+  reduceMotion: boolean;
   onSelect: (code: string, additive: boolean) => void;
 }) {
   const hasContent = !!content && content.kind !== "empty";
+  // The insert animation starts once a card is actually rendered in the pocket
+  // (the server action may still be in flight when the user clicks).
+  const insertActive = insertNonce !== undefined && content?.kind === "card";
+  const insertKey = insertActive ? `insert-${insertNonce}` : "idle";
+  const [doneKey, setDoneKey] = useState<string | null>(null);
+  const inserting = insertActive && doneKey !== insertKey;
   const overlayStyle = sleeveOverlayStyle(sleeve);
   // Not disabling useDraggable for empty pockets on purpose: dnd-kit marks a
   // disabled draggable aria-disabled, which also blocks Playwright's (and a
@@ -133,6 +148,7 @@ function Pocket({
         opacity: isDragging ? 0.3 : hasContent ? 1 : 0.4,
         overflow: "hidden",
       }}
+      data-inserting={inserting ? "true" : undefined}
     >
       <motion.div
         key={layoutId ?? code}
@@ -146,41 +162,56 @@ function Pocket({
           justifyContent: "center",
         }}
       >
-        {content?.kind === "card" && content.count && content.count > 1 && (
-          <span
-            style={{
-              position: "absolute",
-              top: 2,
-              right: 2,
-              background: "#06c",
-              color: "white",
-              borderRadius: 4,
-              padding: "0 4px",
-              fontSize: 10,
-            }}
-          >
-            ×{content.count}
-          </span>
-        )}
-        {content?.kind === "card" && overlayStyle && (
-          <span
-            style={{ position: "absolute", inset: 0, pointerEvents: "none", ...overlayStyle }}
-          />
-        )}
-        {content?.kind === "card" && display?.imageUrl ? (
-          // biome-ignore lint/performance/noImgElement: editor MVP, no next/image config yet
-          <img
-            src={display.imageUrl}
-            alt={display.name}
-            style={{ maxWidth: "100%", maxHeight: "100%" }}
-          />
-        ) : display ? (
-          <span>
-            {display.name} {display.number}
-          </span>
-        ) : (
-          <span>{code}</span>
-        )}
+        <motion.div
+          key={insertKey}
+          initial={insertActive ? (reduceMotion ? { opacity: 0 } : INSERT_OFFSCREEN) : false}
+          animate={reduceMotion ? { opacity: 1 } : INSERT_REST}
+          transition={reduceMotion ? { duration: 0.15, ease: "easeOut" } : INSERT_SPRING}
+          onAnimationComplete={() => setDoneKey(insertKey)}
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {content?.kind === "card" && content.count && content.count > 1 && (
+            <span
+              style={{
+                position: "absolute",
+                top: 2,
+                right: 2,
+                background: "#06c",
+                color: "white",
+                borderRadius: 4,
+                padding: "0 4px",
+                fontSize: 10,
+              }}
+            >
+              ×{content.count}
+            </span>
+          )}
+          {content?.kind === "card" && overlayStyle && (
+            <span
+              style={{ position: "absolute", inset: 0, pointerEvents: "none", ...overlayStyle }}
+            />
+          )}
+          {content?.kind === "card" && display?.imageUrl ? (
+            // biome-ignore lint/performance/noImgElement: editor MVP, no next/image config yet
+            <img
+              src={display.imageUrl}
+              alt={display.name}
+              style={{ maxWidth: "100%", maxHeight: "100%" }}
+            />
+          ) : display ? (
+            <span>
+              {display.name} {display.number}
+            </span>
+          ) : (
+            <span>{code}</span>
+          )}
+        </motion.div>
       </motion.div>
     </button>
   );
@@ -242,6 +273,10 @@ export function BinderEditor({
     null,
   );
   const [activeMoveIds, setActiveMoveIds] = useState<Map<string, string> | null>(null);
+  // Pocket that should play the insert animation (set only by handleAddCard).
+  // Cleared by any other pocket change, so undo/redo/drag/sort/import never replay it.
+  const [insertion, setInsertion] = useState<{ code: string; nonce: number } | null>(null);
+  const insertNonceRef = useRef(0);
   const flipTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const effectivePockets = optimisticPockets ?? pockets;
 
@@ -250,6 +285,7 @@ export function BinderEditor({
   }
 
   function runChanges(changes: PocketChange[]) {
+    setInsertion(null);
     startTransition(async () => {
       await applyPocketChanges(binderId, changes);
     });
@@ -278,6 +314,17 @@ export function BinderEditor({
     }
     const code = selectedCodes[0] as string;
     recordAndRun([{ pocketCode: code, before: getContent(code), after: content }]);
+  }
+
+  // "Usar como carta" path: the only one that plays the insert animation.
+  function handleAddCard(variant: string) {
+    if (selectedCodes.length !== 1) {
+      return;
+    }
+    const code = selectedCodes[0] as string;
+    assignSingle({ kind: "card", variant, instance: null });
+    insertNonceRef.current += 1;
+    setInsertion({ code, nonce: insertNonceRef.current });
   }
 
   function handleSetPriceOverride() {
@@ -1048,6 +1095,8 @@ export function BinderEditor({
                       sleeve={theme.sleeve}
                       gridPosition={gridPosition}
                       layoutId={activeMoveIds?.get(code)}
+                      insertNonce={insertion?.code === code ? insertion.nonce : undefined}
+                      reduceMotion={prefersReducedMotion}
                       onSelect={handleSelect}
                     />
                   );
@@ -1157,9 +1206,7 @@ export function BinderEditor({
                     <button
                       type="button"
                       disabled={isPending}
-                      onClick={() =>
-                        assignSingle({ kind: "card", variant: result.id, instance: null })
-                      }
+                      onClick={() => handleAddCard(result.id)}
                     >
                       Usar como carta
                     </button>{" "}
