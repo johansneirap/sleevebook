@@ -38,7 +38,7 @@ const OPEN_ROTATE_SECONDS = 0.45;
 const OPEN_SWING_SECONDS = 0.6;
 const OPEN_DONE_MS = 1050;
 const FADE_MS = 150;
-const SERIF = "Georgia, 'Times New Roman', serif";
+const SERIF = "var(--font-display)";
 
 // Board width drives everything else: the cover is 0.82 w/h (3x3 binder),
 // and the thickness is ~9% of the width. The stage also sets the perspective.
@@ -472,7 +472,8 @@ export function ClosedBinder({
                 >
                   Binder
                 </p>
-                <h2
+                {/* Not a heading: the page already has an <h1> with the binder name. */}
+                <p
                   style={{
                     margin: "6px 0 0",
                     fontFamily: SERIF,
@@ -486,7 +487,7 @@ export function ClosedBinder({
                   }}
                 >
                   {name}
-                </h2>
+                </p>
                 <div
                   aria-hidden
                   style={{

@@ -126,6 +126,21 @@ test.describe("card focus (animated)", () => {
   });
 });
 
+test("the focused card flips to its back with the button and the f key", async ({ page }) => {
+  await openFocusedCard(page);
+  const flip = page.getByRole("button", { name: "Voltear carta" });
+  const front = page.getByTestId("flip-card-front");
+
+  await flip.click();
+  await expect(flip).toHaveAttribute("aria-pressed", "true");
+  await expect(front).toHaveAttribute("aria-hidden", "true");
+  await expect(page.getByTestId("card-back")).toBeVisible();
+
+  await page.keyboard.press("f");
+  await expect(flip).toHaveAttribute("aria-pressed", "false");
+  await expect(front).not.toHaveAttribute("aria-hidden", "true");
+});
+
 test.describe("card focus (reduced motion)", () => {
   test.use({ reducedMotion: "reduce" });
 

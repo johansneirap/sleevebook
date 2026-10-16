@@ -71,7 +71,7 @@ export function CardBack({ width }: { width: number }) {
         <span
           style={{
             color: GOLD,
-            fontFamily: "Georgia, 'Times New Roman', serif",
+            fontFamily: "var(--font-display)",
             fontSize: Math.max(8, Math.round(width * 0.088)),
             fontWeight: 400,
             letterSpacing: "0.32em",

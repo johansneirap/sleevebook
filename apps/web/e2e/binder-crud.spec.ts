@@ -25,6 +25,9 @@ test("create, rename, duplicate, archive and delete a binder", async ({ page }) 
 
   await expect(page).toHaveURL(/\/binders\/[0-9a-f-]+$/);
   await expect(page.getByRole("heading", { name: ORIGINAL_NAME })).toBeVisible();
+  // A freshly created binder lands on its closed cover (no ?spread param).
+  await expect(page.getByTestId("closed-binder")).toBeVisible();
+  await page.getByRole("button", { name: "Abrir binder" }).click();
   await expect(page.getByText("Spread 1 / 3")).toBeVisible();
 
   await page.goto("/binders");

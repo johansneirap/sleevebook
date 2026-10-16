@@ -29,6 +29,13 @@ test("pressing f toggles the flip", async ({ page }) => {
   const button = page.getByRole("button", { name: "Voltear carta" });
   const front = page.getByTestId("flip-card-front");
 
+  // The shortcut listener attaches on hydration; a button round-trip proves
+  // the client is live before pressing keys.
+  await button.click();
+  await expect(button).toHaveAttribute("aria-pressed", "true");
+  await button.click();
+  await expect(button).toHaveAttribute("aria-pressed", "false");
+
   await page.keyboard.press("f");
   await expect(button).toHaveAttribute("aria-pressed", "true");
   await expect(front).toHaveAttribute("aria-hidden", "true");
