@@ -116,6 +116,7 @@ button:disabled {
   *,
   *::before,
   *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: must beat inline transition styles for reduced motion */
     transition-duration: 1ms !important;
   }
 }
