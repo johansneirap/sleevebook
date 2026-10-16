@@ -1,0 +1,38 @@
+/* Design tokens from docs/DESIGN_BRIEF.md ("la galería privada"). Only
+   tokens and font hooks live here for now -- pages opt in to them; the
+   per-binder theme (ThemedMain / theme-presets.ts) still owns binder pages. */
+:root {
+  --velvet: #14110f;
+  --velvet-raised: #1d1916;
+  --leather: #2a201a;
+  --leather-deep: #1a1411;
+  --linen: #ede6da;
+  --smoke: #a39a8e;
+  --foil: #d4b77c;
+  --foil-dim: #8f7a52;
+  --sleeve: rgba(255, 255, 255, 0.08);
+  --rule: color-mix(in srgb, var(--foil) 45%, transparent);
+
+  --font-display: var(--font-instrument-serif), "Bodoni Moda", Georgia, serif;
+  --font-ui: var(--font-hanken-grotesk), "Helvetica Neue", Arial, sans-serif;
+  --font-data: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sb-label {
+  font-family: var(--font-ui);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.14em;
+}
+
+.sb-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1.05;
+}
+
+.sb-data {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
