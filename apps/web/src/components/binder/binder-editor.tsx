@@ -53,6 +53,93 @@ const IMPORT_PLACEHOLDER: Record<ImportFormat, string> = {
   csv: "name,set,number,variant,qty\nRiolu,MEG,76,normal,4",
 };
 
+// Layout-only CSS for the editor workbench: faces in the center, tool panels in
+// a side column from 1100px, stacked below on narrower screens. Inline styles
+// cannot express media queries, so these few rules live in a scoped <style>.
+const EDITOR_CSS = `
+.sb-ed { display: grid; gap: 32px; align-items: start; }
+.sb-ed-faces { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; }
+.sb-ed-side { min-width: 0; }
+@media (min-width: 1100px) {
+  .sb-ed { grid-template-columns: minmax(0, 1fr) 340px; gap: 56px; }
+  .sb-ed-faces { justify-content: flex-start; }
+  .sb-ed-side {
+    position: sticky;
+    top: 16px;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    padding-right: 4px;
+    scrollbar-width: thin;
+  }
+}
+.sb-ed-section { border-bottom: 1px solid var(--rule); }
+.sb-ed-section > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.14em;
+  color: var(--smoke);
+  transition: color 240ms var(--ease-out-expo);
+}
+.sb-ed-section > summary::-webkit-details-marker { display: none; }
+.sb-ed-section > summary::after {
+  content: "+";
+  font-family: var(--font-data);
+  font-size: 14px;
+  color: var(--foil-dim);
+}
+.sb-ed-section[open] > summary::after { content: "\\2212"; }
+.sb-ed-section > summary:hover { color: var(--linen); }
+.sb-ed-section > div { padding: 2px 0 16px; }
+.sb-ed-quiet,
+.sb-ed-quiet:hover:not(:disabled) {
+  background: transparent;
+  border-color: transparent;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: color-mix(in srgb, var(--linen) 72%, transparent);
+}
+.sb-ed-quiet:hover:not(:disabled) { color: var(--linen); }
+.sb-ed-results {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  max-height: 380px;
+  overflow-y: auto;
+  border-top: 1px solid var(--rule);
+}
+.sb-ed-result {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--linen) 8%, transparent);
+  font-size: 12px;
+}
+.sb-ed-result-meta { min-width: 0; overflow-wrap: anywhere; }
+.sb-ed-num {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--smoke);
+}
+.sb-ed-result-actions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.sb-ed-result-actions button { font-size: 11px; padding: 2px 8px; }
+.sb-ed-selection strong {
+  font-family: var(--font-data);
+  font-weight: 400;
+  color: var(--foil);
+}
+.sb-ed-price { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+`;
+
 interface BinderEditorProps {
   binderId: string;
   faces: SheetFace[];
@@ -120,6 +207,23 @@ function Pocket({
   const { attributes, listeners, setNodeRef: setDragRef, isDragging } = useDraggable({ id: code });
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id: code });
 
+  // A sleeve: translucent hairline on the leather face, the card fills it.
+  // Empty pockets stay a faint outline; the selected one gets a fine foil ring,
+  // and a drop target a soft foil glow.
+  const borderColor =
+    isOver || isSelected
+      ? "var(--foil)"
+      : content?.kind === "placeholder"
+        ? "var(--foil-dim)"
+        : hasContent
+          ? "color-mix(in srgb, var(--linen) 16%, transparent)"
+          : "color-mix(in srgb, var(--linen) 9%, transparent)";
+  const boxShadow = isOver
+    ? "0 0 0 1px var(--foil), 0 0 26px 4px color-mix(in srgb, var(--foil) 26%, transparent)"
+    : isSelected
+      ? "0 0 0 1px var(--foil)"
+      : "none";
+
   return (
     <button
       ref={(node) => {
@@ -134,18 +238,24 @@ function Pocket({
         position: "relative",
         aspectRatio: "63 / 88",
         ...gridPosition,
-        borderWidth: isSelected ? 2 : 1,
-        borderColor: isSelected ? "#06c" : isOver ? "#0a0" : "#ccc",
+        borderWidth: 1,
+        borderColor,
         borderStyle: content?.kind === "placeholder" ? "dashed" : "solid",
+        borderRadius: 3,
+        boxShadow,
+        transition:
+          "box-shadow 280ms var(--ease-out-expo), border-color 280ms var(--ease-out-expo)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         fontSize: 11,
-        padding: 4,
-        background: isSelected ? "#eef6ff" : "white",
+        fontVariantCaps: "normal",
+        letterSpacing: "normal",
+        padding: 0,
+        background: hasContent ? "color-mix(in srgb, var(--linen) 4%, transparent)" : "transparent",
         cursor: hasContent ? "grab" : "pointer",
-        opacity: isDragging ? 0.3 : hasContent ? 1 : 0.4,
+        opacity: isDragging ? 0.3 : 1,
         overflow: "hidden",
       }}
       data-inserting={inserting ? "true" : undefined}
@@ -180,13 +290,17 @@ function Pocket({
             <span
               style={{
                 position: "absolute",
-                top: 2,
-                right: 2,
-                background: "#06c",
-                color: "white",
-                borderRadius: 4,
+                top: 4,
+                right: 4,
+                zIndex: 1,
+                background: "var(--velvet)",
+                color: "var(--foil)",
+                border: "1px solid var(--rule)",
+                borderRadius: 2,
                 padding: "0 4px",
                 fontSize: 10,
+                fontFamily: "var(--font-data)",
+                fontVariantNumeric: "tabular-nums",
               }}
             >
               ×{content.count}
@@ -194,7 +308,14 @@ function Pocket({
           )}
           {content?.kind === "card" && overlayStyle && (
             <span
-              style={{ position: "absolute", inset: 0, pointerEvents: "none", ...overlayStyle }}
+              style={{
+                position: "absolute",
+                inset: 0,
+                borderRadius: 3,
+                boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--linen) 14%, transparent)",
+                pointerEvents: "none",
+                ...overlayStyle,
+              }}
             />
           )}
           {content?.kind === "card" && display?.imageUrl ? (
@@ -202,14 +323,39 @@ function Pocket({
             <img
               src={display.imageUrl}
               alt={display.name}
-              style={{ maxWidth: "100%", maxHeight: "100%" }}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+                display: "block",
+                borderRadius: 2,
+              }}
             />
           ) : display ? (
-            <span>
+            <span
+              style={{
+                fontFamily: "var(--font-ui)",
+                fontSize: 10,
+                lineHeight: 1.3,
+                textAlign: "center",
+                color: "var(--linen)",
+                padding: 4,
+              }}
+            >
               {display.name} {display.number}
             </span>
           ) : (
-            <span>{code}</span>
+            <span
+              style={{
+                fontFamily: "var(--font-data)",
+                fontVariantNumeric: "tabular-nums",
+                fontSize: 10,
+                letterSpacing: "0.04em",
+                color: "var(--smoke)",
+              }}
+            >
+              {code}
+            </span>
           )}
         </motion.div>
       </motion.div>
@@ -604,628 +750,714 @@ export function BinderEditor({
   const panelCoverage = panelCoverageMap(panels, format);
 
   return (
-    <div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 12, alignItems: "center" }}>
-        <button type="button" onClick={handleUndo} disabled={undoStack.length === 0 || isPending}>
-          Deshacer
-        </button>
-        <button type="button" onClick={handleRedo} disabled={redoStack.length === 0 || isPending}>
-          Rehacer
-        </button>
-        {totalValueUsd > 0 && <span>Valor total del binder: ${totalValueUsd.toFixed(2)} USD</span>}
-      </div>
+    <div className="sb-ed">
+      <style>{EDITOR_CSS}</style>
+      <div style={{ minWidth: 0 }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 4,
+            alignItems: "center",
+            paddingBottom: 10,
+            marginBottom: 24,
+            borderBottom: "1px solid var(--rule)",
+          }}
+        >
+          <button
+            type="button"
+            className="sb-ed-quiet"
+            onClick={handleUndo}
+            disabled={undoStack.length === 0 || isPending}
+          >
+            Deshacer
+          </button>
+          <button
+            type="button"
+            className="sb-ed-quiet"
+            onClick={handleRedo}
+            disabled={redoStack.length === 0 || isPending}
+          >
+            Rehacer
+          </button>
+          {totalValueUsd > 0 && (
+            <span
+              className="sb-ed-price"
+              style={{ marginLeft: "auto", fontSize: 12, color: "var(--smoke)" }}
+            >
+              Valor total del binder: ${totalValueUsd.toFixed(2)} USD
+            </span>
+          )}
+        </div>
 
-      <details style={{ marginBottom: 16, maxWidth: 420 }}>
-        <summary>Reordenar binder</summary>
-        <div style={{ marginTop: 8 }}>
-          {criteriaSlots.map((slot, index) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: fixed 3 slots (Criterio 1/2/3), never reordered/inserted/removed
-            <div key={index} style={{ display: "flex", gap: 4, marginTop: 4 }}>
-              <select
-                aria-label={`Criterio ${index + 1}: campo`}
-                value={slot?.field ?? ""}
-                onChange={(event) => {
-                  const field = event.target.value as SortableField | "";
-                  setCriteriaSlots((current) => {
-                    const next = [...current];
-                    next[index] = field ? { field, dir: slot?.dir ?? "asc" } : null;
-                    return next;
-                  });
+        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+          <div className="sb-ed-faces">
+            {faces.map((face) => (
+              <section
+                key={`${face.sheet}-${face.side}`}
+                style={{
+                  background: "color-mix(in srgb, var(--leather) 88%, transparent)",
+                  border: "1px solid color-mix(in srgb, var(--linen) 9%, transparent)",
+                  borderRadius: 6,
+                  width: "min(100%, 400px)",
+                  padding: "14px 18px 20px",
+                  boxShadow: "inset 0 0 56px rgba(0, 0, 0, 0.38)",
                 }}
               >
-                {index > 0 && <option value="">— sin usar —</option>}
-                {SORT_FIELD_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              {slot && (
+                <h2
+                  style={{
+                    fontFamily: "var(--font-ui)",
+                    fontSize: 11,
+                    fontWeight: 400,
+                    fontVariantCaps: "all-small-caps",
+                    letterSpacing: "0.14em",
+                    color: "var(--smoke)",
+                    margin: "0 0 14px",
+                    paddingBottom: 8,
+                    borderBottom: "1px solid var(--rule)",
+                  }}
+                >
+                  Hoja {face.sheet} · {face.side === "F" ? "Frente" : "Reverso"}
+                </h2>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: `repeat(${format.cols}, 1fr)`,
+                    gap: 8,
+                    width: "100%",
+                  }}
+                >
+                  {Array.from({ length: format.rows * format.cols }, (_, i) => {
+                    const code = formatPocketCode({
+                      sheet: face.sheet,
+                      side: face.side,
+                      index: i + 1,
+                    });
+                    const gridPosition = {
+                      gridColumnStart: (i % format.cols) + 1,
+                      gridRowStart: Math.floor(i / format.cols) + 1,
+                    };
+
+                    const coveredBy = panelCoverage.get(code);
+                    if (coveredBy) {
+                      if (!coveredBy.isAnchor) {
+                        return null;
+                      }
+                      return (
+                        <PanelCell
+                          key={code}
+                          asset={coveredBy.panel.asset}
+                          rows={coveredBy.panel.span.rows}
+                          cols={coveredBy.panel.span.cols}
+                          crop={coveredBy.panel.crop}
+                          style={gridPosition}
+                        />
+                      );
+                    }
+
+                    const content = effectivePockets[code];
+                    const display =
+                      content?.kind === "card" || content?.kind === "placeholder"
+                        ? displays[content.variant]
+                        : undefined;
+                    return (
+                      <Pocket
+                        key={code}
+                        code={code}
+                        content={content}
+                        display={display}
+                        isSelected={selectedCodes.includes(code)}
+                        sleeve={theme.sleeve}
+                        gridPosition={gridPosition}
+                        layoutId={activeMoveIds?.get(code)}
+                        insertNonce={insertion?.code === code ? insertion.nonce : undefined}
+                        reduceMotion={prefersReducedMotion}
+                        onSelect={handleSelect}
+                      />
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
+          </div>
+        </DndContext>
+      </div>
+
+      <aside className="sb-ed-side">
+        <details className="sb-ed-section">
+          <summary>Reordenar binder</summary>
+          <div>
+            {criteriaSlots.map((slot, index) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: fixed 3 slots (Criterio 1/2/3), never reordered/inserted/removed
+              <div key={index} style={{ display: "flex", gap: 4, marginTop: 4 }}>
                 <select
-                  aria-label={`Criterio ${index + 1}: dirección`}
-                  value={slot.dir}
+                  aria-label={`Criterio ${index + 1}: campo`}
+                  value={slot?.field ?? ""}
                   onChange={(event) => {
-                    const dir = event.target.value as "asc" | "desc";
+                    const field = event.target.value as SortableField | "";
                     setCriteriaSlots((current) => {
                       const next = [...current];
-                      next[index] = { field: slot.field, dir };
+                      next[index] = field ? { field, dir: slot?.dir ?? "asc" } : null;
                       return next;
                     });
                   }}
                 >
-                  <option value="asc">Ascendente</option>
-                  <option value="desc">Descendente</option>
+                  {index > 0 && <option value="">— sin usar —</option>}
+                  {SORT_FIELD_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
-              )}
-            </div>
-          ))}
-
-          <div style={{ marginTop: 8 }}>
-            <select
-              aria-label="Agrupar por"
-              value={groupBy ?? ""}
-              onChange={(event) =>
-                setGroupBy(event.target.value ? (event.target.value as GroupField) : null)
-              }
-            >
-              <option value="">Sin agrupar</option>
-              <option value="era">Agrupar por era</option>
-              <option value="setName">Agrupar por set</option>
-            </select>
-          </div>
-
-          <label style={{ display: "block", marginTop: 4 }}>
-            <input
-              type="checkbox"
-              checked={startOnNewSide}
-              disabled={!groupBy}
-              onChange={(event) => setStartOnNewSide(event.target.checked)}
-            />{" "}
-            Empezar cada sección en cara nueva
-          </label>
-
-          {sortError && <p style={{ color: "#c00" }}>{sortError}</p>}
-
-          <button type="button" onClick={handleApplySort} disabled={isSorting || isPending}>
-            Aplicar orden
-          </button>
-        </div>
-      </details>
-
-      <details style={{ marginBottom: 16, maxWidth: 480 }}>
-        <summary>Importar cartas</summary>
-        <div style={{ marginTop: 8 }}>
-          <select
-            aria-label="Formato de importación"
-            value={importFormat}
-            onChange={(event) => setImportFormat(event.target.value as ImportFormat)}
-          >
-            <option value="decklist">Lista PTCGL / Limitless</option>
-            <option value="csv">CSV (name,set,number,variant,qty)</option>
-          </select>
-          <textarea
-            aria-label="Texto a importar"
-            value={importText}
-            onChange={(event) => setImportText(event.target.value)}
-            rows={6}
-            style={{ width: "100%", marginTop: 4, fontFamily: "monospace", fontSize: 12 }}
-            placeholder={IMPORT_PLACEHOLDER[importFormat]}
-          />
-          <button
-            type="button"
-            onClick={handlePreviewImport}
-            disabled={isPreviewingImport || importText.trim().length === 0}
-          >
-            Previsualizar
-          </button>
-
-          {importPreview && (
-            <>
-              <p>
-                {importPreview.lines.filter((line) => line.status === "resolved").length} resueltas,{" "}
-                {importPreview.lines.filter((line) => line.status === "ambiguous").length} ambiguas,{" "}
-                {importPreview.lines.filter((line) => line.status === "not-found").length} no
-                encontradas
-                {importPreview.unparsed.length > 0 &&
-                  ` (${importPreview.unparsed.length} líneas no reconocidas)`}
-              </p>
-
-              <ul
-                style={{
-                  listStyle: "none",
-                  padding: 0,
-                  maxHeight: 240,
-                  overflowY: "auto",
-                  fontSize: 12,
-                }}
-              >
-                {importPreview.lines.map((line, index) => (
-                  <li
-                    // biome-ignore lint/suspicious/noArrayIndexKey: lines can repeat (same raw text, different row); index matches the preview array position used by handleSelectCandidate
-                    key={index}
-                    style={{ marginTop: 4, display: "flex", gap: 6, alignItems: "center" }}
+                {slot && (
+                  <select
+                    aria-label={`Criterio ${index + 1}: dirección`}
+                    value={slot.dir}
+                    onChange={(event) => {
+                      const dir = event.target.value as "asc" | "desc";
+                      setCriteriaSlots((current) => {
+                        const next = [...current];
+                        next[index] = { field: slot.field, dir };
+                        return next;
+                      });
+                    }}
                   >
-                    <span style={{ fontFamily: "monospace" }}>×{line.quantity}</span>
-                    {line.status === "not-found" ? (
-                      <span style={{ color: "#c00" }}>
-                        {line.raw} — {line.error}
-                      </span>
-                    ) : line.status === "ambiguous" ? (
-                      <>
-                        <span>{line.raw}</span>
-                        <select
-                          aria-label={`Elegir impresión para ${line.raw}`}
-                          value={line.variantId ?? ""}
-                          onChange={(event) => handleSelectCandidate(index, event.target.value)}
-                        >
-                          {line.candidates.map((candidate) => (
-                            <option key={candidate.id} value={candidate.id}>
-                              {candidate.variant} ({candidate.setName})
-                            </option>
-                          ))}
-                        </select>
-                      </>
-                    ) : (
-                      <span>
-                        {line.display?.name} {line.display?.number} ({line.display?.variant})
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-
-              <div style={{ marginTop: 8 }}>
-                <select
-                  aria-label="Destino de importación"
-                  value={importDestination}
-                  onChange={(event) =>
-                    setImportDestination(event.target.value as ImportDestination)
-                  }
-                >
-                  <option value="end">Al final</option>
-                  <option value="pocket">Desde un bolsillo específico</option>
-                  <option value="newSide">Empezar en cara nueva</option>
-                </select>
-                {importDestination === "pocket" && (
-                  <input
-                    aria-label="Bolsillo de destino"
-                    type="text"
-                    placeholder="S1·F·1"
-                    value={importDestinationPocket}
-                    onChange={(event) => setImportDestinationPocket(event.target.value)}
-                  />
+                    <option value="asc">Ascendente</option>
+                    <option value="desc">Descendente</option>
+                  </select>
                 )}
               </div>
+            ))}
 
-              <div style={{ marginTop: 4 }}>
-                <select
-                  aria-label="Modo de cantidad"
-                  value={importMode}
-                  onChange={(event) => setImportMode(event.target.value as ImportMode)}
-                >
-                  <option value="perCopy">Una copia por bolsillo</option>
-                  <option value="singleWithCount">Todas las copias en un bolsillo (×N)</option>
-                </select>
-              </div>
-
-              {importError && <p style={{ color: "#c00" }}>{importError}</p>}
-
-              <button
-                type="button"
-                onClick={handleApplyImport}
-                disabled={isApplyingImport || isPending}
-              >
-                Aplicar importación
-              </button>
-            </>
-          )}
-        </div>
-      </details>
-
-      <details style={{ marginBottom: 16, maxWidth: 420 }}>
-        <summary>Tema</summary>
-        <div style={{ marginTop: 8 }}>
-          <label>
-            Preset:{" "}
-            <select
-              aria-label="Preset de tema"
-              value={themePreset}
-              onChange={(event) => setThemePreset(event.target.value)}
-            >
-              {Object.entries(THEME_PRESETS).map(([key, preset]) => (
-                <option key={key} value={key}>
-                  {preset.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div style={{ marginTop: 4 }}>
-            <label>
-              Funda:{" "}
+            <div style={{ marginTop: 8 }}>
               <select
-                aria-label="Textura de funda"
-                value={themeSleeve}
-                onChange={(event) => setThemeSleeve(event.target.value)}
+                aria-label="Agrupar por"
+                value={groupBy ?? ""}
+                onChange={(event) =>
+                  setGroupBy(event.target.value ? (event.target.value as GroupField) : null)
+                }
               >
-                {Object.entries(SLEEVE_LABELS).map(([key, label]) => (
+                <option value="">Sin agrupar</option>
+                <option value="era">Agrupar por era</option>
+                <option value="setName">Agrupar por set</option>
+              </select>
+            </div>
+
+            <label style={{ display: "block", marginTop: 4 }}>
+              <input
+                type="checkbox"
+                checked={startOnNewSide}
+                disabled={!groupBy}
+                onChange={(event) => setStartOnNewSide(event.target.checked)}
+              />{" "}
+              Empezar cada sección en cara nueva
+            </label>
+
+            {sortError && <p style={{ color: "#e8957f" }}>{sortError}</p>}
+
+            <button type="button" onClick={handleApplySort} disabled={isSorting || isPending}>
+              Aplicar orden
+            </button>
+          </div>
+        </details>
+
+        <details className="sb-ed-section">
+          <summary>Importar cartas</summary>
+          <div style={{ marginTop: 8 }}>
+            <select
+              aria-label="Formato de importación"
+              value={importFormat}
+              onChange={(event) => setImportFormat(event.target.value as ImportFormat)}
+            >
+              <option value="decklist">Lista PTCGL / Limitless</option>
+              <option value="csv">CSV (name,set,number,variant,qty)</option>
+            </select>
+            <textarea
+              aria-label="Texto a importar"
+              value={importText}
+              onChange={(event) => setImportText(event.target.value)}
+              rows={6}
+              style={{ width: "100%", marginTop: 4, fontFamily: "var(--font-data)", fontSize: 12 }}
+              placeholder={IMPORT_PLACEHOLDER[importFormat]}
+            />
+            <button
+              type="button"
+              onClick={handlePreviewImport}
+              disabled={isPreviewingImport || importText.trim().length === 0}
+            >
+              Previsualizar
+            </button>
+
+            {importPreview && (
+              <>
+                <p>
+                  {importPreview.lines.filter((line) => line.status === "resolved").length}{" "}
+                  resueltas,{" "}
+                  {importPreview.lines.filter((line) => line.status === "ambiguous").length}{" "}
+                  ambiguas,{" "}
+                  {importPreview.lines.filter((line) => line.status === "not-found").length} no
+                  encontradas
+                  {importPreview.unparsed.length > 0 &&
+                    ` (${importPreview.unparsed.length} líneas no reconocidas)`}
+                </p>
+
+                <ul
+                  style={{
+                    listStyle: "none",
+                    padding: 0,
+                    maxHeight: 240,
+                    overflowY: "auto",
+                    fontSize: 12,
+                  }}
+                >
+                  {importPreview.lines.map((line, index) => (
+                    <li
+                      // biome-ignore lint/suspicious/noArrayIndexKey: lines can repeat (same raw text, different row); index matches the preview array position used by handleSelectCandidate
+                      key={index}
+                      style={{ marginTop: 4, display: "flex", gap: 6, alignItems: "center" }}
+                    >
+                      <span className="sb-ed-num">×{line.quantity}</span>
+                      {line.status === "not-found" ? (
+                        <span style={{ color: "#e8957f" }}>
+                          {line.raw} — {line.error}
+                        </span>
+                      ) : line.status === "ambiguous" ? (
+                        <>
+                          <span>{line.raw}</span>
+                          <select
+                            aria-label={`Elegir impresión para ${line.raw}`}
+                            value={line.variantId ?? ""}
+                            onChange={(event) => handleSelectCandidate(index, event.target.value)}
+                          >
+                            {line.candidates.map((candidate) => (
+                              <option key={candidate.id} value={candidate.id}>
+                                {candidate.variant} ({candidate.setName})
+                              </option>
+                            ))}
+                          </select>
+                        </>
+                      ) : (
+                        <span>
+                          {line.display?.name} {line.display?.number} ({line.display?.variant})
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+
+                <div style={{ marginTop: 8 }}>
+                  <select
+                    aria-label="Destino de importación"
+                    value={importDestination}
+                    onChange={(event) =>
+                      setImportDestination(event.target.value as ImportDestination)
+                    }
+                  >
+                    <option value="end">Al final</option>
+                    <option value="pocket">Desde un bolsillo específico</option>
+                    <option value="newSide">Empezar en cara nueva</option>
+                  </select>
+                  {importDestination === "pocket" && (
+                    <input
+                      aria-label="Bolsillo de destino"
+                      type="text"
+                      placeholder="S1·F·1"
+                      value={importDestinationPocket}
+                      onChange={(event) => setImportDestinationPocket(event.target.value)}
+                    />
+                  )}
+                </div>
+
+                <div style={{ marginTop: 4 }}>
+                  <select
+                    aria-label="Modo de cantidad"
+                    value={importMode}
+                    onChange={(event) => setImportMode(event.target.value as ImportMode)}
+                  >
+                    <option value="perCopy">Una copia por bolsillo</option>
+                    <option value="singleWithCount">Todas las copias en un bolsillo (×N)</option>
+                  </select>
+                </div>
+
+                {importError && <p style={{ color: "#e8957f" }}>{importError}</p>}
+
+                <button
+                  type="button"
+                  onClick={handleApplyImport}
+                  disabled={isApplyingImport || isPending}
+                >
+                  Aplicar importación
+                </button>
+              </>
+            )}
+          </div>
+        </details>
+
+        <details className="sb-ed-section">
+          <summary>Tema</summary>
+          <div style={{ marginTop: 8 }}>
+            <label>
+              Preset:{" "}
+              <select
+                aria-label="Preset de tema"
+                value={themePreset}
+                onChange={(event) => setThemePreset(event.target.value)}
+              >
+                {Object.entries(THEME_PRESETS).map(([key, preset]) => (
                   <option key={key} value={key}>
-                    {label}
+                    {preset.label}
                   </option>
                 ))}
               </select>
             </label>
-          </div>
 
-          <div style={{ marginTop: 4 }}>
-            <label>
-              Fondo personalizado (opcional):{" "}
-              <input
-                type="text"
-                aria-label="Color de fondo personalizado"
-                placeholder="#223344"
-                value={themeBg}
-                onChange={(event) => setThemeBg(event.target.value)}
-              />
-            </label>
-          </div>
+            <div style={{ marginTop: 4 }}>
+              <label>
+                Funda:{" "}
+                <select
+                  aria-label="Textura de funda"
+                  value={themeSleeve}
+                  onChange={(event) => setThemeSleeve(event.target.value)}
+                >
+                  {Object.entries(SLEEVE_LABELS).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
 
-          <button
-            type="button"
-            onClick={handleSaveTheme}
-            disabled={isSavingTheme || isPending}
-            style={{ marginTop: 8 }}
-          >
-            Guardar tema
-          </button>
-        </div>
-      </details>
+            <div style={{ marginTop: 4 }}>
+              <label>
+                Fondo personalizado (opcional):{" "}
+                <input
+                  type="text"
+                  aria-label="Color de fondo personalizado"
+                  placeholder="#223344"
+                  value={themeBg}
+                  onChange={(event) => setThemeBg(event.target.value)}
+                />
+              </label>
+            </div>
 
-      <details style={{ marginBottom: 16, maxWidth: 480 }}>
-        <summary>Paneles de arte</summary>
-        <div style={{ marginTop: 8 }}>
-          <label>
-            URL de la imagen:{" "}
-            <input
-              type="text"
-              aria-label="URL de la imagen del panel"
-              placeholder="https://..."
-              value={panelAssetUrl}
-              onChange={(event) => setPanelAssetUrl(event.target.value)}
-              style={{ width: "100%" }}
-            />
-          </label>
-
-          <div style={{ marginTop: 4, display: "flex", gap: 4, alignItems: "center" }}>
-            <label>
-              Bolsillo de anclaje:{" "}
-              <input
-                type="text"
-                aria-label="Bolsillo de anclaje del panel"
-                placeholder="S1·F·1"
-                value={panelAnchor}
-                onChange={(event) => setPanelAnchor(event.target.value)}
-              />
-            </label>
             <button
               type="button"
-              onClick={handleUseSelectedPocketAsAnchor}
-              disabled={!singleSelectedCode}
+              onClick={handleSaveTheme}
+              disabled={isSavingTheme || isPending}
+              style={{ marginTop: 8 }}
             >
-              Usar seleccionado
+              Guardar tema
             </button>
           </div>
+        </details>
 
-          <div style={{ marginTop: 4, display: "flex", gap: 12 }}>
-            <label>
-              Filas:{" "}
-              <input
-                type="number"
-                aria-label="Filas del panel"
-                min={1}
-                max={format.rows}
-                value={panelRows}
-                onChange={(event) => setPanelRows(Number.parseInt(event.target.value, 10) || 1)}
-                style={{ width: 56 }}
-              />
-            </label>
-            <label>
-              Columnas:{" "}
-              <input
-                type="number"
-                aria-label="Columnas del panel"
-                min={1}
-                max={format.cols}
-                value={panelCols}
-                onChange={(event) => setPanelCols(Number.parseInt(event.target.value, 10) || 1)}
-                style={{ width: 56 }}
-              />
-            </label>
-            <button
-              type="button"
-              onClick={() => {
-                setPanelRows(format.rows);
-                setPanelCols(format.cols);
-              }}
-            >
-              Página completa
-            </button>
-          </div>
-
+        <details className="sb-ed-section">
+          <summary>Paneles de arte</summary>
           <div style={{ marginTop: 8 }}>
             <label>
-              Zoom: {panelZoom}%{" "}
+              URL de la imagen:{" "}
               <input
-                type="range"
-                aria-label="Zoom del panel"
-                min={100}
-                max={300}
-                value={panelZoom}
-                onChange={(event) => setPanelZoom(Number.parseInt(event.target.value, 10))}
+                type="text"
+                aria-label="URL de la imagen del panel"
+                placeholder="https://..."
+                value={panelAssetUrl}
+                onChange={(event) => setPanelAssetUrl(event.target.value)}
+                style={{ width: "100%" }}
               />
             </label>
-          </div>
-          <div>
-            <label>
-              Posición horizontal: {panelX}%{" "}
-              <input
-                type="range"
-                aria-label="Posición horizontal del panel"
-                min={0}
-                max={100}
-                value={panelX}
-                onChange={(event) => setPanelX(Number.parseInt(event.target.value, 10))}
-              />
-            </label>
-          </div>
-          <div>
-            <label>
-              Posición vertical: {panelY}%{" "}
-              <input
-                type="range"
-                aria-label="Posición vertical del panel"
-                min={0}
-                max={100}
-                value={panelY}
-                onChange={(event) => setPanelY(Number.parseInt(event.target.value, 10))}
-              />
-            </label>
-          </div>
 
-          {panelAssetUrl.trim() && (
-            <div style={{ marginTop: 8 }}>
-              <p style={{ fontSize: 12, color: "#888" }}>
-                Previsualización (sin cortar por bolsillo):
-              </p>
-              <PanelCell
-                asset={panelAssetUrl.trim()}
-                rows={1}
-                cols={1}
-                crop={{ x: panelX, y: panelY, zoom: panelZoom }}
-                style={{ width: 120, aspectRatio: `${panelCols} / ${panelRows}` }}
-              />
+            <div style={{ marginTop: 4, display: "flex", gap: 4, alignItems: "center" }}>
+              <label>
+                Bolsillo de anclaje:{" "}
+                <input
+                  type="text"
+                  aria-label="Bolsillo de anclaje del panel"
+                  placeholder="S1·F·1"
+                  value={panelAnchor}
+                  onChange={(event) => setPanelAnchor(event.target.value)}
+                />
+              </label>
+              <button
+                type="button"
+                onClick={handleUseSelectedPocketAsAnchor}
+                disabled={!singleSelectedCode}
+              >
+                Usar seleccionado
+              </button>
             </div>
-          )}
 
-          {panelError && <p style={{ color: "#c00" }}>{panelError}</p>}
-
-          <button
-            type="button"
-            onClick={handleAddPanel}
-            disabled={isAddingPanel || isPending}
-            style={{ marginTop: 8 }}
-          >
-            Agregar panel
-          </button>
-
-          {panels.length > 0 && (
-            <ul style={{ listStyle: "none", padding: 0, marginTop: 8 }}>
-              {panels.map((panel) => (
-                <li key={panel.id} style={{ marginTop: 4, fontSize: 12 }}>
-                  {panel.anchor} ({panel.span.rows}×{panel.span.cols}){" "}
-                  <button
-                    type="button"
-                    disabled={isPending}
-                    onClick={() => handleRemovePanel(panel.id)}
-                  >
-                    Quitar panel
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </details>
-
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-          {faces.map((face) => (
-            <section key={`${face.sheet}-${face.side}`}>
-              <h2 style={{ fontSize: 14, fontWeight: "normal" }}>
-                Hoja {face.sheet} · {face.side === "F" ? "Frente" : "Reverso"}
-              </h2>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: `repeat(${format.cols}, 1fr)`,
-                  gap: 6,
-                  width: 320,
+            <div style={{ marginTop: 4, display: "flex", gap: 12 }}>
+              <label>
+                Filas:{" "}
+                <input
+                  type="number"
+                  aria-label="Filas del panel"
+                  min={1}
+                  max={format.rows}
+                  value={panelRows}
+                  onChange={(event) => setPanelRows(Number.parseInt(event.target.value, 10) || 1)}
+                  style={{ width: 56 }}
+                />
+              </label>
+              <label>
+                Columnas:{" "}
+                <input
+                  type="number"
+                  aria-label="Columnas del panel"
+                  min={1}
+                  max={format.cols}
+                  value={panelCols}
+                  onChange={(event) => setPanelCols(Number.parseInt(event.target.value, 10) || 1)}
+                  style={{ width: 56 }}
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setPanelRows(format.rows);
+                  setPanelCols(format.cols);
                 }}
               >
-                {Array.from({ length: format.rows * format.cols }, (_, i) => {
-                  const code = formatPocketCode({
-                    sheet: face.sheet,
-                    side: face.side,
-                    index: i + 1,
-                  });
-                  const gridPosition = {
-                    gridColumnStart: (i % format.cols) + 1,
-                    gridRowStart: Math.floor(i / format.cols) + 1,
-                  };
+                Página completa
+              </button>
+            </div>
 
-                  const coveredBy = panelCoverage.get(code);
-                  if (coveredBy) {
-                    if (!coveredBy.isAnchor) {
-                      return null;
-                    }
-                    return (
-                      <PanelCell
-                        key={code}
-                        asset={coveredBy.panel.asset}
-                        rows={coveredBy.panel.span.rows}
-                        cols={coveredBy.panel.span.cols}
-                        crop={coveredBy.panel.crop}
-                        style={gridPosition}
-                      />
-                    );
-                  }
+            <div style={{ marginTop: 8 }}>
+              <label>
+                Zoom: {panelZoom}%{" "}
+                <input
+                  type="range"
+                  aria-label="Zoom del panel"
+                  min={100}
+                  max={300}
+                  value={panelZoom}
+                  onChange={(event) => setPanelZoom(Number.parseInt(event.target.value, 10))}
+                />
+              </label>
+            </div>
+            <div>
+              <label>
+                Posición horizontal: {panelX}%{" "}
+                <input
+                  type="range"
+                  aria-label="Posición horizontal del panel"
+                  min={0}
+                  max={100}
+                  value={panelX}
+                  onChange={(event) => setPanelX(Number.parseInt(event.target.value, 10))}
+                />
+              </label>
+            </div>
+            <div>
+              <label>
+                Posición vertical: {panelY}%{" "}
+                <input
+                  type="range"
+                  aria-label="Posición vertical del panel"
+                  min={0}
+                  max={100}
+                  value={panelY}
+                  onChange={(event) => setPanelY(Number.parseInt(event.target.value, 10))}
+                />
+              </label>
+            </div>
 
-                  const content = effectivePockets[code];
-                  const display =
-                    content?.kind === "card" || content?.kind === "placeholder"
-                      ? displays[content.variant]
-                      : undefined;
-                  return (
-                    <Pocket
-                      key={code}
-                      code={code}
-                      content={content}
-                      display={display}
-                      isSelected={selectedCodes.includes(code)}
-                      sleeve={theme.sleeve}
-                      gridPosition={gridPosition}
-                      layoutId={activeMoveIds?.get(code)}
-                      insertNonce={insertion?.code === code ? insertion.nonce : undefined}
-                      reduceMotion={prefersReducedMotion}
-                      onSelect={handleSelect}
-                    />
-                  );
-                })}
-              </div>
-            </section>
-          ))}
-        </div>
-      </DndContext>
-
-      <div
-        style={{
-          marginTop: 16,
-          border: "1px solid #ccc",
-          borderRadius: 4,
-          padding: 12,
-          maxWidth: 420,
-        }}
-      >
-        {selectedCodes.length === 0 && (
-          <p>
-            Hacé click en un bolsillo para editarlo, o arrastrá una carta a otro bolsillo.
-            Shift/Cmd-click para seleccionar varios.
-          </p>
-        )}
-
-        {selectedCodes.length > 1 && (
-          <>
-            <p>{selectedCodes.length} bolsillos seleccionados</p>
-            <button type="button" disabled={isPending} onClick={bulkClear}>
-              Vaciar seleccionados
-            </button>{" "}
-            <button type="button" onClick={() => setSelectedCodes([])}>
-              Cancelar selección
-            </button>
-          </>
-        )}
-
-        {singleSelectedCode && (
-          <>
-            <p>
-              Editando <strong>{singleSelectedCode}</strong>
-            </p>
-
-            {selectedContent?.kind === "card" && displays[selectedContent.variant] && (
-              <div style={{ marginBottom: 8 }}>
-                <HoloCard
-                  imageUrl={displays[selectedContent.variant]?.imageUrl ?? null}
-                  name={displays[selectedContent.variant]?.name ?? ""}
-                  variant={displays[selectedContent.variant]?.variant ?? "normal"}
-                  sleeve={theme.sleeve}
-                  width={180}
+            {panelAssetUrl.trim() && (
+              <div style={{ marginTop: 8 }}>
+                <p style={{ fontSize: 12, color: "var(--smoke)" }}>
+                  Previsualización (sin cortar por bolsillo):
+                </p>
+                <PanelCell
+                  asset={panelAssetUrl.trim()}
+                  rows={1}
+                  cols={1}
+                  crop={{ x: panelX, y: panelY, zoom: panelZoom }}
+                  style={{
+                    width: 120,
+                    maxWidth: "100%",
+                    aspectRatio: `${panelCols} / ${panelRows}`,
+                  }}
                 />
               </div>
             )}
 
-            <button type="button" disabled={isPending} onClick={() => assignSingle(EMPTY_POCKET)}>
-              Vaciar
+            {panelError && <p style={{ color: "#e8957f" }}>{panelError}</p>}
+
+            <button
+              type="button"
+              onClick={handleAddPanel}
+              disabled={isAddingPanel || isPending}
+              style={{ marginTop: 8 }}
+            >
+              Agregar panel
             </button>
 
-            {selectedContent?.kind === "card" && (
-              <div style={{ marginTop: 8 }}>
-                <p>
-                  Precio de mercado:{" "}
-                  {prices[selectedContent.variant] !== undefined
-                    ? `$${(prices[selectedContent.variant] as number).toFixed(2)} USD`
-                    : "sin dato"}
-                  {selectedContent.priceOverrideUsd !== undefined &&
-                    ` — Precio propio: $${selectedContent.priceOverrideUsd.toFixed(2)} USD`}
-                </p>
-                <label>
-                  Precio propio (USD):{" "}
-                  <input
-                    key={singleSelectedCode}
-                    ref={priceInputRef}
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    aria-label="Precio propio en dólares"
-                    defaultValue={selectedContent.priceOverrideUsd ?? ""}
-                  />
-                </label>{" "}
-                <button type="button" disabled={isPending} onClick={handleSetPriceOverride}>
-                  Guardar precio propio
-                </button>{" "}
-                {selectedContent.priceOverrideUsd !== undefined && (
-                  <button type="button" disabled={isPending} onClick={handleClearPriceOverride}>
-                    Quitar precio propio
-                  </button>
-                )}
-              </div>
-            )}
-
-            <div style={{ marginTop: 8 }}>
-              <input
-                type="text"
-                placeholder="Buscar carta por nombre..."
-                value={query}
-                onChange={(event) => onSearchChange(event.target.value)}
-                style={{ width: "100%" }}
-              />
-              {isSearching && <p>Buscando...</p>}
-              <ul style={{ listStyle: "none", padding: 0 }}>
-                {results.map((result) => (
-                  <li key={result.id} style={{ marginTop: 4 }}>
-                    {result.setName} — {result.name} {result.number} ({result.variant}){" "}
+            {panels.length > 0 && (
+              <ul style={{ listStyle: "none", padding: 0, marginTop: 8 }}>
+                {panels.map((panel) => (
+                  <li key={panel.id} style={{ marginTop: 4, fontSize: 12 }}>
+                    {panel.anchor} ({panel.span.rows}×{panel.span.cols}){" "}
                     <button
                       type="button"
                       disabled={isPending}
-                      onClick={() => handleAddCard(result.id)}
+                      onClick={() => handleRemovePanel(panel.id)}
                     >
-                      Usar como carta
-                    </button>{" "}
-                    <button
-                      type="button"
-                      disabled={isPending}
-                      onClick={() =>
-                        assignSingle({ kind: "placeholder", variant: result.id, style: "ficha" })
-                      }
-                    >
-                      Usar como placeholder
+                      Quitar panel
                     </button>
                   </li>
                 ))}
               </ul>
-            </div>
-          </>
-        )}
-      </div>
+            )}
+          </div>
+        </details>
+
+        <div className="sb-ed-selection" style={{ padding: "18px 0 8px" }}>
+          {selectedCodes.length === 0 && (
+            <p>
+              Hacé click en un bolsillo para editarlo, o arrastrá una carta a otro bolsillo.
+              Shift/Cmd-click para seleccionar varios.
+            </p>
+          )}
+
+          {selectedCodes.length > 1 && (
+            <>
+              <p>{selectedCodes.length} bolsillos seleccionados</p>
+              <button type="button" disabled={isPending} onClick={bulkClear}>
+                Vaciar seleccionados
+              </button>{" "}
+              <button type="button" onClick={() => setSelectedCodes([])}>
+                Cancelar selección
+              </button>
+            </>
+          )}
+
+          {singleSelectedCode && (
+            <>
+              <p>
+                Editando <strong>{singleSelectedCode}</strong>
+              </p>
+
+              {selectedContent?.kind === "card" && displays[selectedContent.variant] && (
+                <div style={{ marginBottom: 8 }}>
+                  <HoloCard
+                    imageUrl={displays[selectedContent.variant]?.imageUrl ?? null}
+                    name={displays[selectedContent.variant]?.name ?? ""}
+                    variant={displays[selectedContent.variant]?.variant ?? "normal"}
+                    sleeve={theme.sleeve}
+                    width={180}
+                  />
+                </div>
+              )}
+
+              <button type="button" disabled={isPending} onClick={() => assignSingle(EMPTY_POCKET)}>
+                Vaciar
+              </button>
+
+              {selectedContent?.kind === "card" && (
+                <div style={{ marginTop: 8 }}>
+                  <p>
+                    Precio de mercado:{" "}
+                    {prices[selectedContent.variant] !== undefined
+                      ? `$${(prices[selectedContent.variant] as number).toFixed(2)} USD`
+                      : "sin dato"}
+                    {selectedContent.priceOverrideUsd !== undefined &&
+                      ` — Precio propio: $${selectedContent.priceOverrideUsd.toFixed(2)} USD`}
+                  </p>
+                  <label>
+                    Precio propio (USD):{" "}
+                    <input
+                      key={singleSelectedCode}
+                      ref={priceInputRef}
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      aria-label="Precio propio en dólares"
+                      defaultValue={selectedContent.priceOverrideUsd ?? ""}
+                    />
+                  </label>{" "}
+                  <button type="button" disabled={isPending} onClick={handleSetPriceOverride}>
+                    Guardar precio propio
+                  </button>{" "}
+                  {selectedContent.priceOverrideUsd !== undefined && (
+                    <button type="button" disabled={isPending} onClick={handleClearPriceOverride}>
+                      Quitar precio propio
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <div style={{ marginTop: 8 }}>
+                <input
+                  type="text"
+                  placeholder="Buscar carta por nombre..."
+                  value={query}
+                  onChange={(event) => onSearchChange(event.target.value)}
+                  style={{ width: "100%" }}
+                />
+                {isSearching && <p style={{ color: "var(--smoke)", fontSize: 12 }}>Buscando...</p>}
+                <ul className="sb-ed-results">
+                  {results.map((result) => (
+                    <li key={result.id} className="sb-ed-result">
+                      {result.imageUrl ? (
+                        // biome-ignore lint/performance/noImgElement: editor MVP, no next/image config yet
+                        <img
+                          src={result.imageUrl}
+                          alt=""
+                          style={{
+                            width: 34,
+                            height: 48,
+                            objectFit: "cover",
+                            borderRadius: 2,
+                            background: "color-mix(in srgb, var(--linen) 6%, transparent)",
+                          }}
+                        />
+                      ) : (
+                        <span
+                          aria-hidden="true"
+                          style={{
+                            width: 34,
+                            height: 48,
+                            borderRadius: 2,
+                            border: "1px solid color-mix(in srgb, var(--linen) 12%, transparent)",
+                          }}
+                        />
+                      )}
+                      <div className="sb-ed-result-meta">
+                        <span>
+                          {result.setName} — {result.name}{" "}
+                          <span className="sb-ed-num">{result.number}</span> ({result.variant}){" "}
+                        </span>
+                        <div className="sb-ed-result-actions">
+                          <button
+                            type="button"
+                            disabled={isPending}
+                            onClick={() => handleAddCard(result.id)}
+                          >
+                            Usar como carta
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isPending}
+                            onClick={() =>
+                              assignSingle({
+                                kind: "placeholder",
+                                variant: result.id,
+                                style: "ficha",
+                              })
+                            }
+                          >
+                            Usar como placeholder
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </>
+          )}
+        </div>
+      </aside>
     </div>
   );
 }
