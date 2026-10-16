@@ -36,3 +36,86 @@
   font-family: var(--font-data);
   font-variant-numeric: tabular-nums;
 }
+
+/* Base element styles: the UI is the case, the cards are the jewel. */
+html {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--velvet);
+  color: var(--linen);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.005em;
+}
+
+a {
+  color: var(--foil);
+  text-decoration-color: var(--rule);
+  text-underline-offset: 3px;
+  transition: color 240ms var(--ease-out-expo);
+}
+
+a:hover {
+  color: var(--linen);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--linen);
+  background: var(--velvet-raised);
+  border: 1px solid color-mix(in srgb, var(--linen) 16%, transparent);
+  border-radius: 2px;
+  padding: 0.35em 0.75em;
+  transition:
+    border-color 240ms var(--ease-out-expo),
+    background-color 240ms var(--ease-out-expo);
+}
+
+button {
+  cursor: pointer;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.1em;
+}
+
+button:hover:not(:disabled),
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--rule);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+:focus-visible {
+  outline: 1px solid var(--foil);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--foil) 35%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 1ms !important;
+  }
+}

@@ -9,7 +9,15 @@ export interface ThemeTokens {
 }
 
 export const THEME_PRESETS: Record<string, ThemeTokens> = {
+  // "La galería privada" (docs/DESIGN_BRIEF.md): the default experience.
   default: {
+    label: "Galería",
+    background: "radial-gradient(ellipse 70% 55% at 50% 42%, #2a221c 0%, #14110f 70%)",
+    foreground: "#ede6da",
+    accent: "#d4b77c",
+    fontFamily: "var(--font-ui)",
+  },
+  clasico: {
     label: "Clásico",
     background: "#ffffff",
     foreground: "#111111",
