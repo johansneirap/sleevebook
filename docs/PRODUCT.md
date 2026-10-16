@@ -424,7 +424,7 @@ Alcance, backend y hosting quedaron decididos el 13-10-2026; antes del primer li
 | 1 | Nombre y dominio | Sleevebook, Holosleeve, Pagefoil, Foiltheca (.com libres al 13-10-2026); otros con .app | Decidido: Sleevebook |
 | 2 | Proveedor de precios | Snapshot pokemontcg.io / Scrydex / JustTCG | Snapshot en MVP; comparar planes en fase 3 |
 | 3 | Monetización | Gratis / freemium (modo tienda, PDF) / afiliados | Decidir después de la beta |
-| 4 | Motor 3D de página | CSS 3D / three.js | Prototipo de ambos en fase 2 y medir fps en móvil |
+| 4 | Motor 3D de página | CSS 3D / three.js | Decidido: CSS 3D (2026-10-16). Medido con CPU 4× más lenta, viewport 412 px, build dev: pasar página 57 fps, abrir binder 60, sacar carta 58, voltear 60; un solo frame largo (≤67 ms) al montar la animación. three.js queda para N3 (relieve/WebGL), no para la página |
 | 5 | Inventario | Binder referencia variantes / copias reales | Variantes en MVP; copias en modo vendedor |
 | 6 | Base de datos si Railway queda corto | Postgres en Railway / Neon free | Railway mientras el uso quepa en el plan |
 
