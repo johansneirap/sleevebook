@@ -1,10 +1,17 @@
 "use client";
 
 import type { Format, Layout, SheetFace } from "@sleevebook/binder-core";
-import { useState } from "react";
+import { AnimatePresence } from "motion/react";
+import { useCallback, useState } from "react";
 import type { VariantDisplay } from "../../lib/binders";
-import { CardFocusOverlay } from "./card-focus-overlay";
+import { CardFocusOverlay, type FocusOrigin, measureFocusOrigin } from "./card-focus-overlay";
 import { FaceGrid } from "./face-grid";
+
+interface FocusedCard {
+  code: string;
+  display: VariantDisplay;
+  origin: FocusOrigin;
+}
 
 export function BinderFaces({
   faces,
@@ -21,7 +28,15 @@ export function BinderFaces({
   displays: Map<string, VariantDisplay>;
   sleeve: string;
 }) {
-  const [focusedDisplay, setFocusedDisplay] = useState<VariantDisplay | null>(null);
+  // Tracks the pocket code (not just the display) so the same variant placed in
+  // two pockets returns to the right one.
+  const [focused, setFocused] = useState<FocusedCard | null>(null);
+
+  const handleCardClick = useCallback((code: string, display: VariantDisplay, rect: DOMRect) => {
+    setFocused({ code, display, origin: measureFocusOrigin(rect) });
+  }, []);
+
+  const handleClose = useCallback(() => setFocused(null), []);
 
   return (
     <>
@@ -35,17 +50,22 @@ export function BinderFaces({
             panels={panels}
             displays={displays}
             sleeve={sleeve}
-            onCardClick={setFocusedDisplay}
+            focusedCode={focused?.code ?? null}
+            onCardClick={handleCardClick}
           />
         ))}
       </div>
-      {focusedDisplay && (
-        <CardFocusOverlay
-          display={focusedDisplay}
-          sleeve={sleeve}
-          onClose={() => setFocusedDisplay(null)}
-        />
-      )}
+      <AnimatePresence>
+        {focused && (
+          <CardFocusOverlay
+            key={focused.code}
+            display={focused.display}
+            sleeve={sleeve}
+            origin={focused.origin}
+            onClose={handleClose}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }

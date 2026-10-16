@@ -5,7 +5,12 @@ import { formatPocketCode, panelCoverageMap } from "@sleevebook/binder-core";
 import type { CSSProperties } from "react";
 import type { VariantDisplay } from "../../lib/binders";
 import { sleeveOverlayStyle } from "../../lib/theme-presets";
+import { usePrefersReducedMotion } from "../../lib/use-prefers-reduced-motion";
 import { PanelCell } from "./panel-cell";
+
+// Time the thumbnail stays hidden after the card is returned, so it does not
+// show through the card while it flies back into the pocket.
+const REVEAL_DELAY_S = 0.5;
 
 interface FaceGridProps {
   face: SheetFace;
@@ -14,7 +19,9 @@ interface FaceGridProps {
   panels: Layout["panels"];
   displays: Map<string, VariantDisplay>;
   sleeve: string;
-  onCardClick?: (display: VariantDisplay) => void;
+  /** Pocket code of the card currently taken out of the sleeve, if any. */
+  focusedCode?: string | null;
+  onCardClick?: (code: string, display: VariantDisplay, rect: DOMRect) => void;
 }
 
 const POCKET_STYLE: CSSProperties = {
@@ -38,8 +45,10 @@ export function FaceGrid({
   panels,
   displays,
   sleeve,
+  focusedCode = null,
   onCardClick,
 }: FaceGridProps) {
+  const reducedMotion = usePrefersReducedMotion();
   const codes = Array.from({ length: format.rows * format.cols }, (_, i) =>
     formatPocketCode({ sheet: face.sheet, side: face.side, index: i + 1 }),
   );
@@ -89,11 +98,22 @@ export function FaceGrid({
               : undefined;
 
           if (content?.kind === "card") {
+            // While the card is out, the pocket reads as physically empty.
+            const isOut = focusedCode === code;
+            const contentStyle: CSSProperties = isOut
+              ? { opacity: 0, transition: "none" }
+              : {
+                  opacity: 1,
+                  transition: `opacity 0s linear ${reducedMotion ? 0 : REVEAL_DELAY_S}s`,
+                };
             return (
               <button
                 key={code}
                 type="button"
-                onClick={() => display && onCardClick?.(display)}
+                onClick={(event) =>
+                  display &&
+                  onCardClick?.(code, display, event.currentTarget.getBoundingClientRect())
+                }
                 style={{
                   ...POCKET_STYLE,
                   ...gridPosition,
@@ -113,6 +133,7 @@ export function FaceGrid({
                       borderRadius: 4,
                       padding: "0 4px",
                       fontSize: 10,
+                      ...contentStyle,
                     }}
                   >
                     ×{content.count}
@@ -125,6 +146,7 @@ export function FaceGrid({
                       inset: 0,
                       pointerEvents: "none",
                       ...overlayStyle,
+                      ...contentStyle,
                     }}
                   />
                 )}
@@ -133,10 +155,10 @@ export function FaceGrid({
                   <img
                     src={display.imageUrl}
                     alt={display.name}
-                    style={{ maxWidth: "100%", maxHeight: "100%" }}
+                    style={{ maxWidth: "100%", maxHeight: "100%", ...contentStyle }}
                   />
                 ) : (
-                  <span>
+                  <span style={contentStyle}>
                     {display?.name} {display?.number}
                   </span>
                 )}
