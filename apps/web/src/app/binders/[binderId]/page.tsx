@@ -1,11 +1,17 @@
-import { computeBinderValueUsd, generateSpreads } from "@sleevebook/binder-core";
+import { computeBinderValueUsd, convertFromUsd, generateSpreads } from "@sleevebook/binder-core";
 import { notFound } from "next/navigation";
-import { BinderTitle, ProgressFigure, ValueFigure } from "../../../components/binder/binder-header";
+import {
+  BinderTitle,
+  formatRateDate,
+  ProgressFigure,
+  ValueFigure,
+} from "../../../components/binder/binder-header";
 import { BinderStage } from "../../../components/binder/binder-stage";
 import { OwnerToolbar } from "../../../components/binder/owner-toolbar";
 import { ThemedMain } from "../../../components/binder/themed-main";
 import { collectVariantIds, getBinderWithLayout, getVariantDisplays } from "../../../lib/binders";
 import { getGoalProgress } from "../../../lib/goals";
+import { getExchangeRates } from "../../../lib/money";
 import { getLatestPrices } from "../../../lib/pricing";
 import { getShareLinkForBinder, getSiteUrl } from "../../../lib/share";
 import { clampSpreadIndex } from "../../../lib/spreads";
@@ -47,6 +53,22 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
   );
   const totalValueUsd = computeBinderValueUsd(pockets, priceLookup);
 
+  const { rates, capturedAt } = await getExchangeRates();
+  const displayCurrency = binderData.currency;
+  const convertedValue = convertFromUsd(totalValueUsd, displayCurrency, rates);
+  // Without a rate we quietly fall back to USD instead of hiding the value.
+  const valueFigure =
+    convertedValue === undefined
+      ? { amount: totalValueUsd, currency: "usd" as const, note: "sin tipo de cambio" }
+      : {
+          amount: convertedValue,
+          currency: displayCurrency,
+          note:
+            displayCurrency === "usd" || !capturedAt
+              ? undefined
+              : `tipo de cambio al ${formatRateDate(capturedAt)}`,
+        };
+
   const shareInfo = await getShareLinkForBinder(binderId);
   const siteUrl = getSiteUrl();
   const isPublished = binderData.status === "published";
@@ -83,7 +105,7 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
                 percentage={progress.percentage}
               />
             )}
-            {totalValueUsd > 0 && <ValueFigure valueUsd={totalValueUsd} />}
+            {totalValueUsd > 0 && <ValueFigure {...valueFigure} />}
           </div>
         )}
       </header>
