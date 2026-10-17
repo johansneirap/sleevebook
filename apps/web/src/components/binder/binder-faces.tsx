@@ -2,8 +2,10 @@
 
 import type { Format, Layout, SheetFace } from "@sleevebook/binder-core";
 import { AnimatePresence } from "motion/react";
-import { Fragment, useCallback, useState } from "react";
+import { Fragment, type ReactNode, useCallback, useState } from "react";
+import { createPortal } from "react-dom";
 import type { VariantDisplay } from "../../lib/binders";
+import type { PocketMetaMap } from "../seller-public/types";
 import { CardFocusOverlay, type FocusOrigin, measureFocusOrigin } from "./card-focus-overlay";
 import { FaceGrid } from "./face-grid";
 import type { OpeningAxis } from "./page-curl";
@@ -94,6 +96,11 @@ const SPREAD_CSS = `
 }
 `;
 
+// Only mounted after a card is focused, so document is always available.
+function OverlayPortal({ children }: { children: ReactNode }) {
+  return createPortal(children, document.body);
+}
+
 /**
  * The two slots of a spread: the opening spread pairs the inside front cover
  * (null) with sheet 1's front, the closing one sheet N's back with the inside
@@ -120,6 +127,7 @@ export function BinderFaces({
   displays,
   sleeve,
   opening = "side",
+  pocketMeta,
 }: {
   faces: SheetFace[];
   format: Format;
@@ -128,6 +136,8 @@ export function BinderFaces({
   displays: Map<string, VariantDisplay>;
   sleeve: string;
   opening?: OpeningAxis;
+  /** Seller mode only; absent keeps the collection look. */
+  pocketMeta?: PocketMetaMap;
 }) {
   // Tracks the pocket code (not just the display) so the same variant placed in
   // two pockets returns to the right one.
@@ -158,6 +168,7 @@ export function BinderFaces({
                 focusedCode={focused?.code ?? null}
                 onCardClick={handleCardClick}
                 turnSlot={i}
+                pocketMeta={pocketMeta}
               />
             ) : (
               <InsideCover turnSlot={i} />
@@ -167,13 +178,18 @@ export function BinderFaces({
       </div>
       <AnimatePresence>
         {focused && (
-          <CardFocusOverlay
-            key={focused.code}
-            display={focused.display}
-            sleeve={sleeve}
-            origin={focused.origin}
-            onClose={handleClose}
-          />
+          // Portaled to <body>: the stage's isolation would otherwise trap the
+          // overlay under fixed page chrome such as the seller tray.
+          <OverlayPortal key={focused.code}>
+            <CardFocusOverlay
+              display={focused.display}
+              sleeve={sleeve}
+              origin={focused.origin}
+              onClose={handleClose}
+              pocketCode={focused.code}
+              pocketMeta={pocketMeta?.[focused.code]}
+            />
+          </OverlayPortal>
         )}
       </AnimatePresence>
     </>

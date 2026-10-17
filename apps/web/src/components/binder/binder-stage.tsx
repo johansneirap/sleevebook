@@ -109,6 +109,7 @@ export function BinderStage({
   panels,
   displays,
   sleeve,
+  pocketMeta,
 }: BinderStageProps) {
   const [closed, setClosed] = useState(startClosed);
   const { coverColor, accentColor } = deriveBinderColors(theme);
@@ -145,6 +146,7 @@ export function BinderStage({
         panels={panels}
         displays={displays}
         sleeve={sleeve}
+        pocketMeta={pocketMeta}
       />
     </div>
   );

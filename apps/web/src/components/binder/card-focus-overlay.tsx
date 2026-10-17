@@ -4,6 +4,8 @@ import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import type { VariantDisplay } from "../../lib/binders";
 import { usePrefersReducedMotion } from "../../lib/use-prefers-reduced-motion";
+import { type PocketMeta, STATUS_LABELS } from "../seller-public/types";
+import { useWantList } from "../seller-public/want-list";
 import { CardBack } from "./card-back";
 import { FlipCard } from "./flip-card";
 import { HoloCard } from "./holo-card";
@@ -80,6 +82,42 @@ const BACKDROP_BACKGROUND = [
   "radial-gradient(ellipse 60% 62% at 50% 50%, rgba(62, 44, 33, 0.7) 0%, rgba(20, 15, 12, 0.94) 42%, rgba(6, 4, 3, 0.99) 100%)",
 ].join(", ");
 
+// Seller mode: adds the focused card to the buyer's list. Vendido cannot be added.
+function WantListToggle({
+  inList,
+  sold,
+  onToggle,
+  sidePanel,
+}: {
+  inList: boolean;
+  sold: boolean;
+  onToggle: () => void;
+  sidePanel: boolean;
+}) {
+  const label = sold ? "Carta vendida" : inList ? "Quitar de mi lista" : "Agregar a mi lista";
+  return (
+    <button
+      type="button"
+      className="sb-label cfo-flip"
+      disabled={sold}
+      onClick={onToggle}
+      style={{
+        marginTop: sidePanel ? 18 : 12,
+        padding: "4px 0",
+        background: "none",
+        border: "none",
+        borderBottom: "1px solid var(--rule)",
+        color: inList ? "var(--foil)" : "var(--linen)",
+        fontSize: 12,
+        cursor: sold ? "default" : "pointer",
+        opacity: sold ? 0.45 : 1,
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 const LABEL_STYLE = {
   margin: 0,
   fontSize: 11,
@@ -97,13 +135,19 @@ export function CardFocusOverlay({
   sleeve,
   origin,
   onClose,
+  pocketCode,
+  pocketMeta,
 }: {
   display: VariantDisplay;
   sleeve: string;
   origin: FocusOrigin;
   onClose: () => void;
+  /** Seller mode only: the focused pocket and its price/status. */
+  pocketCode?: string;
+  pocketMeta?: PocketMeta;
 }) {
   const reducedMotion = usePrefersReducedMotion();
+  const want = useWantList();
   const [flipped, setFlipped] = useState(false);
   // Measured once on mount: the same viewport the origin was measured in.
   const [layout] = useState(() => {
@@ -167,6 +211,27 @@ export function CardFocusOverlay({
         padding: "28px 16px calc(20px + env(safe-area-inset-bottom, 0px))",
         background: "linear-gradient(to top, rgba(6, 4, 3, 0.97) 62%, rgba(6, 4, 3, 0))",
       };
+
+  const flipButton = (
+    <button
+      type="button"
+      className="sb-label cfo-flip"
+      aria-pressed={flipped}
+      onClick={() => setFlipped((value) => !value)}
+      style={{
+        marginTop: sidePanel ? 18 : 12,
+        padding: "4px 0",
+        background: "none",
+        border: "none",
+        borderBottom: "1px solid var(--rule)",
+        color: flipped ? "var(--foil)" : "var(--linen)",
+        fontSize: 12,
+        cursor: "pointer",
+      }}
+    >
+      Voltear carta
+    </button>
+  );
 
   return (
     <div
@@ -291,6 +356,26 @@ export function CardFocusOverlay({
               </dd>
             </div>
           ) : null}
+          {pocketMeta?.price ? (
+            <div>
+              <dt className="sb-label" style={LABEL_STYLE}>
+                Precio
+              </dt>
+              <dd className="sb-data" style={{ ...VALUE_STYLE, color: "var(--foil)" }}>
+                {pocketMeta.price}
+              </dd>
+            </div>
+          ) : null}
+          {pocketMeta?.status ? (
+            <div>
+              <dt className="sb-label" style={LABEL_STYLE}>
+                Estado
+              </dt>
+              <dd className="sb-label" style={VALUE_STYLE}>
+                {STATUS_LABELS[pocketMeta.status]}
+              </dd>
+            </div>
+          ) : null}
         </dl>
         <div
           aria-hidden="true"
@@ -303,24 +388,20 @@ export function CardFocusOverlay({
         <p className="sb-data" style={{ ...LABEL_STYLE, margin: 0 }}>
           {caption}
         </p>
-        <button
-          type="button"
-          className="sb-label cfo-flip"
-          aria-pressed={flipped}
-          onClick={() => setFlipped((value) => !value)}
-          style={{
-            marginTop: sidePanel ? 18 : 12,
-            padding: "4px 0",
-            background: "none",
-            border: "none",
-            borderBottom: "1px solid var(--rule)",
-            color: flipped ? "var(--foil)" : "var(--linen)",
-            fontSize: 12,
-            cursor: "pointer",
-          }}
-        >
-          Voltear carta
-        </button>
+        {want && pocketCode ? (
+          // Seller mode: the list toggle sits beside the flip button on one row.
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 24 }}>
+            {flipButton}
+            <WantListToggle
+              inList={want.has(pocketCode)}
+              sold={pocketMeta?.status === "vendido"}
+              onToggle={() => want.toggle(pocketCode)}
+              sidePanel={sidePanel}
+            />
+          </div>
+        ) : (
+          flipButton
+        )}
       </motion.section>
     </div>
   );
