@@ -396,10 +396,11 @@ Seis fases; cada una termina con algo usable. La fase 1 tiene que poder reproduc
 
 ### Fase 3 — Vendedores y salida física
 
-- [ ] Modo vendedor: precios visibles, estados, contacto, carrito "copiar lista"
-- [ ] Exportar a PDF imprimible (placeholders + paneles) y a imagen por cara
-- [ ] Embed (iframe) y QR del binder
-- [ ] Proveedor de precios principal elegido (Scrydex o JustTCG) con job diario
+- [x] Modo vendedor: precios visibles, estados, contacto, carrito "copiar lista" (estado por bolsillo, no por copia — ver registro)
+- [x] Exportar a PDF imprimible (placeholders + paneles) y a imagen por cara (PDF vía "Guardar como PDF" del navegador — ver registro)
+- [x] Embed (iframe) y QR del binder
+- [x] Proveedor de precios con job diario: pokemontcg.io v2 por ahora, cambiable a Scrydex (ver registro)
+- [x] Moneda CLP/EUR con tipo de cambio diario (pendiente desde Fase 1); "me faltan" ordenable por precio y exportable (CSV)
 
 ### Fase 4 — Comunidad
 
@@ -422,10 +423,10 @@ Alcance, backend y hosting quedaron decididos el 13-10-2026; antes del primer li
 | # | Pregunta | Opciones | Estado |
 | --- | --- | --- | --- |
 | 1 | Nombre y dominio | Sleevebook, Holosleeve, Pagefoil, Foiltheca (.com libres al 13-10-2026); otros con .app | Decidido: Sleevebook |
-| 2 | Proveedor de precios | Snapshot pokemontcg.io / Scrydex / JustTCG | Snapshot en MVP; comparar planes en fase 3 |
+| 2 | Proveedor de precios | Snapshot pokemontcg.io / Scrydex / JustTCG | Decidido (2026-10-16): API v2 de pokemontcg.io detrás de una interfaz `PriceSource`; migrar a Scrydex antes del apagado del 1-mar-2027 |
 | 3 | Monetización | Gratis / freemium (modo tienda, PDF) / afiliados | Decidir después de la beta |
 | 4 | Motor 3D de página | CSS 3D / three.js | Decidido: CSS 3D (2026-10-16). Medido con CPU 4× más lenta, viewport 412 px, build dev: pasar página 57 fps, abrir binder 60, sacar carta 58, voltear 60; un solo frame largo (≤67 ms) al montar la animación. three.js queda para N3 (relieve/WebGL), no para la página |
-| 5 | Inventario | Binder referencia variantes / copias reales | Variantes en MVP; copias en modo vendedor |
+| 5 | Inventario | Binder referencia variantes / copias reales | Variantes también en modo vendedor: el estado y precio de venta van por bolsillo (`pocket_listing`); copias reales siguen pendientes |
 | 6 | Base de datos si Railway queda corto | Postgres en Railway / Neon free | Railway mientras el uso quepa en el plan |
 
 **Registro de decisiones**
@@ -465,3 +466,7 @@ Alcance, backend y hosting quedaron decididos el 13-10-2026; antes del primer li
 | 2026-10-16 | Sacar/insertar/voltear carta y girar binder (Fase 2, bloque 6): "sacar" es un FLIP medido (no `layoutId`) desde el bolsillo al centro y de vuelta; "voltear" usa un reverso original de Sleevebook (no el dorso oficial Pokémon) y vive dentro de la carta enfocada (botón o tecla F); "insertar" anima solo al asignar una carta desde la búsqueda del editor (drag & drop, deshacer, importar y ordenar no la reproducen); "girar binder" es una caja CSS 3D (sin three.js) con tapa, lomo y contratapa, que aparece al entrar a un binder sin `?spread` y se abre con animación; la tapa usa como arte un panel de página completa anclado en `S1·F·1` | Reverso, motor CSS 3D y alcance aprobados por el usuario vía pregunta directa; el dorso oficial es arte con copyright (ver Legal); `?spread=N` sigue abriendo directo para no romper links ni marcadores; FLIP medido evita colisiones de `layoutId` con la copia fantasma del pasar página |
 | 2026-10-16 | Design brief aplicado antes de cerrar Fase 2 ("ola 4"): tokens y fuentes (Instrument Serif / Hanken Grotesk / Geist Mono vía `next/font`) en `globals.css`; el preset `default` pasa a "Galería" (terciopelo/lino/foil) y el blanco anterior queda como `clasico`; restyle de landing, lista de binders, crear, "me faltan", portada pública, cabecera con cifras de catálogo, binder abierto sobre cuero, detalle de carta con ficha y editor como mesa de trabajo | El usuario pidió aplicar `docs/DESIGN_BRIEF.md` antes del punto de control humano. No se muestra precio ni fecha en el detalle de carta (el visor no recibe precios por carta) ni el dueño en la portada pública (la consulta de share no lo trae); la landing usa las imágenes de demo de pokemontcg.io, igual que `/demo` |
 | 2026-10-16 | Pasar página = una hoja que gira sobre el lomo: el frente sale de la cara derecha (o izquierda hacia atrás) y su reverso aterriza exacto sobre la cara opuesta, con el borde libre adelantado a mitad de giro. Todo spread tiene dos posiciones fijas: el primero y el último muestran la contratapa interior frente a su única cara (en móvil se oculta) | En la revisión funcional el pliegue anterior giraba el spread completo desde el borde exterior y se detenía a 130°, así que no partía ni terminaba donde debía. Se mide la posición real de cada cara antes de pintar, así el giro sirve para apertura lateral, superior y móvil apilado; la landing usa el mismo componente |
+| 2026-10-16 | Precios diarios desde la API v2 de pokemontcg.io (gratis) solo para las variantes usadas en binders y objetivos, detrás de `PriceSource`; tipo de cambio USD→CLP/EUR diario desde open.er-api.com; workflow `Prices` en GitHub Actions | El dump de GitHub no trae precios (price_point estaba vacío). Scrydex cuesta US$29/mes y JustTCG free es no comercial; v2 funciona hasta el 1-mar-2027 y comparte IDs con Scrydex. Algunas variantes de los binders no tienen ID de pokemontcg.io y quedan sin precio de mercado |
+| 2026-10-16 | Modo vendedor por binder (`binder.mode`, contacto, moneda); estado y precio de venta por bolsillo en `pocket_listing`, fuera de `binder_version` | Marcar vendido o cambiar un precio debe verse al tiro en el link público sin republicar. Precedencia del precio: vendedor > manual > mercado. La lista del comprador vive en su navegador (localStorage) y se envía por WhatsApp/Instagram/correo |
+| 2026-10-16 | PDF = página `/imprimir` con medidas reales en mm (63×88, A4 o Carta, marcas de corte) que el navegador guarda como PDF; imagen por cara con `next/og` | Sin dependencia de una librería PDF y con la misma fidelidad tipográfica; el QR de la ficha solo aparece si el binder está publicado |
+| 2026-10-16 | Embed en `/e/[slug]` (solo binders publicados) con `frame-ancestors *`; el resto de la app con `X-Frame-Options: SAMEORIGIN`; QR en `/s/[slug]/qr` (SVG/PNG) | Insertar el binder en otras webs sin abrir el resto de la app al clickjacking; las vistas del embed no suman al contador del link público |

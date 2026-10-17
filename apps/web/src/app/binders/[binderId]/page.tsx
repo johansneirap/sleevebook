@@ -9,6 +9,7 @@ import {
 import { BinderStage } from "../../../components/binder/binder-stage";
 import { OwnerToolbar } from "../../../components/binder/owner-toolbar";
 import { ThemedMain } from "../../../components/binder/themed-main";
+import { loadSellerPocketData } from "../../../components/seller-public/seller-pocket-data";
 import { collectVariantIds, getBinderWithLayout, getVariantDisplays } from "../../../lib/binders";
 import { getGoalProgress } from "../../../lib/goals";
 import { getExchangeRates } from "../../../lib/money";
@@ -69,6 +70,12 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
               : `tipo de cambio al ${formatRateDate(capturedAt)}`,
         };
 
+  // Seller binders preview their price tags and listing states to the owner too.
+  const sellerData =
+    binderData.mode === "seller"
+      ? await loadSellerPocketData(binderId, pockets, displays, binderData.currency)
+      : null;
+
   const shareInfo = await getShareLinkForBinder(binderId);
   const siteUrl = getSiteUrl();
   const isPublished = binderData.status === "published";
@@ -80,6 +87,7 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
         isPublished={isPublished}
         shareInfo={isPublished ? shareInfo : null}
         siteUrl={siteUrl}
+        binderName={binderData.name}
         missingHref={
           progress && progress.missingVariantIds.length > 0
             ? `/binders/${binderId}/faltan`
@@ -123,6 +131,7 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
         panels={binderData.layout.panels}
         displays={displays}
         sleeve={binderData.layout.theme.sleeve}
+        pocketMeta={sellerData?.pocketMeta}
       />
     </ThemedMain>
   );

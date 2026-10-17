@@ -51,7 +51,7 @@ export function ListingsEditor({ binderId, currency, rows }: ListingsEditorProps
   );
 
   const invalidCodes = dirtyCodes.filter(
-    (code) => !parsePriceInput((drafts[code] as ListingDraft).price).ok,
+    (code) => !parsePriceInput((drafts[code] as ListingDraft).price, currency).ok,
   );
 
   // Counts and value reflect what is saved, so they never disagree with the public page.
@@ -62,7 +62,7 @@ export function ListingsEditor({ binderId, currency, rows }: ListingsEditorProps
       const saved = baseline[row.pocketCode] ?? row.saved;
       result[saved.status] += 1;
       if (saved.status === "disponible") {
-        const parsed = parsePriceInput(saved.price);
+        const parsed = parsePriceInput(saved.price, currency);
         const asking = parsed.ok && parsed.value !== null ? parsed.value : null;
         const amount = asking ?? row.reference?.amount ?? null;
         if (amount !== null) {
@@ -71,7 +71,7 @@ export function ListingsEditor({ binderId, currency, rows }: ListingsEditorProps
       }
     }
     return { ...result, availableValue };
-  }, [rows, baseline]);
+  }, [rows, baseline, currency]);
 
   function current(code: string, fallback: ListingDraft): ListingDraft {
     return drafts[code] ?? baseline[code] ?? fallback;
@@ -103,7 +103,7 @@ export function ListingsEditor({ binderId, currency, rows }: ListingsEditorProps
       setBaseline((prev) => {
         const next = { ...prev };
         for (const change of changes) {
-          const parsed = parsePriceInput(change.price);
+          const parsed = parsePriceInput(change.price, currency);
           const value = parsed.ok ? parsed.value : null;
           next[change.pocketCode] = {
             status: change.status,
@@ -173,7 +173,7 @@ export function ListingsEditor({ binderId, currency, rows }: ListingsEditorProps
               const fallback = row.saved;
               const draft = current(row.pocketCode, fallback);
               const dirty = dirtyCodes.includes(row.pocketCode);
-              const priceParse = parsePriceInput(draft.price);
+              const priceParse = parsePriceInput(draft.price, currency);
               const priceError = !priceParse.ok
                 ? priceParse.error
                 : (errors[row.pocketCode] ?? undefined);

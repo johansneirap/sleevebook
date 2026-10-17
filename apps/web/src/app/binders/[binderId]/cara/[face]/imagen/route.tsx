@@ -39,7 +39,14 @@ export async function GET(request: Request, { params }: RouteContext) {
   }
 
   return new ImageResponse(
-    <FaceImage face={face} format={format} pockets={pockets} panels={panels} displays={displays} />,
+    <FaceImage
+      face={face}
+      format={format}
+      pockets={pockets}
+      panels={panels}
+      displays={displays}
+      binderName={binderData.name}
+    />,
     {
       width: FACE_IMAGE_WIDTH,
       height: faceImageHeight(format),

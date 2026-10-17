@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { publishBinder, unpublishBinder } from "../../lib/share-actions";
+import { ShareExtras } from "../share/share-extras";
 
 // Owner tools live at the top edge of the page, small and quiet, so the binder
 // stays the center of attention. Server component: forms use server actions.
@@ -17,6 +18,8 @@ export interface OwnerToolbarProps {
   shareInfo: OwnerShareInfo | null;
   siteUrl: string;
   missingHref?: string;
+  /** Used for the embed snippet's iframe title. */
+  binderName: string;
 }
 
 const CSS = `
@@ -88,6 +91,7 @@ export function OwnerToolbar({
   shareInfo,
   siteUrl,
   missingHref,
+  binderName,
 }: OwnerToolbarProps) {
   return (
     <div className="sb-owner-toolbar" style={ROW}>
@@ -96,6 +100,8 @@ export function OwnerToolbar({
         <Link href="/binders">&larr; Mis binders</Link>
         <Link href={`/binders/${binderId}/editar`}>Editar</Link>
         {missingHref && <Link href={missingHref}>Ver lo que falta</Link>}
+        <Link href={`/binders/${binderId}/vender`}>Vender</Link>
+        <Link href={`/binders/${binderId}/imprimir`}>Imprimir</Link>
       </div>
 
       {isPublished && shareInfo ? (
@@ -119,6 +125,7 @@ export function OwnerToolbar({
             <input type="hidden" name="binderId" value={binderId} />
             <button type="submit">Despublicar</button>
           </form>
+          <ShareExtras slug={shareInfo.slug} siteUrl={siteUrl} name={binderName} />
         </div>
       ) : (
         <form action={publishBinder} style={INLINE_FORM}>

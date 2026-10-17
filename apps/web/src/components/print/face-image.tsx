@@ -105,9 +105,10 @@ export interface FaceImageProps {
   pockets: Layout["pockets"];
   panels: Layout["panels"];
   displays: Map<string, VariantDisplay>;
+  binderName: string;
 }
 
-export function FaceImage({ face, format, pockets, panels, displays }: FaceImageProps) {
+export function FaceImage({ face, format, pockets, panels, displays, binderName }: FaceImageProps) {
   const g = geometry(format);
   const height = faceImageHeight(format);
   const coverage = panelCoverageMap(panels, format);
@@ -299,7 +300,7 @@ export function FaceImage({ face, format, pockets, panels, displays }: FaceImage
           color: COLORS.smoke,
         }}
       >
-        {`Binder · Hoja ${face.sheet} · ${sideLabel(face.side)}`}
+        {`${binderName} · Hoja ${face.sheet} · ${sideLabel(face.side)}`}
       </div>
     </div>
   );

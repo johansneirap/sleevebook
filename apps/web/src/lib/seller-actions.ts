@@ -157,7 +157,7 @@ export async function saveListings(
       errors[code] = "Esta casilla no es una carta.";
       continue;
     }
-    const price = parsePriceInput(change.price);
+    const price = parsePriceInput(change.price, currency);
     if (!price.ok) {
       errors[code] = price.error;
       continue;

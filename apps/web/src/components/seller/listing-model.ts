@@ -11,8 +11,10 @@ export type PriceParse = { ok: true; value: number | null } | { ok: false; error
 const PRICE_PATTERN = /^\d{1,10}(\.\d{1,2})?$/;
 
 /** Empty means "no asking price" (use market/manual). Accepts "," as decimal separator. */
-export function parsePriceInput(raw: string): PriceParse {
-  const trimmed = raw.trim().replace(",", ".");
+export function parsePriceInput(raw: string, currency?: Currency): PriceParse {
+  // CLP has no decimals, so "15.000" / "15,000" are thousands separators.
+  const trimmed =
+    currency === "clp" ? raw.trim().replace(/[.,]/g, "") : raw.trim().replace(",", ".");
   if (trimmed === "") {
     return { ok: true, value: null };
   }
