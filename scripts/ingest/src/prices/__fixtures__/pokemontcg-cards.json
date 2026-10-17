@@ -1,0 +1,58 @@
+{
+  "data": [
+    {
+      "id": "sv1-1",
+      "tcgplayer": {
+        "url": "https://prices.pokemontcg.io/tcgplayer/sv1-1",
+        "updatedAt": "2026-10-01",
+        "prices": {
+          "normal": { "low": 0.1, "mid": 0.2, "high": 1, "market": 0.15, "directLow": null },
+          "reverseHolofoil": {
+            "low": 0.3,
+            "mid": 0.45,
+            "high": 2,
+            "market": null,
+            "directLow": null
+          }
+        }
+      }
+    },
+    {
+      "id": "sv1-2",
+      "tcgplayer": {
+        "url": "https://prices.pokemontcg.io/tcgplayer/sv1-2",
+        "updatedAt": "2026-10-01",
+        "prices": {
+          "holofoil": { "low": 5, "mid": 6.5, "high": 20, "market": null, "directLow": null }
+        }
+      }
+    },
+    {
+      "id": "sv1-3",
+      "tcgplayer": {
+        "url": "https://prices.pokemontcg.io/tcgplayer/sv1-3",
+        "updatedAt": "2026-10-01",
+        "prices": {
+          "holofoil": { "low": 12, "mid": 14, "high": 30, "market": 13.37, "directLow": 11 }
+        }
+      }
+    },
+    {
+      "id": "sv1-4",
+      "tcgplayer": {
+        "url": "https://prices.pokemontcg.io/tcgplayer/sv1-4",
+        "updatedAt": "2026-10-01",
+        "prices": {
+          "normal": { "low": 0, "mid": 0, "high": 0, "market": 0, "directLow": null }
+        }
+      }
+    },
+    {
+      "id": "sv1-5"
+    }
+  ],
+  "page": 1,
+  "pageSize": 250,
+  "count": 5,
+  "totalCount": 5
+}

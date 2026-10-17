@@ -5,6 +5,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import type { ImagePipelineConfig } from "./images/pipeline";
 import { processVariantImage } from "./images/pipeline";
 import type { CatalogSource, RawCard, RawSet } from "./source";
+import { pickTcgplayerAmountUsd } from "./tcgplayer-prices";
 
 export const PROVIDER = "pokemontcg.io";
 
@@ -14,22 +15,9 @@ export const PROVIDER = "pokemontcg.io";
 type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
 type Queryable = Database | Tx;
 
-// Maps our derived variant names to the tcgplayer price bucket that prices
-// that exact printing. Vintage-only buckets (1stEditionHolofoil, etc.) are
-// intentionally not modeled here.
-const TCGPLAYER_PRICE_KEY: Record<string, string> = {
-  normal: "normal",
-  holo: "holofoil",
-  reverse: "reverseHolofoil",
-  pokeball: "pokeball",
-  masterball: "masterball",
-};
-
 function extractTcgplayerPriceUsd(rawCard: RawCard, variant: string): string | null {
-  const key = TCGPLAYER_PRICE_KEY[variant];
-  const priceData = key ? rawCard.tcgplayer?.prices?.[key] : undefined;
-  const amount = priceData?.market ?? priceData?.mid;
-  return typeof amount === "number" && amount > 0 ? amount.toFixed(2) : null;
+  const amount = pickTcgplayerAmountUsd(rawCard.tcgplayer?.prices, variant);
+  return amount === null ? null : amount.toFixed(2);
 }
 
 export interface IngestSummary {
