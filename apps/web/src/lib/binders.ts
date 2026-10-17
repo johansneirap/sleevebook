@@ -1,5 +1,5 @@
-import type { Layout } from "@sleevebook/binder-core";
-import { layoutSchema } from "@sleevebook/binder-core";
+import type { BinderMode, Currency, Layout, SellerContact } from "@sleevebook/binder-core";
+import { currencySchema, layoutSchema, sellerContactSchema } from "@sleevebook/binder-core";
 import { binder, binderVersion, card, cardVariant, DEV_USER_ID, set } from "@sleevebook/db";
 import { desc, eq, inArray } from "drizzle-orm";
 import { db } from "./db";
@@ -34,6 +34,22 @@ export interface BinderWithLayout {
   sheets: number;
   status: string;
   layout: Layout;
+  mode: BinderMode;
+  sellerContact: SellerContact;
+  currency: Currency;
+}
+
+/** Fase 3 binder settings, parsed defensively from their DB columns. */
+export function parseBinderSettings(row: {
+  mode: string;
+  sellerContact: unknown;
+  currency: string;
+}): { mode: BinderMode; sellerContact: SellerContact; currency: Currency } {
+  return {
+    mode: row.mode === "seller" ? "seller" : "collection",
+    sellerContact: sellerContactSchema.catch({}).parse(row.sellerContact ?? {}),
+    currency: currencySchema.catch("usd").parse(row.currency),
+  };
 }
 
 export async function getBinderWithLayout(binderId: string): Promise<BinderWithLayout | null> {
@@ -58,6 +74,7 @@ export async function getBinderWithLayout(binderId: string): Promise<BinderWithL
     sheets: binderRow.sheets,
     status: binderRow.status,
     layout: layoutSchema.parse(versionRow.layout),
+    ...parseBinderSettings(binderRow),
   };
 }
 

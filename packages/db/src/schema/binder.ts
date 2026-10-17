@@ -1,4 +1,13 @@
-import { integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+  integer,
+  jsonb,
+  numeric,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { user } from "./auth";
 import { goal } from "./collection";
 import { uuidPk } from "./columns";
@@ -17,6 +26,14 @@ export const binder = pgTable("binder", {
   theme: jsonb("theme"),
   goalId: uuid("goal_id").references(() => goal.id, { onDelete: "set null" }),
   status: text("status").notNull().default("draft"),
+  // Fase 3: "collection" (default) or "seller" -- seller mode shows prices,
+  // listing states and contact buttons on the public page.
+  mode: text("mode").notNull().default("collection"),
+  // { whatsapp?: string; instagram?: string; email?: string } -- see
+  // sellerContactSchema in @sleevebook/binder-core.
+  sellerContact: jsonb("seller_contact"),
+  // Display currency for this binder's prices: "usd" | "clp" | "eur".
+  currency: text("currency").notNull().default("usd"),
 });
 
 export const binderVersion = pgTable("binder_version", {
@@ -42,4 +59,25 @@ export const shareLink = pgTable(
     views: integer("views").notNull().default(0),
   },
   (table) => [uniqueIndex("share_link_slug_idx").on(table.slug)],
+);
+
+// Seller-mode state per pocket. Lives outside binder_version on purpose:
+// marking a card sold or changing its price must show on the public link
+// immediately, without republishing the binder.
+export const pocketListing = pgTable(
+  "pocket_listing",
+  {
+    id: uuidPk(),
+    binderId: uuid("binder_id")
+      .notNull()
+      .references(() => binder.id, { onDelete: "cascade" }),
+    pocketCode: text("pocket_code").notNull(),
+    // "disponible" | "reservado" | "vendido"
+    status: text("status").notNull().default("disponible"),
+    // Seller's asking price, in `currency`. Null = fall back to the market price.
+    price: numeric("price", { precision: 12, scale: 2 }),
+    currency: text("currency").notNull().default("usd"),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("pocket_listing_binder_pocket_idx").on(table.binderId, table.pocketCode)],
 );

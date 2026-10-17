@@ -102,3 +102,17 @@ export const pricePoint = pgTable(
     ),
   ],
 );
+
+// Daily USD -> quote rates, written by the prices job.
+export const exchangeRate = pgTable(
+  "exchange_rate",
+  {
+    id: uuidPk(),
+    base: text("base").notNull().default("usd"),
+    quote: text("quote").notNull(),
+    rate: numeric("rate", { precision: 14, scale: 6 }).notNull(),
+    source: text("source").notNull(),
+    capturedAt: timestamp("captured_at").notNull().defaultNow(),
+  },
+  (table) => [index("exchange_rate_quote_captured_idx").on(table.quote, desc(table.capturedAt))],
+);

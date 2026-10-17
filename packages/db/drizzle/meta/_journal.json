@@ -15,6 +15,13 @@
       "when": 1791934064014,
       "tag": "0001_messy_giant_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792195204388,
+      "tag": "0002_tired_radioactive_man",
+      "breakpoints": true
     }
   ]
 }
