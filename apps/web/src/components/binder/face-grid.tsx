@@ -6,6 +6,7 @@ import type { CSSProperties } from "react";
 import type { VariantDisplay } from "../../lib/binders";
 import { sleeveOverlayStyle } from "../../lib/theme-presets";
 import { usePrefersReducedMotion } from "../../lib/use-prefers-reduced-motion";
+import type { PocketMetaMap } from "../seller-public/types";
 import { PanelCell } from "./panel-cell";
 
 // Time the thumbnail stays hidden after the card is returned, so it does not
@@ -26,7 +27,12 @@ interface FaceGridProps {
   turnSlot?: number;
   /** Decorative copy for the page-turn overlay: inert, label drawn by CSS. */
   ghost?: boolean;
+  /** Seller mode only: price tags and listing status per pocket. */
+  pocketMeta?: PocketMetaMap;
 }
+
+// Vendido: the art stays readable but recedes behind the label.
+const SOLD_ART_FILTER = "grayscale(0.85) brightness(0.5)";
 
 // Page styles shared by every face. Width is fluid: two faces fit side by
 // side on desktop and the spread stacks on phones (see binder-faces.tsx).
@@ -114,6 +120,7 @@ export function FaceGrid({
   onCardClick,
   turnSlot,
   ghost = false,
+  pocketMeta,
 }: FaceGridProps) {
   const reducedMotion = usePrefersReducedMotion();
   const codes = Array.from({ length: format.rows * format.cols }, (_, i) =>
@@ -207,6 +214,12 @@ export function FaceGrid({
                   opacity: 1,
                   transition: `opacity 0s linear ${reducedMotion ? 0 : REVEAL_DELAY_S}s`,
                 };
+            const meta = pocketMeta?.[code];
+            const sold = meta?.status === "vendido";
+            const reserved = meta?.status === "reservado";
+            const artStyle: CSSProperties = sold
+              ? { ...contentStyle, filter: SOLD_ART_FILTER }
+              : contentStyle;
             return (
               <button
                 key={code}
@@ -233,7 +246,7 @@ export function FaceGrid({
                       position: "absolute",
                       top: 4,
                       right: 4,
-                      zIndex: 1,
+                      zIndex: 2,
                       background: "rgba(10,8,7,0.7)",
                       color: "var(--linen)",
                       border: "1px solid var(--rule)",
@@ -270,14 +283,67 @@ export function FaceGrid({
                       width: "100%",
                       height: "100%",
                       objectFit: "cover",
-                      ...contentStyle,
+                      ...artStyle,
                     }}
                   />
                 ) : (
-                  <span style={{ ...contentStyle, padding: 4 }}>
+                  <span style={{ ...artStyle, padding: 4 }}>
                     {display?.name} {display?.number}
                   </span>
                 )}
+                {reserved || sold ? (
+                  <span
+                    className="sb-label"
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      zIndex: 1,
+                      padding: "3px 4px",
+                      fontSize: 10,
+                      lineHeight: "12px",
+                      letterSpacing: "0.16em",
+                      textAlign: "center",
+                      background: "rgba(10,8,7,0.82)",
+                      color: reserved ? "var(--foil)" : "var(--linen)",
+                      borderBottom: "1px solid var(--rule)",
+                      pointerEvents: "none",
+                      ...contentStyle,
+                    }}
+                  >
+                    {reserved ? "Reservado" : "Vendido"}
+                  </span>
+                ) : null}
+                {meta?.price && !sold ? (
+                  // Museum-style label: thin, dark glass, hairline foil edge.
+                  <span
+                    className="sb-data"
+                    style={{
+                      position: "absolute",
+                      left: 4,
+                      right: 4,
+                      bottom: 4,
+                      zIndex: 1,
+                      padding: "2px 4px",
+                      fontSize: 10,
+                      lineHeight: "14px",
+                      letterSpacing: "0.03em",
+                      textAlign: "center",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      color: "var(--linen)",
+                      background: "rgba(10,8,7,0.72)",
+                      borderTop: "1px solid color-mix(in srgb, var(--foil) 35%, transparent)",
+                      borderRadius: 2,
+                      pointerEvents: "none",
+                      ...contentStyle,
+                    }}
+                  >
+                    {meta.price}
+                  </span>
+                ) : null}
               </button>
             );
           }

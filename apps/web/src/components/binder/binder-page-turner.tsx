@@ -14,6 +14,7 @@ import {
 } from "react";
 import type { VariantDisplay } from "../../lib/binders";
 import { usePrefersReducedMotion } from "../../lib/use-prefers-reduced-motion";
+import type { PocketMetaMap } from "../seller-public/types";
 import { BinderFaces, InsideCover, spreadSlots } from "./binder-faces";
 import { FaceGrid } from "./face-grid";
 import {
@@ -63,6 +64,8 @@ interface BinderPageTurnerProps {
   panels: Layout["panels"];
   displays: Map<string, VariantDisplay>;
   sleeve: string;
+  /** Seller mode only; absent keeps the collection look. */
+  pocketMeta?: PocketMetaMap;
 }
 
 export function BinderPageTurner({
@@ -75,6 +78,7 @@ export function BinderPageTurner({
   panels,
   displays,
   sleeve,
+  pocketMeta,
 }: BinderPageTurnerProps) {
   const router = useRouter();
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -187,6 +191,7 @@ export function BinderPageTurner({
             displays={displays}
             sleeve={sleeve}
             opening={opening}
+            pocketMeta={pocketMeta}
           />
         </div>
         {turn && outgoingSpread && geometry && (
@@ -203,6 +208,7 @@ export function BinderPageTurner({
                   panels={panels}
                   displays={displays}
                   sleeve={sleeve}
+                  pocketMeta={pocketMeta}
                 />
               ) : (
                 <InsideCover />
