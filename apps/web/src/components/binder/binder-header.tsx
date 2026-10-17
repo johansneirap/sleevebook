@@ -1,3 +1,4 @@
+import { type Currency, formatMoney } from "@sleevebook/binder-core";
 import type { CSSProperties, ReactNode } from "react";
 
 // Shared header language for binder pages: serif title, catalog-style figures
@@ -69,7 +70,31 @@ export function ProgressFigure({
   );
 }
 
-export function ValueFigure({ valueUsd }: { valueUsd: number }) {
+/** USD keeps the historical "$12.50 USD" form; other currencies use Intl formatting. */
+export function formatDisplayMoney(amount: number, currency: Currency): string {
+  return currency === "usd" ? `$${amount.toFixed(2)} USD` : formatMoney(amount, currency);
+}
+
+/** Fecha de un tipo de cambio en formato chileno, para "tipo de cambio al …". */
+export function formatRateDate(capturedAtIso: string): string {
+  return new Intl.DateTimeFormat("es-CL", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "America/Santiago",
+  }).format(new Date(capturedAtIso));
+}
+
+export function ValueFigure({
+  amount,
+  currency,
+  note,
+}: {
+  amount: number;
+  currency: Currency;
+  /** Small quiet note next to the figure, e.g. the rate date or "sin tipo de cambio". */
+  note?: string;
+}) {
   return (
     <p
       style={{
@@ -87,12 +112,13 @@ export function ValueFigure({ valueUsd }: { valueUsd: number }) {
         className="sb-data"
         style={{ fontSize: "clamp(26px, 4vw, 34px)", color: "var(--linen)" }}
       >
-        ${valueUsd.toFixed(2)}
+        {formatDisplayMoney(amount, currency)}
       </span>
-      <span className="sb-data" style={{ fontSize: 13, color: "var(--smoke)" }}>
-        {" "}
-        USD
-      </span>
+      {note && (
+        <span className="sb-data" style={{ fontSize: 13, color: "var(--smoke)" }}>
+          {note}
+        </span>
+      )}
     </p>
   );
 }
