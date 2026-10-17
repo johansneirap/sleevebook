@@ -2,9 +2,9 @@ name: Catalog ingest
 
 on:
   schedule:
-    # Daily: the same pokemon-tcg-data dump carries the tcgplayer price
-    # snapshot embedded per card, so refreshing prices means re-running the
-    # whole catalog ingest (idempotent for sets/cards/variants either way).
+    # Daily catalog sync from the pokemon-tcg-data dump (sets, cards, variants).
+    # The dump carries no prices; prices come from the separate prices job
+    # (.github/workflows/prices.yml).
     - cron: "0 6 * * *"
   workflow_dispatch: {}
 

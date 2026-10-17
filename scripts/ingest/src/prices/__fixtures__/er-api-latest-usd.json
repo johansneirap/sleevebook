@@ -1,0 +1,19 @@
+{
+  "result": "success",
+  "provider": "https://www.exchangerate-api.com",
+  "documentation": "https://www.exchangerate-api.com/docs/free",
+  "terms_of_use": "https://www.exchangerate-api.com/terms",
+  "time_last_update_unix": 1792108801,
+  "time_last_update_utc": "Fri, 14 Oct 2026 00:00:01 +0000",
+  "time_next_update_unix": 1792195201,
+  "time_next_update_utc": "Sat, 15 Oct 2026 00:00:01 +0000",
+  "time_eol_unix": 0,
+  "base_code": "USD",
+  "rates": {
+    "USD": 1,
+    "CLP": 952.35,
+    "EUR": 0.9187,
+    "GBP": 0.7941,
+    "JPY": 151.2
+  }
+}

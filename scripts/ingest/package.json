@@ -23,6 +23,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --passWithNoTests",
     "start": "tsx src/run.ts",
+    "prices": "tsx src/prices/run.ts",
     "migrate:tracker": "tsx src/tracker/cli.ts"
   }
 }
