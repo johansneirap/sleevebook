@@ -91,6 +91,16 @@ const SECONDARY: CSSProperties = {
   border: "1px solid var(--rule)",
 };
 
+const QUIET_LINK: CSSProperties = {
+  ...CTA_BASE,
+  alignSelf: "center",
+  padding: "12px 4px",
+  color: "var(--smoke)",
+  textDecoration: "underline",
+  textDecorationColor: "var(--rule)",
+  textUnderlineOffset: 6,
+};
+
 const SPREAD_FRAME: CSSProperties = {
   display: "flex",
   position: "relative",
@@ -262,6 +272,9 @@ export function LandingHero() {
           </Link>
           <Link href="/demo" className="sb-label" style={SECONDARY}>
             Ver demo
+          </Link>
+          <Link href="/galeria" className="sb-label" style={QUIET_LINK}>
+            Explorar la galería
           </Link>
         </div>
       </div>
