@@ -1,0 +1,204 @@
+/* Intercambios page. Tokens live in globals.css; page shell classes come from catalog.css. */
+.sb-trade-intro {
+  margin: 18px 0 0;
+  max-width: 62ch;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--smoke);
+}
+
+.sb-trade-empty {
+  margin: 40px 0 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1.35;
+  color: var(--smoke);
+  max-width: 40ch;
+}
+
+.sb-trade-list {
+  list-style: none;
+  margin: 40px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.sb-trade-entry {
+  display: grid;
+  gap: 16px;
+  padding: 26px 0 28px;
+  border-bottom: 1px solid color-mix(in srgb, var(--linen) 10%, transparent);
+}
+
+.sb-trade-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+}
+
+.sb-trade-avatar,
+.sb-trade-monogram {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.sb-trade-avatar {
+  object-fit: cover;
+}
+
+.sb-trade-monogram {
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--rule);
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--linen);
+}
+
+.sb-trade-identity {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.sb-trade-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(22px, 3.4vw, 28px);
+  line-height: 1.1;
+  color: var(--linen);
+  overflow-wrap: anywhere;
+}
+
+.sb-trade-handle {
+  font-family: var(--font-data);
+  font-size: 13px;
+  color: var(--smoke);
+  text-decoration: none;
+  transition: color 240ms var(--ease-out-expo);
+}
+
+.sb-trade-handle:hover,
+.sb-trade-handle:focus-visible {
+  color: var(--foil);
+}
+
+.sb-trade-tag {
+  margin-left: auto;
+  padding: 3px 10px;
+  border: 1px solid var(--foil-dim);
+  border-radius: 2px;
+  font-family: var(--font-ui);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.14em;
+  font-size: 12px;
+  color: var(--foil);
+  white-space: nowrap;
+}
+
+.sb-trade-row {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.sb-trade-row-label {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.14em;
+  font-size: 12px;
+  color: var(--smoke);
+}
+
+.sb-trade-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.sb-trade-card {
+  width: 88px;
+  margin: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.sb-trade-thumb,
+.sb-trade-thumb-blank {
+  display: block;
+  width: 88px;
+  aspect-ratio: 2.5 / 3.5;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.sb-trade-thumb {
+  object-fit: cover;
+  background: var(--velvet-raised);
+}
+
+.sb-trade-thumb-blank {
+  border: 1px dashed var(--rule);
+  background: var(--velvet-raised);
+}
+
+.sb-trade-card figcaption {
+  display: grid;
+  gap: 1px;
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--smoke);
+  overflow-wrap: anywhere;
+}
+
+.sb-trade-card figcaption > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sb-trade-card figcaption .sb-data {
+  font-size: 11px;
+}
+
+.sb-trade-contact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  font-family: var(--font-ui);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.14em;
+  font-size: 12px;
+}
+
+.sb-trade-contact a {
+  color: var(--smoke);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 2px;
+  transition: color 240ms var(--ease-out-expo);
+}
+
+.sb-trade-contact a:hover,
+.sb-trade-contact a:focus-visible {
+  color: var(--foil);
+  border-bottom-color: var(--foil-dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-trade-handle,
+  .sb-trade-contact a {
+    transition: none;
+  }
+}
