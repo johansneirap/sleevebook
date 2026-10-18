@@ -63,6 +63,10 @@ jobs:
 
       - run: pnpm typecheck
 
+      # Production build, like the Railway image: catches pages that try to
+      # prerender against a database that doesn't exist at build time.
+      - run: pnpm --filter @sleevebook/web build
+
       - name: Migrate the database
         run: pnpm --filter @sleevebook/db db:migrate
 
