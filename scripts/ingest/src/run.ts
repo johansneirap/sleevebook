@@ -2,6 +2,7 @@ import { createDb } from "@sleevebook/db";
 import { downloadAndExtract } from "./download";
 import type { ImagePipelineConfig } from "./images/pipeline";
 import { createS3Storage } from "./images/storage";
+import { catalogHasSets, notifyNewSets } from "./set-alerts";
 import { loadCatalogSource } from "./source";
 import { upsertCatalog } from "./upsert";
 
@@ -39,9 +40,24 @@ async function main() {
 
   const db = createDb(databaseUrl);
   try {
+    // A first ingest into an empty catalog is not "new sets": stay silent.
+    const hadSets = await catalogHasSets(db);
+
     console.log("Upserting catalog...");
     const summary = await upsertCatalog(db, source, imagePipeline);
     console.log(summary);
+
+    if (hadSets && summary.newSetIds.length > 0) {
+      try {
+        const notified = await notifyNewSets(db, summary.newSetIds);
+        console.log(
+          `Set alerts: ${notified} notifications for ${summary.newSetIds.length} new sets.`,
+        );
+      } catch (error) {
+        // The catalog is already committed; a failing alert must not fail the ingest.
+        console.warn("Set alerts skipped; the catalog is stored:", error);
+      }
+    }
   } finally {
     await db.$client.end();
   }
