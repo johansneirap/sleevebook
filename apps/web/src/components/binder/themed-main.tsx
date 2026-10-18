@@ -16,9 +16,9 @@ export function ThemedMain({ theme, children }: { theme: Layout["theme"]; childr
     >
       <div
         style={{
-          maxWidth: 1120,
+          maxWidth: 1320,
           marginInline: "auto",
-          paddingBlock: "clamp(20px, 4vw, 56px)",
+          paddingBlock: "clamp(16px, 2.4vw, 32px)",
           paddingInline: "clamp(16px, 4vw, 48px)",
         }}
       >

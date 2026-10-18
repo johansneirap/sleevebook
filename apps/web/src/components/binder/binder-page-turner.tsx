@@ -211,7 +211,7 @@ export function BinderPageTurner({
                   pocketMeta={pocketMeta}
                 />
               ) : (
-                <InsideCover />
+                <InsideCover format={format} />
               ),
             )}
           />

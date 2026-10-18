@@ -7,7 +7,7 @@ import { createPortal } from "react-dom";
 import type { VariantDisplay } from "../../lib/binders";
 import type { PocketMetaMap } from "../seller-public/types";
 import { CardFocusOverlay, type FocusOrigin, measureFocusOrigin } from "./card-focus-overlay";
-import { FaceGrid } from "./face-grid";
+import { FaceGrid, faceSizeVars } from "./face-grid";
 import type { OpeningAxis } from "./page-curl";
 
 interface FocusedCard {
@@ -115,8 +115,15 @@ export function spreadSlots(faces: SheetFace[]): [SheetFace | null, SheetFace | 
 }
 
 /** The bare inside of the cover, opposite the first/last face. */
-export function InsideCover({ turnSlot }: { turnSlot?: number }) {
-  return <div aria-hidden className="sb-face sb-cover" data-turn-slot={turnSlot} />;
+export function InsideCover({ turnSlot, format }: { turnSlot?: number; format: Format }) {
+  return (
+    <div
+      aria-hidden
+      className="sb-face sb-cover"
+      data-turn-slot={turnSlot}
+      style={faceSizeVars(format)}
+    />
+  );
 }
 
 export function BinderFaces({
@@ -171,7 +178,7 @@ export function BinderFaces({
                 pocketMeta={pocketMeta}
               />
             ) : (
-              <InsideCover turnSlot={i} />
+              <InsideCover turnSlot={i} format={format} />
             )}
           </Fragment>
         ))}

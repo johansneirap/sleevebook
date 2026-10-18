@@ -95,7 +95,17 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
         }
       />
 
-      <header style={{ display: "flex", flexDirection: "column", gap: 22, marginBottom: 40 }}>
+      {/* Compact: the open binder below is the protagonist of this page. */}
+      <header
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          gap: "12px 40px",
+          marginBottom: 16,
+        }}
+      >
         <BinderTitle>{binderData.name}</BinderTitle>
         {(totalValueUsd > 0 || progress) && (
           <div
@@ -103,7 +113,7 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
               display: "flex",
               flexWrap: "wrap",
               alignItems: "flex-end",
-              gap: "16px 48px",
+              gap: "8px 36px",
             }}
           >
             {progress && (

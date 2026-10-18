@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useMotionTemplate, useSpring } from "motion/react";
+import { motion, useMotionTemplate, useSpring, useTransform } from "motion/react";
 import { useRef } from "react";
 import { sleeveOverlayStyle } from "../../lib/theme-presets";
 import { usePrefersReducedMotion } from "../../lib/use-prefers-reduced-motion";
@@ -14,25 +14,38 @@ export interface HoloCardProps {
 }
 
 const ASPECT_RATIO = 88 / 63;
-const MAX_TILT_DEG = 16;
+const MAX_TILT_DEG = 12;
 
 // Foil color stops per catalog variant, swept diagonally and repositioned by
-// pointer offset. Reverse is masked to the card's border so the illustration
-// stays clear, matching the "foil en el marco" behavior described in
-// docs/PRODUCT.md. Conceived independently from first principles (gradient +
+// pointer offset. Conceived independently from first principles (gradient +
 // radial glare + pointer-driven 3D tilt) -- not derived from or modeled on
 // any third-party holo-card CSS implementation.
+//
+// Real foil only lives in part of the card: a holo rare shines in the art
+// window, a reverse (and the Poké Ball / Master Ball patterns) everywhere
+// except it. The masks keep the effect off the text box so the card never
+// reads washed out, and both glare and foil fade in only while the card is
+// being tilted -- at rest it looks like the printed card.
 const FOIL_GRADIENTS: Record<string, string> = {
-  holo: "linear-gradient(115deg, transparent 20%, #ff2fd688 32%, #35e6ff88 46%, #fff94488 60%, #ff2fd688 74%, transparent 86%)",
+  holo: "linear-gradient(115deg, transparent 18%, #ff4fd8 30%, #4fe3ff 42%, #fff36b 54%, #7dff9b 64%, #ff4fd8 76%, transparent 88%)",
   reverse:
-    "linear-gradient(115deg, transparent 15%, #35c7ff99 35%, #ffffff77 50%, #35c7ff99 65%, transparent 85%)",
+    "linear-gradient(115deg, transparent 15%, #6fd3ff 34%, #f4f8ff 50%, #6fd3ff 66%, transparent 85%)",
   pokeball:
-    "linear-gradient(115deg, transparent 15%, #ff445599 35%, #ffffff88 50%, #ff445599 65%, transparent 85%)",
+    "linear-gradient(115deg, transparent 15%, #ff6b78 34%, #fff1f1 50%, #ff6b78 66%, transparent 85%)",
   masterball:
-    "linear-gradient(115deg, transparent 15%, #7b2ff799 32%, #f107a399 50%, #7b2ff799 68%, transparent 88%)",
+    "linear-gradient(115deg, transparent 15%, #9b6bff 32%, #ff6bd0 50%, #9b6bff 68%, transparent 88%)",
 };
 
-const REVERSE_MASK = "radial-gradient(ellipse 58% 58% at center, transparent 55%, black 72%)";
+// Standard layout: the illustration sits in the upper half, slightly above centre.
+const ART_WINDOW = "radial-gradient(ellipse 46% 25% at 50% 31%, black 72%, transparent 100%)";
+const OUTSIDE_ART_WINDOW =
+  "radial-gradient(ellipse 46% 25% at 50% 31%, transparent 80%, black 100%)";
+const FOIL_MASKS: Record<string, string> = {
+  holo: ART_WINDOW,
+  reverse: OUTSIDE_ART_WINDOW,
+  pokeball: OUTSIDE_ART_WINDOW,
+  masterball: OUTSIDE_ART_WINDOW,
+};
 
 export function HoloCard({
   imageUrl,
@@ -49,7 +62,11 @@ export function HoloCard({
   const rotateY = useSpring(0, { stiffness: 300, damping: 24 });
   const glareX = useSpring(50, { stiffness: 300, damping: 24 });
   const glareY = useSpring(50, { stiffness: 300, damping: 24 });
-  const glareBackground = useMotionTemplate`radial-gradient(circle at ${glareX}% ${glareY}%, rgba(255,255,255,0.65), transparent 55%)`;
+  // 0 at rest, 1 while the pointer tilts the card.
+  const active = useSpring(0, { stiffness: 160, damping: 26 });
+  const glareBackground = useMotionTemplate`radial-gradient(circle at ${glareX}% ${glareY}%, rgba(255,250,240,0.5), rgba(255,250,240,0.12) 22%, transparent 48%)`;
+  const glareOpacity = useTransform(active, [0, 1], [0, 0.7]);
+  const foilOpacity = useTransform(active, [0, 1], [0.08, 0.42]);
   const foilPosition = useMotionTemplate`${glareX}% ${glareY}%`;
 
   function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
@@ -63,6 +80,7 @@ export function HoloCard({
     rotateX.set((0.5 - py) * MAX_TILT_DEG);
     glareX.set(px * 100);
     glareY.set(py * 100);
+    active.set(1);
   }
 
   function handlePointerLeave() {
@@ -70,10 +88,12 @@ export function HoloCard({
     rotateY.set(0);
     glareX.set(50);
     glareY.set(50);
+    active.set(0);
   }
 
   const height = Math.round(width * ASPECT_RATIO);
   const foilGradient = FOIL_GRADIENTS[variant];
+  const foilMask = FOIL_MASKS[variant];
 
   return (
     <div style={{ perspective: 1000 }}>
@@ -112,8 +132,10 @@ export function HoloCard({
             style={{
               position: "absolute",
               inset: 0,
+              pointerEvents: "none",
               background: glareBackground,
-              mixBlendMode: "overlay",
+              mixBlendMode: "soft-light",
+              opacity: glareOpacity,
             }}
           />
         )}
@@ -126,10 +148,11 @@ export function HoloCard({
               backgroundImage: foilGradient,
               backgroundSize: "220% 220%",
               backgroundPosition: foilPosition,
-              mixBlendMode: "color-dodge",
-              opacity: 0.85,
-              maskImage: variant === "reverse" ? REVERSE_MASK : undefined,
-              WebkitMaskImage: variant === "reverse" ? REVERSE_MASK : undefined,
+              pointerEvents: "none",
+              mixBlendMode: "overlay",
+              opacity: foilOpacity,
+              maskImage: foilMask,
+              WebkitMaskImage: foilMask,
             }}
           />
         )}

@@ -16,7 +16,7 @@ export function BinderTitle({ children }: { children: ReactNode }) {
       className="sb-display"
       style={{
         margin: 0,
-        fontSize: "clamp(40px, 7vw, 76px)",
+        fontSize: "clamp(32px, 3.6vw, 52px)",
         lineHeight: 1.02,
         fontWeight: 400,
         color: "var(--linen)",
@@ -54,7 +54,7 @@ export function ProgressFigure({
       <span
         className="sb-display"
         style={{
-          fontSize: "clamp(44px, 8vw, 68px)",
+          fontSize: "clamp(28px, 3.2vw, 40px)",
           lineHeight: 1,
           color: "var(--foil)",
           fontVariantNumeric: "lining-nums tabular-nums",
@@ -110,7 +110,7 @@ export function ValueFigure({
       </span>
       <span
         className="sb-data"
-        style={{ fontSize: "clamp(26px, 4vw, 34px)", color: "var(--linen)" }}
+        style={{ fontSize: "clamp(20px, 2.2vw, 26px)", color: "var(--linen)" }}
       >
         {formatDisplayMoney(amount, currency)}
       </span>

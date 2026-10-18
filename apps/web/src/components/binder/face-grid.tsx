@@ -37,8 +37,23 @@ const SOLD_ART_FILTER = "grayscale(0.85) brightness(0.5)";
 // Page styles shared by every face. Width is fluid: two faces fit side by
 // side on desktop and the spread stacks on phones (see binder-faces.tsx).
 export const FACE_CSS = `
+/* Sized from the binder outwards: a face is as wide as fits (a) half the
+   viewport and (b) a viewport-tall page of --sb-rows x --sb-cols pockets
+   (63:88 cards, 6px gaps, 40px side padding, ~67px of label + padding), so a
+   whole spread is visible without zooming. */
 .sb-face {
-  width: clamp(200px, 34vw, 320px);
+  --sb-page-h: calc(100svh - 290px);
+  width: max(
+    220px,
+    min(
+      calc(
+        var(--sb-cols, 3) * ((var(--sb-page-h) - 67px - (var(--sb-rows, 3) - 1) * 6px) / var(--sb-rows, 3) * 0.716)
+          + (var(--sb-cols, 3) - 1) * 6px + 40px
+      ),
+      calc((100vw - 200px) / 2),
+      600px
+    )
+  );
 }
 @media (max-width: 640px) {
   .sb-face { width: min(320px, calc(100vw - 80px)); }
@@ -109,6 +124,11 @@ const PLACEHOLDER_LABEL_STYLE: CSSProperties = {
   opacity: 0.8,
 };
 
+/** Feeds the format into the .sb-face width formula. */
+export function faceSizeVars(format: Format): CSSProperties {
+  return { "--sb-rows": format.rows, "--sb-cols": format.cols } as CSSProperties;
+}
+
 export function FaceGrid({
   face,
   format,
@@ -137,6 +157,7 @@ export function FaceGrid({
       inert={ghost || undefined}
       aria-hidden={ghost || undefined}
       style={{
+        ...faceSizeVars(format),
         position: "relative",
         boxSizing: "border-box",
         padding: "18px 20px 22px",

@@ -72,7 +72,7 @@ const ROW: CSSProperties = {
   fontFamily: "var(--font-ui)",
   color: "var(--smoke)",
   paddingBottom: 12,
-  marginBottom: 36,
+  marginBottom: 20,
   borderBottom: "1px solid color-mix(in srgb, var(--linen) 10%, transparent)",
 };
 

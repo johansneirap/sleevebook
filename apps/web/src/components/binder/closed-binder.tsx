@@ -94,8 +94,10 @@ const CONTROL_CSS = `
 
 // Board width drives everything else: the cover is 0.82 w/h (3x3 binder),
 // and the thickness is ~9% of the width. The stage also sets the perspective.
+// Sized from the viewport height (leaving room for the header and the
+// controls below) so the closed binder is the protagonist, like the open one.
 const SIZE_VARS = {
-  "--w": "min(260px, 70vw)",
+  "--w": "max(200px, min(70vw, calc((100svh - 400px) * 0.82), 460px))",
   "--h": "calc(var(--w) / 0.82)",
   "--d": "calc(var(--w) * 0.09)",
 } as CSSProperties;
