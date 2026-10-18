@@ -10,6 +10,7 @@ import {
   getBinderWithLayout,
   getVariantDisplays,
 } from "../../../../../../lib/binders";
+import { getCurrentUser, ownsBinder } from "../../../../../../lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,10 @@ interface RouteContext {
 
 export async function GET(request: Request, { params }: RouteContext) {
   const { binderId, face: faceValue } = await params;
+  const viewer = await getCurrentUser();
+  if (!viewer || !(await ownsBinder(viewer.id, binderId))) {
+    return new Response("Not found", { status: 404 });
+  }
   const face = parseFaceParam(faceValue);
 
   const binderData = await getBinderWithLayout(binderId);

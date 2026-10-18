@@ -1,6 +1,6 @@
 import type { BinderMode, Currency, Layout, SellerContact } from "@sleevebook/binder-core";
 import { currencySchema, layoutSchema, sellerContactSchema } from "@sleevebook/binder-core";
-import { binder, binderVersion, card, cardVariant, DEV_USER_ID, set } from "@sleevebook/db";
+import { binder, binderVersion, card, cardVariant, set } from "@sleevebook/db";
 import { desc, eq, inArray } from "drizzle-orm";
 import { db } from "./db";
 
@@ -13,7 +13,7 @@ export interface BinderSummary {
   status: string;
 }
 
-export async function listBinders(): Promise<BinderSummary[]> {
+export async function listBinders(userId: string): Promise<BinderSummary[]> {
   return db
     .select({
       id: binder.id,
@@ -24,7 +24,7 @@ export async function listBinders(): Promise<BinderSummary[]> {
       status: binder.status,
     })
     .from(binder)
-    .where(eq(binder.userId, DEV_USER_ID))
+    .where(eq(binder.userId, userId))
     .orderBy(binder.name);
 }
 

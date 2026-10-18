@@ -6,7 +6,7 @@ import {
   listingStatusSchema,
   sellerContactSchema,
 } from "@sleevebook/binder-core";
-import { binder, DEV_USER_ID, pocketListing } from "@sleevebook/db";
+import { binder, pocketListing } from "@sleevebook/db";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -14,6 +14,7 @@ import { parsePriceInput } from "../components/seller/listing-model";
 import type { SettingsState } from "../components/seller/settings-state";
 import { getBinderWithLayout } from "./binders";
 import { db } from "./db";
+import { assertBinderOwner } from "./session";
 import { getShareLinkForBinder } from "./share";
 
 const binderIdSchema = z.uuid();
@@ -42,6 +43,7 @@ export async function saveSellerSettings(
   if (!binderIdSchema.safeParse(binderId).success) {
     return { status: "error", message: "No encontramos este binder.", errors: {} };
   }
+  const owner = await assertBinderOwner(binderId);
 
   const errors: SettingsState["errors"] = {};
 
@@ -86,7 +88,7 @@ export async function saveSellerSettings(
       currency: currencyParsed.data,
       sellerContact: contactParsed.data,
     })
-    .where(and(eq(binder.id, binderId), eq(binder.userId, DEV_USER_ID)));
+    .where(and(eq(binder.id, binderId), eq(binder.userId, owner.id)));
 
   await revalidateSellerPaths(binderId);
   return { status: "saved", message: "Configuración guardada.", errors: {} };
@@ -124,6 +126,7 @@ export async function saveListings(
   if (!binderIdSchema.safeParse(binderId).success) {
     return { ok: false, message: "No encontramos este binder.", errors: {} };
   }
+  const owner = await assertBinderOwner(binderId);
   const parsedChanges = z.array(listingChangeSchema).max(5000).safeParse(changes);
   if (!parsedChanges.success) {
     return { ok: false, message: "Los cambios no son válidos.", errors: {} };
@@ -132,7 +135,7 @@ export async function saveListings(
   const [owned] = await db
     .select({ currency: binder.currency })
     .from(binder)
-    .where(and(eq(binder.id, binderId), eq(binder.userId, DEV_USER_ID)));
+    .where(and(eq(binder.id, binderId), eq(binder.userId, owner.id)));
   if (!owned) {
     return { ok: false, message: "No encontramos este binder.", errors: {} };
   }

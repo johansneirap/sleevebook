@@ -15,6 +15,7 @@ import { getBinderWithLayout, getVariantDisplays } from "../../../../lib/binders
 import { getListings } from "../../../../lib/listings";
 import { getExchangeRates } from "../../../../lib/money";
 import { getLatestPrices } from "../../../../lib/pricing";
+import { requireBinderOwner } from "../../../../lib/session";
 
 interface PageProps {
   params: Promise<{ binderId: string }>;
@@ -28,6 +29,7 @@ function sideRank(side: string): number {
 
 export default async function SellerModePage({ params }: PageProps) {
   const { binderId } = await params;
+  await requireBinderOwner(binderId, `/binders/${binderId}/vender`);
 
   const data = await getBinderWithLayout(binderId);
   if (!data) {

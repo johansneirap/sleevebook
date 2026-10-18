@@ -14,6 +14,7 @@ import { collectVariantIds, getBinderWithLayout, getVariantDisplays } from "../.
 import { getGoalProgress } from "../../../lib/goals";
 import { getExchangeRates } from "../../../lib/money";
 import { getLatestPrices } from "../../../lib/pricing";
+import { requireBinderOwner } from "../../../lib/session";
 import { getShareLinkForBinder, getSiteUrl } from "../../../lib/share";
 import { clampSpreadIndex } from "../../../lib/spreads";
 
@@ -24,6 +25,7 @@ interface PageProps {
 
 export default async function BinderViewerPage({ params, searchParams }: PageProps) {
   const { binderId } = await params;
+  await requireBinderOwner(binderId, `/binders/${binderId}`);
   const { spread: spreadParam } = await searchParams;
 
   const binderData = await getBinderWithLayout(binderId);

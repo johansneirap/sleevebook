@@ -5,6 +5,7 @@ import { binder, shareLink } from "@sleevebook/db";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "./db";
+import { assertBinderOwner } from "./session";
 
 const VISIBILITIES = new Set(["public", "unlisted"]);
 
@@ -17,6 +18,7 @@ export async function publishBinder(formData: FormData): Promise<void> {
   if (!binderId) {
     return;
   }
+  await assertBinderOwner(binderId);
   const visibilityRaw = String(formData.get("visibility") ?? "unlisted");
   const visibility = VISIBILITIES.has(visibilityRaw) ? visibilityRaw : "unlisted";
 
@@ -38,6 +40,7 @@ export async function unpublishBinder(formData: FormData): Promise<void> {
   if (!binderId) {
     return;
   }
+  await assertBinderOwner(binderId);
   await db.update(binder).set({ status: "draft" }).where(eq(binder.id, binderId));
   revalidatePath(`/binders/${binderId}`);
   revalidatePath(`/binders/${binderId}/editar`);

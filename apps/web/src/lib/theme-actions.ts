@@ -5,6 +5,7 @@ import { binderVersion } from "@sleevebook/db";
 import { desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "./db";
+import { assertBinderOwner } from "./session";
 
 export interface ThemeInput {
   preset: string;
@@ -13,6 +14,7 @@ export interface ThemeInput {
 }
 
 export async function updateBinderTheme(binderId: string, theme: ThemeInput): Promise<void> {
+  await assertBinderOwner(binderId);
   const [versionRow] = await db
     .select({ id: binderVersion.id, layout: binderVersion.layout })
     .from(binderVersion)

@@ -5,6 +5,7 @@ import { BinderEditor } from "../../../../components/binder/binder-editor";
 import { ThemedMain } from "../../../../components/binder/themed-main";
 import { getBinderWithLayout, getVariantDisplays } from "../../../../lib/binders";
 import { getLatestPrices } from "../../../../lib/pricing";
+import { requireBinderOwner } from "../../../../lib/session";
 import { clampSpreadIndex } from "../../../../lib/spreads";
 
 interface PageProps {
@@ -14,6 +15,7 @@ interface PageProps {
 
 export default async function BinderEditorPage({ params, searchParams }: PageProps) {
   const { binderId } = await params;
+  await requireBinderOwner(binderId, `/binders/${binderId}/editar`);
   const { spread: spreadParam } = await searchParams;
 
   const binderData = await getBinderWithLayout(binderId);

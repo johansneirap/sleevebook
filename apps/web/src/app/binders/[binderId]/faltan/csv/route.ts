@@ -1,3 +1,4 @@
+import { getCurrentUser, ownsBinder } from "../../../../../lib/session";
 import { loadMissingList, parseSort } from "../missing-list";
 
 interface RouteContext {
@@ -23,6 +24,10 @@ function asciiFilename(name: string): string {
 
 export async function GET(request: Request, { params }: RouteContext): Promise<Response> {
   const { binderId } = await params;
+  const viewer = await getCurrentUser();
+  if (!viewer || !(await ownsBinder(viewer.id, binderId))) {
+    return new Response("Not found", { status: 404 });
+  }
   const sort = parseSort(new URL(request.url).searchParams.get("orden") ?? undefined);
 
   const list = await loadMissingList(binderId, sort);

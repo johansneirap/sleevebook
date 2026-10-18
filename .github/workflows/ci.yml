@@ -41,6 +41,9 @@ jobs:
       PUBLIC_ASSETS_URL: http://localhost:9000/ci
       BETTER_AUTH_SECRET: ci-placeholder
       BETTER_AUTH_URL: http://localhost:3000
+      # e2e signs in through the dev-only email+password login (never on in
+      # production builds); see apps/web/e2e/global-setup.ts.
+      AUTH_DEV_LOGIN: "1"
 
     steps:
       - uses: actions/checkout@v4

@@ -6,6 +6,7 @@ import { binderVersion } from "@sleevebook/db";
 import { desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "./db";
+import { assertBinderOwner } from "./session";
 
 export type PocketValue = Layout["pockets"][string];
 
@@ -18,6 +19,7 @@ export interface PocketChange {
 // undo/redo replay -- goes through this one atomic read-patch-write so a
 // multi-pocket change (e.g. a swap) never persists half-applied.
 export async function applyPocketChanges(binderId: string, changes: PocketChange[]): Promise<void> {
+  await assertBinderOwner(binderId);
   if (changes.length === 0) {
     return;
   }

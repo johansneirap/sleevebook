@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { NewBinderForm } from "../../../components/library/new-binder-form";
 import "../../../components/library/catalog.css";
+import { requireUser } from "../../../lib/session";
 
 interface PageProps {
   searchParams: Promise<{ rows?: string; cols?: string }>;
@@ -14,6 +15,7 @@ const PRESETS = [
 ];
 
 export default async function NewBinderPage({ searchParams }: PageProps) {
+  await requireUser("/binders/new");
   const { rows, cols } = await searchParams;
   const defaultRows = rows ?? "3";
   const defaultCols = cols ?? "3";

@@ -47,6 +47,23 @@ BETTER_AUTH_URL=https://sleevebook.com
 
 Si el servicio arranca sin alguna de estas, falla rápido con un error de Zod (`src/env.ts`, cargado desde `instrumentation.ts`) — es intencional, así nunca corre medio-configurado.
 
+### Login con Google (Fase 4)
+
+Desde la Fase 4 las páginas del dueño (`/binders/...`) exigen sesión; los links públicos (`/s/...`, `/e/...`) siguen abiertos. Sin estas variables nadie puede entrar a editar:
+
+```
+GOOGLE_CLIENT_ID=<del OAuth Client de Google Cloud>
+GOOGLE_CLIENT_SECRET=<del OAuth Client de Google Cloud>
+OWNER_EMAIL=<tu correo de Google: la primera cuenta con ese correo hereda los binders creados antes del login>
+```
+
+1. En [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → *Create credentials* → *OAuth client ID* → tipo *Web application* (si lo pide, configurá antes la pantalla de consentimiento en modo *External* / *Testing* y agregá los correos de la beta como *test users*).
+2. *Authorized JavaScript origins*: el valor de `BETTER_AUTH_URL` (hoy `https://sleevebookweb-production.up.railway.app`).
+3. *Authorized redirect URIs*: `<BETTER_AUTH_URL>/api/auth/callback/google`.
+4. Copiá client id y secret a las variables de Railway. `BETTER_AUTH_URL` tiene que ser exactamente la URL pública del servicio (sin `/` final) o Google rechaza el callback.
+
+`AUTH_DEV_LOGIN=1` (login con correo y contraseña para dev local y e2e) **no** va en Railway: el código lo ignora en builds de producción igual.
+
 ## 4. Control de gasto
 
 Verificado en el dashboard actual (Workspace → Usage):

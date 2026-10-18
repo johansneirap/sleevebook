@@ -1,11 +1,12 @@
 "use server";
 
 import { createEmptyLayout } from "@sleevebook/binder-core";
-import { binder, binderVersion, DEV_USER_ID } from "@sleevebook/db";
+import { binder, binderVersion } from "@sleevebook/db";
 import { desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "./db";
+import { assertBinderOwner, assertUser } from "./session";
 
 const OPENINGS = new Set(["side", "top"]);
 const MAX_FORMAT_DIMENSION = 6;
@@ -25,6 +26,7 @@ function parseClampedInt(
 }
 
 export async function createBinder(formData: FormData): Promise<void> {
+  const owner = await assertUser();
   const name = String(formData.get("name") ?? "").trim() || "Binder sin nombre";
   const formatRows = parseClampedInt(formData.get("rows"), 3, 1, MAX_FORMAT_DIMENSION);
   const formatCols = parseClampedInt(formData.get("cols"), 3, 1, MAX_FORMAT_DIMENSION);
@@ -35,7 +37,7 @@ export async function createBinder(formData: FormData): Promise<void> {
   const [created] = await db
     .insert(binder)
     .values({
-      userId: DEV_USER_ID,
+      userId: owner.id,
       name,
       formatRows,
       formatCols,
@@ -60,6 +62,7 @@ export async function createBinder(formData: FormData): Promise<void> {
 
 export async function duplicateBinder(formData: FormData): Promise<void> {
   const sourceId = String(formData.get("binderId") ?? "");
+  const owner = await assertBinderOwner(sourceId);
   const [source] = await db.select().from(binder).where(eq(binder.id, sourceId));
   if (!source) {
     return;
@@ -78,7 +81,7 @@ export async function duplicateBinder(formData: FormData): Promise<void> {
   const [created] = await db
     .insert(binder)
     .values({
-      userId: source.userId,
+      userId: owner.id,
       name: `${source.name} (copia)`,
       formatRows: source.formatRows,
       formatCols: source.formatCols,
@@ -106,6 +109,7 @@ export async function renameBinder(formData: FormData): Promise<void> {
   if (!binderId || !name) {
     return;
   }
+  await assertBinderOwner(binderId);
   await db.update(binder).set({ name }).where(eq(binder.id, binderId));
   revalidatePath("/binders");
   revalidatePath(`/binders/${binderId}`);
@@ -117,6 +121,7 @@ export async function setBinderStatus(formData: FormData): Promise<void> {
   if (!binderId || !["draft", "archived"].includes(status)) {
     return;
   }
+  await assertBinderOwner(binderId);
   await db.update(binder).set({ status }).where(eq(binder.id, binderId));
   revalidatePath("/binders");
 }
@@ -126,6 +131,7 @@ export async function deleteBinder(formData: FormData): Promise<void> {
   if (!binderId) {
     return;
   }
+  await assertBinderOwner(binderId);
   await db.delete(binder).where(eq(binder.id, binderId));
   revalidatePath("/binders");
 }

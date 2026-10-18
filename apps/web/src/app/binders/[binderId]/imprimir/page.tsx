@@ -18,6 +18,7 @@ import {
   getBinderWithLayout,
   getVariantDisplays,
 } from "../../../../lib/binders";
+import { requireBinderOwner } from "../../../../lib/session";
 import { getShareLinkForBinder, getSiteUrl } from "../../../../lib/share";
 
 interface PageProps {
@@ -106,6 +107,7 @@ const PAGE_CSS = `
 
 export default async function PrintBinderPage({ params, searchParams }: PageProps) {
   const { binderId } = await params;
+  await requireBinderOwner(binderId, `/binders/${binderId}/imprimir`);
   const query = await searchParams;
 
   const binderData = await getBinderWithLayout(binderId);

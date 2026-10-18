@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { formatDisplayMoney, formatRateDate } from "../../../../components/binder/binder-header";
 import { CopyListButton } from "../../../../components/missing/copy-list-button";
 import "../../../../components/library/catalog.css";
+import { requireBinderOwner } from "../../../../lib/session";
 import { loadMissingList, parseSort, SORT_OPTIONS } from "./missing-list";
 
 interface PageProps {
@@ -20,6 +21,7 @@ const SORT_LINK_STYLE = {
 
 export default async function MissingCardsPage({ params, searchParams }: PageProps) {
   const { binderId } = await params;
+  await requireBinderOwner(binderId, `/binders/${binderId}/faltan`);
   const { orden } = await searchParams;
   const sort = parseSort(orden);
 

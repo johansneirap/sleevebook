@@ -15,6 +15,7 @@ import { desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "./db";
 import type { PocketValue } from "./pocket-actions";
+import { assertBinderOwner } from "./session";
 
 export interface AddPanelInput {
   assetUrl: string;
@@ -29,6 +30,7 @@ export interface AddPanelInput {
 export type PanelActionResult = { ok: true } | { ok: false; error: string };
 
 export async function addPanel(binderId: string, input: AddPanelInput): Promise<PanelActionResult> {
+  await assertBinderOwner(binderId);
   const [binderRow] = await db.select().from(binder).where(eq(binder.id, binderId));
   if (!binderRow) {
     return { ok: false, error: "Binder no encontrado" };
@@ -122,6 +124,7 @@ export async function addPanel(binderId: string, input: AddPanelInput): Promise<
 }
 
 export async function removePanel(binderId: string, panelId: string): Promise<void> {
+  await assertBinderOwner(binderId);
   const [versionRow] = await db
     .select({ id: binderVersion.id, layout: binderVersion.layout })
     .from(binderVersion)

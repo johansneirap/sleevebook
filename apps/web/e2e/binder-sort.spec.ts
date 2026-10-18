@@ -12,7 +12,7 @@ import {
   set,
 } from "@sleevebook/db";
 import { eq } from "drizzle-orm";
-import { computeSortedLayout } from "../src/lib/sort-actions";
+import { computeSortedLayoutUnchecked as computeSortedLayout } from "../src/lib/sort-layout";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {

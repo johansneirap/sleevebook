@@ -128,7 +128,7 @@ test("publishing exposes the binder on its public link, unpublishing takes it of
 
   await page.goto(`/binders/${binderId}`);
   await page.getByRole("button", { name: "Despublicar" }).click();
-  await expect(page.getByRole("button", { name: "Publicar" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Publicar", exact: true })).toBeVisible();
 
   const offlineResponse = await page.goto(`/s/${slug}`);
   expect(offlineResponse?.status()).toBe(404);

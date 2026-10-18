@@ -14,6 +14,7 @@ import { extractImageUrl, type VariantDisplay } from "./binders";
 import { db } from "./db";
 import { parseCsvText, parseDecklistText } from "./import-parse";
 import type { PocketValue } from "./pocket-actions";
+import { assertBinderOwner, assertUser } from "./session";
 
 export type ImportFormat = "decklist" | "csv";
 
@@ -103,6 +104,7 @@ async function resolveOne(
 }
 
 export async function previewImport(format: ImportFormat, text: string): Promise<ImportPreview> {
+  await assertUser();
   if (format === "decklist") {
     const { lines, unparsed } = parseDecklistText(text);
     const resolved = await Promise.all(
@@ -147,6 +149,7 @@ export async function computeImportLayout(
   lines: ApplyImportLine[],
   options: ApplyImportOptions,
 ): Promise<ApplyImportResult> {
+  await assertBinderOwner(binderId);
   const [binderRow] = await db.select().from(binder).where(eq(binder.id, binderId));
   if (!binderRow) {
     return { ok: false, error: "Binder no encontrado" };
