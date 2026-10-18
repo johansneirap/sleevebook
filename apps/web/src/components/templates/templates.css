@@ -1,0 +1,230 @@
+/* Plantillas: gallery grid, CSS-only spread previews and the save form. Tokens live in globals.css. */
+
+.sb-tpl-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin: 28px 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-ui);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.14em;
+  font-size: 13px;
+}
+
+.sb-tpl-tabs a {
+  color: var(--smoke);
+  text-decoration: none;
+  padding-bottom: 4px;
+  border-bottom: 1px solid transparent;
+  transition: color 240ms var(--ease-out-expo);
+}
+
+.sb-tpl-tabs a:hover,
+.sb-tpl-tabs a:focus-visible,
+.sb-tpl-tabs a[aria-current="page"] {
+  color: var(--foil);
+}
+
+.sb-tpl-tabs a[aria-current="page"] {
+  border-bottom-color: var(--foil);
+}
+
+.sb-tpl-notice {
+  margin: 28px 0 0;
+  padding: 12px 16px;
+  border: 1px solid var(--rule);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--linen);
+}
+
+.sb-tpl-grid {
+  list-style: none;
+  margin: 40px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 36px 28px;
+}
+
+.sb-tpl-card {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  min-width: 0;
+}
+
+.sb-tpl-spread {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--linen) 12%, transparent);
+  border-radius: 2px;
+  box-shadow: 0 18px 32px -22px rgba(0, 0, 0, 0.7);
+}
+
+.sb-tpl-page {
+  display: grid;
+  gap: 3px;
+  padding: 8px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.sb-tpl-page + .sb-tpl-page {
+  border-left: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.sb-tpl-cell {
+  position: relative;
+  border-radius: 1px;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.sb-tpl-spread-detail .sb-tpl-page {
+  padding: 16px;
+  gap: 6px;
+}
+
+.sb-tpl-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1.1;
+  color: var(--linen);
+  overflow-wrap: anywhere;
+}
+
+.sb-tpl-meta {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-family: var(--font-ui);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+  color: var(--smoke);
+}
+
+.sb-tpl-desc {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--linen) 80%, transparent);
+}
+
+.sb-tpl-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+}
+
+.sb-tpl-form {
+  display: grid;
+  gap: 28px;
+  margin-top: 40px;
+}
+
+.sb-tpl-choice {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.sb-tpl-choice label {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  align-items: start;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  color: var(--linen);
+}
+
+.sb-tpl-choice input[type="radio"] {
+  accent-color: var(--foil);
+  margin: 3px 0 0;
+}
+
+.sb-tpl-choice small {
+  grid-column: 2;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--smoke);
+}
+
+.sb-tpl-included {
+  margin: 0;
+  padding: 16px 18px;
+  border-left: 2px solid var(--foil-dim);
+  display: grid;
+  gap: 10px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--linen);
+}
+
+.sb-tpl-included dt {
+  font-family: var(--font-ui);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.14em;
+  font-size: 12px;
+  color: var(--smoke);
+}
+
+.sb-tpl-included dd {
+  margin: 0;
+}
+
+.sb-tpl-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+  margin-right: 8px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+
+.sb-tpl-error {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: #e8a48c;
+}
+
+.sb-tpl-quiet {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--smoke);
+  font-family: var(--font-ui);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.14em;
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 240ms var(--ease-out-expo);
+}
+
+.sb-tpl-quiet:hover,
+.sb-tpl-quiet:focus-visible {
+  color: var(--linen);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-tpl-tabs a,
+  .sb-tpl-quiet {
+    transition: none;
+  }
+}
