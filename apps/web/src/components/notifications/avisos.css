@@ -1,0 +1,232 @@
+/* Avisos inbox and species panel. Tokens live in globals.css; page shell comes from catalog.css. */
+.sb-avisos-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.sb-avisos-grid {
+  display: grid;
+  gap: 48px;
+  margin-top: 40px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 760px) {
+  .sb-avisos-grid {
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: 56px;
+  }
+}
+
+.sb-avisos-subtitle {
+  margin: 0;
+  color: var(--smoke);
+  font-size: 12px;
+}
+
+.sb-avisos-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.sb-avisos-item {
+  border-bottom: 1px solid color-mix(in srgb, var(--linen) 10%, transparent);
+}
+
+.sb-avisos-link {
+  position: relative;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "mark kind when"
+    "mark title title"
+    "mark body body";
+  column-gap: 12px;
+  row-gap: 4px;
+  align-items: baseline;
+  padding: 16px 0;
+  color: var(--smoke);
+  text-decoration: none;
+  transition: color 240ms var(--ease-out-expo);
+}
+
+.sb-avisos-link:hover,
+.sb-avisos-link:focus-visible {
+  color: var(--linen);
+}
+
+.sb-avisos-mark {
+  grid-area: mark;
+  align-self: start;
+  padding-top: 0.55em;
+}
+
+.sb-avisos-dot {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--foil);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--foil) 18%, transparent);
+}
+
+.sb-avisos-kind {
+  grid-area: kind;
+  font-family: var(--font-ui);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.14em;
+  font-size: 12px;
+  color: var(--smoke);
+}
+
+.sb-avisos-when {
+  grid-area: when;
+  justify-self: end;
+  font-size: 12px;
+  color: var(--smoke);
+  font-variant-numeric: tabular-nums;
+}
+
+.sb-avisos-title {
+  grid-area: title;
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.sb-avisos-item[data-unread="true"] .sb-avisos-title {
+  color: var(--linen);
+}
+
+.sb-avisos-body {
+  grid-area: body;
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.sb-avisos-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.sb-avisos-empty,
+.sb-avisos-empty-note {
+  margin: 24px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--smoke);
+  max-width: 52ch;
+}
+
+.sb-avisos-more {
+  margin: 24px 0 0;
+}
+
+.sb-quiet-link {
+  color: var(--smoke);
+  font-family: var(--font-ui);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+  text-decoration: none;
+  transition: color 240ms var(--ease-out-expo);
+}
+
+.sb-quiet-link:hover,
+.sb-quiet-link:focus-visible {
+  color: var(--foil);
+}
+
+.sb-foil-action:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.sb-avisos-chips {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.sb-avisos-chip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--linen) 10%, transparent);
+}
+
+.sb-avisos-chip-name {
+  font-family: var(--font-ui);
+  font-size: 15px;
+  color: var(--linen);
+  overflow-wrap: anywhere;
+}
+
+.sb-avisos-chip-note {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--smoke);
+}
+
+.sb-avisos-form {
+  margin-top: 24px;
+  display: grid;
+  gap: 8px;
+}
+
+.sb-avisos-field-label {
+  color: var(--smoke);
+  font-size: 12px;
+}
+
+.sb-avisos-input-row {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sb-avisos-input-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--linen);
+  font-family: var(--font-ui);
+  font-size: 15px;
+}
+
+.sb-avisos-input-row input:focus-visible {
+  outline: 1px solid var(--foil);
+  outline-offset: 1px;
+}
+
+.sb-avisos-error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--foil);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-avisos-link,
+  .sb-quiet-link {
+    transition: none;
+  }
+}

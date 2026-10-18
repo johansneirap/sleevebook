@@ -26,6 +26,8 @@ export interface IngestSummary {
   variantsUpserted: number;
   pricesIngested: number;
   needsReview: number;
+  /** Ids of sets inserted (not updated) by this run. */
+  newSetIds: string[];
 }
 
 export async function findExternalEntityId(
@@ -70,7 +72,11 @@ export async function ensurePokemonGame(db: Database): Promise<string> {
   return (created as { id: string }).id;
 }
 
-async function upsertSet(db: Database, gameId: string, raw: RawSet): Promise<string> {
+async function upsertSet(
+  db: Database,
+  gameId: string,
+  raw: RawSet,
+): Promise<{ setId: string; inserted: boolean }> {
   const values = {
     gameId,
     name: raw.name,
@@ -84,7 +90,7 @@ async function upsertSet(db: Database, gameId: string, raw: RawSet): Promise<str
   const existingId = await findExternalEntityId(db, "set", PROVIDER, raw.id);
   if (existingId) {
     await db.update(set).set(values).where(eq(set.id, existingId));
-    return existingId;
+    return { setId: existingId, inserted: false };
   }
 
   const [created] = await db.insert(set).values(values).returning({ id: set.id });
@@ -93,7 +99,7 @@ async function upsertSet(db: Database, gameId: string, raw: RawSet): Promise<str
   if (raw.ptcgoCode) {
     await linkExternalId(db, "set", setId, "ptcgo", raw.ptcgoCode);
   }
-  return setId;
+  return { setId, inserted: true };
 }
 
 function cardValues(setId: string, raw: RawCard) {
@@ -296,11 +302,15 @@ export async function upsertCatalog(
     variantsUpserted: 0,
     pricesIngested: 0,
     needsReview: 0,
+    newSetIds: [],
   };
 
   for (const rawSet of source.sets) {
-    const setId = await upsertSet(db, gameId, rawSet);
+    const { setId, inserted } = await upsertSet(db, gameId, rawSet);
     summary.setsUpserted++;
+    if (inserted) {
+      summary.newSetIds.push(setId);
+    }
 
     const rawCards = source.cardsBySetId.get(rawSet.id) ?? [];
 

@@ -1,4 +1,5 @@
 import { createDb, pricePoint } from "@sleevebook/db";
+import { runPriceAlerts } from "./alerts";
 import { createPokemontcgIoSource } from "./pokemontcg-io";
 import { captureUsdRates } from "./rates";
 import { collectReferencedVariants } from "./referenced";
@@ -8,6 +9,7 @@ export interface PricesSummary {
   cardsQueried: number;
   pricesIngested: number;
   rates: Record<string, number> | null;
+  alertsNotified: number;
 }
 
 async function main(): Promise<PricesSummary> {
@@ -56,11 +58,21 @@ async function main(): Promise<PricesSummary> {
       );
     }
 
+    // Prices are already stored; a failing alert step must not fail the job.
+    let alertsNotified = 0;
+    try {
+      alertsNotified = await runPriceAlerts(db, capturedAt);
+      console.log(`Price alerts: ${alertsNotified} notifications.`);
+    } catch (error) {
+      console.warn("Price alerts skipped; prices are stored:", error);
+    }
+
     return {
       variantsReferenced: referenced.variantsReferenced,
       cardsQueried: referenced.cards.length,
       pricesIngested: prices.length,
       rates,
+      alertsNotified,
     };
   } finally {
     await db.$client.end();
