@@ -1,0 +1,353 @@
+/* Cuenta (owner) and public profile pages. Tokens live in globals.css. */
+
+.sb-account-form {
+  display: grid;
+  gap: 40px;
+  margin-top: 40px;
+}
+
+.sb-account-section {
+  display: grid;
+  gap: 22px;
+  padding-top: 28px;
+  border-top: 1px solid color-mix(in srgb, var(--linen) 10%, transparent);
+}
+
+.sb-account-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1.1;
+  color: var(--linen);
+}
+
+.sb-account-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 22px;
+}
+
+.sb-account-field {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  align-content: start;
+}
+
+.sb-account-field-narrow {
+  max-width: 360px;
+}
+
+.sb-account-label {
+  font-family: var(--font-ui);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.14em;
+  font-size: 12px;
+  color: var(--smoke);
+}
+
+.sb-account-help {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--smoke);
+}
+
+.sb-account-error {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.4;
+  color: #e8a48c;
+}
+
+.sb-account-saved {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--foil);
+}
+
+.sb-account-handle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--smoke);
+  font-family: var(--font-data);
+}
+
+.sb-account-form input[type="text"],
+.sb-account-form input[type="email"],
+.sb-account-form select,
+.sb-account-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  font: inherit;
+  font-size: 15px;
+  padding: 0.55em 0.75em;
+  color: var(--linen);
+  background: var(--velvet-raised);
+  border: 1px solid color-mix(in srgb, var(--linen) 16%, transparent);
+  border-radius: 2px;
+}
+
+.sb-account-handle input {
+  flex: 1;
+}
+
+.sb-account-form textarea {
+  resize: vertical;
+  min-height: 84px;
+}
+
+.sb-account-form input[aria-invalid="true"],
+.sb-account-form select[aria-invalid="true"] {
+  border-color: #e8a48c;
+}
+
+.sb-account-form input:focus-visible,
+.sb-account-form select:focus-visible,
+.sb-account-form textarea:focus-visible {
+  outline: 1px solid var(--foil);
+  outline-offset: 1px;
+}
+
+.sb-account-toggles {
+  display: grid;
+  gap: 18px;
+}
+
+.sb-account-toggle {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  cursor: pointer;
+}
+
+.sb-account-toggle input {
+  margin: 4px 0 0;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--foil);
+}
+
+.sb-account-toggle > span {
+  display: grid;
+  gap: 4px;
+}
+
+.sb-account-toggle-name {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  color: var(--linen);
+}
+
+.sb-account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 20px;
+}
+
+.sb-account-actions button {
+  cursor: pointer;
+}
+
+.sb-account-actions button:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+/* Public profile */
+
+.sb-public-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px 26px;
+}
+
+.sb-public-avatar,
+.sb-public-monogram {
+  width: 76px;
+  height: 76px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  box-sizing: border-box;
+}
+
+.sb-public-monogram {
+  display: grid;
+  place-items: center;
+  background: var(--foil-dim);
+  color: var(--velvet);
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 1;
+}
+
+.sb-public-identity {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.sb-public-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(34px, 6vw, 52px);
+  line-height: 1.05;
+  color: var(--linen);
+  overflow-wrap: anywhere;
+}
+
+.sb-public-handle {
+  font-family: var(--font-data);
+  font-size: 13px;
+  color: var(--smoke);
+}
+
+.sb-public-bio {
+  margin: 0;
+  max-width: 60ch;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--linen);
+  white-space: pre-line;
+}
+
+.sb-public-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  font-family: var(--font-ui);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+}
+
+.sb-public-contact a {
+  color: var(--smoke);
+  text-decoration: none;
+  transition: color 240ms var(--ease-out-expo);
+}
+
+.sb-public-contact a:hover,
+.sb-public-contact a:focus-visible {
+  color: var(--foil);
+}
+
+.sb-public-section {
+  margin-top: 56px;
+  padding-top: 26px;
+  border-top: 1px solid color-mix(in srgb, var(--linen) 10%, transparent);
+}
+
+.sb-public-section-title {
+  margin: 0 0 22px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 28px;
+  color: var(--linen);
+}
+
+.sb-public-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 22px;
+}
+
+.sb-public-card {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sb-public-card a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.sb-public-card-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1200 / 630;
+  height: auto;
+  object-fit: cover;
+  border: 1px solid color-mix(in srgb, var(--linen) 12%, transparent);
+  border-radius: 2px;
+  background: var(--velvet-raised);
+  transition: border-color 280ms var(--ease-out-expo);
+}
+
+.sb-public-card a:hover .sb-public-card-image,
+.sb-public-card a:focus-visible .sb-public-card-image {
+  border-color: var(--foil);
+}
+
+.sb-public-card-name {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1.15;
+  color: var(--linen);
+  overflow-wrap: anywhere;
+}
+
+.sb-public-card-meta {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+  color: var(--smoke);
+}
+
+.sb-public-card-meta .sb-data {
+  letter-spacing: 0.04em;
+}
+
+.sb-public-wish {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sb-public-wish-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 2.8;
+  height: auto;
+  object-fit: contain;
+  border-radius: 4px;
+  background: var(--velvet-raised);
+}
+
+.sb-public-wish-name {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--linen);
+  overflow-wrap: anywhere;
+}
+
+.sb-public-empty {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--smoke);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-public-card-image,
+  .sb-account-form * {
+    transition: none;
+  }
+}
