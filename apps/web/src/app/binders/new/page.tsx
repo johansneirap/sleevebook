@@ -30,6 +30,19 @@ export default async function NewBinderPage({ searchParams }: PageProps) {
       <h1 className="sb-catalog-title" style={{ marginTop: 28 }}>
         Crear binder
       </h1>
+      <p style={{ margin: "12px 0 0" }}>
+        <Link
+          href="/plantillas"
+          style={{
+            fontFamily: "var(--font-ui)",
+            fontSize: 13,
+            color: "var(--smoke)",
+            textDecoration: "none",
+          }}
+        >
+          o empieza desde una plantilla &rarr;
+        </Link>
+      </p>
 
       <div style={{ marginTop: 36 }}>
         <p className="sb-catalog-eyebrow">Formatos estándar</p>
