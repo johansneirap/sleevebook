@@ -66,6 +66,9 @@ interface BinderPageTurnerProps {
   sleeve: string;
   /** Seller mode only; absent keeps the collection look. */
   pocketMeta?: PocketMetaMap;
+  /** Fase 4: the viewer's wishlist variant ids; with canWish, cards get a "mis deseos" toggle. */
+  wishlistVariantIds?: string[];
+  canWish?: boolean;
 }
 
 export function BinderPageTurner({
@@ -79,6 +82,8 @@ export function BinderPageTurner({
   displays,
   sleeve,
   pocketMeta,
+  wishlistVariantIds,
+  canWish,
 }: BinderPageTurnerProps) {
   const router = useRouter();
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -192,6 +197,8 @@ export function BinderPageTurner({
             sleeve={sleeve}
             opening={opening}
             pocketMeta={pocketMeta}
+            wishlistVariantIds={wishlistVariantIds}
+            canWish={canWish}
           />
         </div>
         {turn && outgoingSpread && geometry && (

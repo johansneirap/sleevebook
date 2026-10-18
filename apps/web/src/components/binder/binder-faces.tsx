@@ -2,9 +2,10 @@
 
 import type { Format, Layout, SheetFace } from "@sleevebook/binder-core";
 import { AnimatePresence } from "motion/react";
-import { Fragment, type ReactNode, useCallback, useState } from "react";
+import { Fragment, type ReactNode, useCallback, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { VariantDisplay } from "../../lib/binders";
+import { toggleWishlist } from "../../lib/wishlist-actions";
 import type { PocketMetaMap } from "../seller-public/types";
 import { CardFocusOverlay, type FocusOrigin, measureFocusOrigin } from "./card-focus-overlay";
 import { FaceGrid, faceSizeVars } from "./face-grid";
@@ -135,6 +136,8 @@ export function BinderFaces({
   sleeve,
   opening = "side",
   pocketMeta,
+  wishlistVariantIds,
+  canWish = false,
 }: {
   faces: SheetFace[];
   format: Format;
@@ -145,10 +148,45 @@ export function BinderFaces({
   opening?: OpeningAxis;
   /** Seller mode only; absent keeps the collection look. */
   pocketMeta?: PocketMetaMap;
+  /** Variants already on the viewer's wishlist (signed-in viewers only). */
+  wishlistVariantIds?: string[];
+  /** Shows the "mis deseos" toggle in the card overlay. */
+  canWish?: boolean;
 }) {
   // Tracks the pocket code (not just the display) so the same variant placed in
   // two pockets returns to the right one.
   const [focused, setFocused] = useState<FocusedCard | null>(null);
+  const [wished, setWished] = useState<ReadonlySet<string>>(
+    () => new Set(wishlistVariantIds ?? []),
+  );
+  // Mirrors `wished` so rapid toggles compute from the latest optimistic state.
+  const wishedRef = useRef(wished);
+
+  const applyWished = useCallback((variantId: string, inList: boolean) => {
+    const next = new Set(wishedRef.current);
+    if (inList) {
+      next.add(variantId);
+    } else {
+      next.delete(variantId);
+    }
+    wishedRef.current = next;
+    setWished(next);
+  }, []);
+
+  const handleWishToggle = useCallback(
+    (variantId: string) => {
+      const nextInList = !wishedRef.current.has(variantId);
+      applyWished(variantId, nextInList);
+      toggleWishlist(variantId)
+        .then(({ inList }) => {
+          if (inList !== nextInList) {
+            applyWished(variantId, inList);
+          }
+        })
+        .catch(() => applyWished(variantId, !nextInList));
+    },
+    [applyWished],
+  );
 
   const handleCardClick = useCallback((code: string, display: VariantDisplay, rect: DOMRect) => {
     setFocused({ code, display, origin: measureFocusOrigin(rect) });
@@ -195,6 +233,14 @@ export function BinderFaces({
               onClose={handleClose}
               pocketCode={focused.code}
               pocketMeta={pocketMeta?.[focused.code]}
+              wish={
+                canWish
+                  ? {
+                      inList: wished.has(focused.display.id),
+                      onToggle: () => handleWishToggle(focused.display.id),
+                    }
+                  : undefined
+              }
             />
           </OverlayPortal>
         )}
