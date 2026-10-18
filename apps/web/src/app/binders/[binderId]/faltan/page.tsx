@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatDisplayMoney, formatRateDate } from "../../../../components/binder/binder-header";
 import { CopyListButton } from "../../../../components/missing/copy-list-button";
+import { AddMissingToWishlistButton } from "../../../../components/wishlist/add-missing-button";
 import "../../../../components/library/catalog.css";
 import { requireBinderOwner } from "../../../../lib/session";
 import { loadMissingList, parseSort, SORT_OPTIONS } from "./missing-list";
@@ -124,6 +125,7 @@ export default async function MissingCardsPage({ params, searchParams }: PagePro
             }}
           >
             <CopyListButton text={copyText} />
+            <AddMissingToWishlistButton variantIds={rows.map((row) => row.variantId)} />
             <a
               href={`/binders/${binderId}/faltan/csv?orden=${sort}`}
               download

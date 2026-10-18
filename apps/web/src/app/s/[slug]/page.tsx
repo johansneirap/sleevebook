@@ -10,8 +10,10 @@ import { SellerTray } from "../../../components/seller-public/seller-tray";
 import { SellerPublicProvider } from "../../../components/seller-public/want-list";
 import { collectVariantIds, getBinderWithLayout, getVariantDisplays } from "../../../lib/binders";
 import { getGoalProgress } from "../../../lib/goals";
+import { getCurrentUser } from "../../../lib/session";
 import { getPublishedBinderBySlug, incrementShareViews } from "../../../lib/share";
 import { clampSpreadIndex } from "../../../lib/spreads";
+import { getWishlistVariantIds } from "../../../lib/wishlist";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -56,6 +58,9 @@ export default async function PublicBinderPage({ params, searchParams }: PagePro
   const displays = await getVariantDisplays(collectVariantIds(pockets));
   const progress = await getGoalProgress(publicBinder.id);
   const closed = spreadParam === undefined;
+  // Signed-in viewers get the "mis deseos" toggle on the cards.
+  const viewer = await getCurrentUser();
+  const wishlistVariantIds = viewer ? await getWishlistVariantIds(viewer.id) : undefined;
   // Seller mode only: collection binders never load listings or prices here.
   const sellerData =
     binderData.mode === "seller"
@@ -137,6 +142,8 @@ export default async function PublicBinderPage({ params, searchParams }: PagePro
             displays={displays}
             sleeve={binderData.layout.theme.sleeve}
             pocketMeta={sellerData?.pocketMeta}
+            wishlistVariantIds={wishlistVariantIds}
+            canWish={Boolean(viewer)}
           />
         </div>
       </div>

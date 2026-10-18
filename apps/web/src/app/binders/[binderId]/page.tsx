@@ -17,6 +17,7 @@ import { getLatestPrices } from "../../../lib/pricing";
 import { requireBinderOwner } from "../../../lib/session";
 import { getShareLinkForBinder, getSiteUrl } from "../../../lib/share";
 import { clampSpreadIndex } from "../../../lib/spreads";
+import { getWishlistVariantIds } from "../../../lib/wishlist";
 
 interface PageProps {
   params: Promise<{ binderId: string }>;
@@ -25,8 +26,9 @@ interface PageProps {
 
 export default async function BinderViewerPage({ params, searchParams }: PageProps) {
   const { binderId } = await params;
-  await requireBinderOwner(binderId, `/binders/${binderId}`);
+  const viewer = await requireBinderOwner(binderId, `/binders/${binderId}`);
   const { spread: spreadParam } = await searchParams;
+  const wishlistVariantIds = await getWishlistVariantIds(viewer.id);
 
   const binderData = await getBinderWithLayout(binderId);
   if (!binderData) {
@@ -144,6 +146,8 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
         displays={displays}
         sleeve={binderData.layout.theme.sleeve}
         pocketMeta={sellerData?.pocketMeta}
+        wishlistVariantIds={wishlistVariantIds}
+        canWish
       />
     </ThemedMain>
   );

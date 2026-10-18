@@ -118,6 +118,39 @@ function WantListToggle({
   );
 }
 
+// Fase 4: the viewer's own wishlist ("mis deseos"). Separate from the buyer
+// list above; quiet, text only.
+function WishlistToggle({
+  inList,
+  onToggle,
+  sidePanel,
+}: {
+  inList: boolean;
+  onToggle: () => void;
+  sidePanel: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      className="sb-label cfo-flip"
+      aria-pressed={inList}
+      onClick={onToggle}
+      style={{
+        marginTop: sidePanel ? 18 : 12,
+        padding: "4px 0",
+        background: "none",
+        border: "none",
+        borderBottom: "1px solid var(--rule)",
+        color: inList ? "var(--foil)" : "var(--linen)",
+        fontSize: 12,
+        cursor: "pointer",
+      }}
+    >
+      {inList ? "En mis deseos" : "Agregar a mis deseos"}
+    </button>
+  );
+}
+
 const LABEL_STYLE = {
   margin: 0,
   fontSize: 11,
@@ -137,6 +170,7 @@ export function CardFocusOverlay({
   onClose,
   pocketCode,
   pocketMeta,
+  wish,
 }: {
   display: VariantDisplay;
   sleeve: string;
@@ -145,6 +179,8 @@ export function CardFocusOverlay({
   /** Seller mode only: the focused pocket and its price/status. */
   pocketCode?: string;
   pocketMeta?: PocketMeta;
+  /** Signed-in viewers only: toggles the card on their wishlist. */
+  wish?: { inList: boolean; onToggle: () => void };
 }) {
   const reducedMotion = usePrefersReducedMotion();
   const want = useWantList();
@@ -388,16 +424,21 @@ export function CardFocusOverlay({
         <p className="sb-data" style={{ ...LABEL_STYLE, margin: 0 }}>
           {caption}
         </p>
-        {want && pocketCode ? (
-          // Seller mode: the list toggle sits beside the flip button on one row.
+        {(want && pocketCode) || wish ? (
+          // The toggles sit beside the flip button on one row.
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 24 }}>
             {flipButton}
-            <WantListToggle
-              inList={want.has(pocketCode)}
-              sold={pocketMeta?.status === "vendido"}
-              onToggle={() => want.toggle(pocketCode)}
-              sidePanel={sidePanel}
-            />
+            {want && pocketCode && (
+              <WantListToggle
+                inList={want.has(pocketCode)}
+                sold={pocketMeta?.status === "vendido"}
+                onToggle={() => want.toggle(pocketCode)}
+                sidePanel={sidePanel}
+              />
+            )}
+            {wish && (
+              <WishlistToggle inList={wish.inList} onToggle={wish.onToggle} sidePanel={sidePanel} />
+            )}
           </div>
         ) : (
           flipButton

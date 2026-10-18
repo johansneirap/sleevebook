@@ -110,6 +110,8 @@ export function BinderStage({
   displays,
   sleeve,
   pocketMeta,
+  wishlistVariantIds,
+  canWish,
 }: BinderStageProps) {
   const [closed, setClosed] = useState(startClosed);
   const { coverColor, accentColor } = deriveBinderColors(theme);
@@ -147,6 +149,8 @@ export function BinderStage({
         displays={displays}
         sleeve={sleeve}
         pocketMeta={pocketMeta}
+        wishlistVariantIds={wishlistVariantIds}
+        canWish={canWish}
       />
     </div>
   );
