@@ -404,9 +404,10 @@ Seis fases; cada una termina con algo usable. La fase 1 tiene que poder reproduc
 
 ### Fase 4 — Comunidad
 
-- [ ] Lista de deseos y coincidencias de intercambio
-- [ ] Galería pública, destacados y plantillas compartibles
-- [ ] Alertas de precio y de sets nuevos con la especie
+- [x] Cuentas con Google (Better Auth) y permisos por dueño; perfil público /u/[usuario] y ajustes en /cuenta
+- [x] Lista de deseos y coincidencias de intercambio (repetidas + binders en venta vs. deseos y faltantes de objetivos)
+- [x] Galería pública, destacados y plantillas compartibles (destacados los elige el administrador)
+- [x] Alertas de precio y de sets nuevos con la especie (bandeja dentro de la app, sin correo — ver registro)
 
 ### Fase 5 — Fidelidad y alcance
 
@@ -470,3 +471,7 @@ Alcance, backend y hosting quedaron decididos el 13-10-2026; antes del primer li
 | 2026-10-16 | Modo vendedor por binder (`binder.mode`, contacto, moneda); estado y precio de venta por bolsillo en `pocket_listing`, fuera de `binder_version` | Marcar vendido o cambiar un precio debe verse al tiro en el link público sin republicar. Precedencia del precio: vendedor > manual > mercado. La lista del comprador vive en su navegador (localStorage) y se envía por WhatsApp/Instagram/correo |
 | 2026-10-16 | PDF = página `/imprimir` con medidas reales en mm (63×88, A4 o Carta, marcas de corte) que el navegador guarda como PDF; imagen por cara con `next/og` | Sin dependencia de una librería PDF y con la misma fidelidad tipográfica; el QR de la ficha solo aparece si el binder está publicado |
 | 2026-10-16 | Embed en `/e/[slug]` (solo binders publicados) con `frame-ancestors *`; el resto de la app con `X-Frame-Options: SAMEORIGIN`; QR en `/s/[slug]/qr` (SVG/PNG) | Insertar el binder en otras webs sin abrir el resto de la app al clickjacking; las vistas del embed no suman al contador del link público |
+| 2026-10-17 | Feedback de la revisión de Fase 3: el visor se dimensiona desde el binder (spread completo sin zoom, título y cifras compactos) y el holo solo aparece al inclinar, enmascarado a la ventana de arte (holo) o al marco (reverse/patrones) | El binder quedaba chico frente al título y las cifras; el brillo fijo y el foil en color-dodge sobre toda la carta la hacían ver manchada y opaca |
+| 2026-10-17 | Login con Google vía Better Auth (único acceso en producción); OWNER_EMAIL hereda los datos creados antes del login; login de correo+contraseña solo para dev/e2e (AUTH_DEV_LOGIN=1, ignorado en producción) | Decisión del usuario. Producción estaba abierta a cualquiera; desde Fase 4 cada página y acción del dueño verifica sesión y propiedad, y la edición queda cerrada hasta configurar el OAuth client |
+| 2026-10-17 | Comunidad: perfil (tabla `profile` aparte de `user`), lista de deseos con precio objetivo, intercambios calculados en memoria (beta cerrada, tope 500 usuarios), galería solo de binders publicados como públicos, plantillas que copian diseño (formato, tema, paneles, secciones) y nunca cartas | Para intercambios, lo ofrecible son las copias extra (se guarda una) más lo disponible en binders en venta; lo buscado, la lista de deseos y los faltantes de objetivos. Todo opt-out desde /cuenta |
+| 2026-10-17 | Avisos dentro de la app (tabla `notification`): precio cuando el mercado cruza el objetivo (una vez por cruce) en el job de precios, y set nuevo con especies de tus objetivos o seguidas en el ingest del catálogo | Decisión del usuario: sin proveedor de correo ni DNS por ahora. El tipo "intercambio" existe en la bandeja pero aún no lo genera nada |

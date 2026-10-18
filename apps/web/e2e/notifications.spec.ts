@@ -10,7 +10,6 @@ const db = createDb(databaseUrl);
 
 // Fixture prefix for this spec: every notification title starts with "F4F".
 const PREFIX = "F4F";
-// Species names only allow letters, so no digits in the followed name.
 const SPECIES = "Ditto Prueba";
 
 let baselineUnread = 0;
@@ -92,8 +91,8 @@ test("Marcar todo como leído limpia el contador", async ({ page }) => {
 test("sigue una especie y la quita", async ({ page }) => {
   await page.goto("/avisos");
 
-  // Letters only: a name with digits is refused with a message.
-  await page.getByLabel("Agregar especie").fill("F4F Pikachu");
+  // Must start with a letter (digits are fine after it, e.g. Porygon2).
+  await page.getByLabel("Agregar especie").fill("2F4F Pikachu");
   await page.getByRole("button", { name: "Seguir", exact: true }).click();
   await expect(page.getByText("Usa solo letras", { exact: false })).toBeVisible();
 

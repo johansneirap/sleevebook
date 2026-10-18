@@ -3,11 +3,9 @@ import type { TradeCard, TradeEntry } from "../../lib/trades";
 import { instagramUrl, mailtoUrl, whatsappUrl } from "../seller-public/want-list-text";
 import { buildTradeMessage } from "./trade-message";
 
-function priceText(priceUsd: number | null): string {
-  return priceUsd === null ? "sin precio" : `$${priceUsd.toFixed(2)} USD`;
-}
+type FormatUsd = (amountUsd: number | null) => string;
 
-function CardThumb({ card }: { card: TradeCard }) {
+function CardThumb({ card, formatUsd }: { card: TradeCard; formatUsd: FormatUsd }) {
   const title = `${card.name} · ${card.setName} ${card.number}`;
   return (
     <li className="sb-trade-card">
@@ -28,13 +26,21 @@ function CardThumb({ card }: { card: TradeCard }) {
         <span className="sb-data">
           {card.setName} · {card.number}
         </span>
-        <span className="sb-data">{priceText(card.priceUsd)}</span>
+        <span className="sb-data">{formatUsd(card.priceUsd)}</span>
       </figcaption>
     </li>
   );
 }
 
-function CardRow({ label, cards }: { label: string; cards: TradeCard[] }) {
+function CardRow({
+  label,
+  cards,
+  formatUsd,
+}: {
+  label: string;
+  cards: TradeCard[];
+  formatUsd: FormatUsd;
+}) {
   if (cards.length === 0) {
     return null;
   }
@@ -43,7 +49,7 @@ function CardRow({ label, cards }: { label: string; cards: TradeCard[] }) {
       <p className="sb-trade-row-label">{label}</p>
       <ul className="sb-trade-cards" aria-label={label}>
         {cards.map((card) => (
-          <CardThumb key={card.variantId} card={card} />
+          <CardThumb key={card.variantId} card={card} formatUsd={formatUsd} />
         ))}
       </ul>
     </div>
@@ -75,7 +81,7 @@ function ContactLinks({ entry }: { entry: TradeEntry }) {
 }
 
 /** One person with a match: who they are, what each side can give, how to reach them. */
-export function TradeEntryCard({ entry }: { entry: TradeEntry }) {
+export function TradeEntryCard({ entry, formatUsd }: { entry: TradeEntry; formatUsd: FormatUsd }) {
   const initial = entry.name.trim().charAt(0).toUpperCase() || "?";
   return (
     <li className="sb-trade-entry" data-testid="trade-entry" data-handle={entry.handle}>
@@ -96,8 +102,8 @@ export function TradeEntryCard({ entry }: { entry: TradeEntry }) {
         </div>
         {entry.mutual ? <span className="sb-trade-tag">Intercambio mutuo</span> : null}
       </header>
-      <CardRow label="Te puede dar" cards={entry.theyCanGive} />
-      <CardRow label="Le sirve de lo tuyo" cards={entry.youCanGive} />
+      <CardRow label="Te puede dar" cards={entry.theyCanGive} formatUsd={formatUsd} />
+      <CardRow label="Le sirve de lo tuyo" cards={entry.youCanGive} formatUsd={formatUsd} />
       <ContactLinks entry={entry} />
     </li>
   );

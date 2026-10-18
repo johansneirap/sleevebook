@@ -102,6 +102,7 @@ export function OwnerToolbar({
         {missingHref && <Link href={missingHref}>Ver lo que falta</Link>}
         <Link href={`/binders/${binderId}/vender`}>Vender</Link>
         <Link href={`/binders/${binderId}/imprimir`}>Imprimir</Link>
+        <Link href={`/binders/${binderId}/plantilla`}>Guardar como plantilla</Link>
       </div>
 
       {isPublished && shareInfo ? (

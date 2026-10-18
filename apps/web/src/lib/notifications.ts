@@ -25,7 +25,8 @@ export interface FollowedSpecies {
 
 export const SPECIES_MIN_LENGTH = 2;
 export const SPECIES_MAX_LENGTH = 40;
-const SPECIES_PATTERN = /^\p{L}[\p{L} '’.-]*$/u;
+// Letters first; digits allowed after (Porygon2), plus space ' ’ . -
+const SPECIES_PATTERN = /^\p{L}[\p{L}\p{N} '’.-]*$/u;
 
 /**
  * Trims, collapses inner whitespace and validates a species the user types.
@@ -45,7 +46,8 @@ export function parseSpeciesName(
   if (!SPECIES_PATTERN.test(name)) {
     return {
       ok: false,
-      error: "Usa solo letras, espacios, guiones, apóstrofos o puntos.",
+      error:
+        "Usa solo letras (puede llevar números después), espacios, guiones, apóstrofos o puntos.",
     };
   }
   return { ok: true, name };

@@ -5,6 +5,7 @@ import "../../components/library/catalog.css";
 import "../../components/trades/trades.css";
 import { requireUser } from "../../lib/session";
 import { loadTradeMatches } from "../../lib/trades";
+import { getViewerPriceFormatter } from "../../lib/viewer-money";
 
 export default async function IntercambiosPage() {
   const viewer = await requireUser("/intercambios");
@@ -32,6 +33,7 @@ export default async function IntercambiosPage() {
     );
   }
 
+  const { formatUsd } = await getViewerPriceFormatter(viewer.id);
   const count = data.entries.length;
   return (
     <main className="sb-catalog-page">
@@ -58,7 +60,7 @@ export default async function IntercambiosPage() {
       ) : (
         <ul className="sb-trade-list">
           {data.entries.map((entry) => (
-            <TradeEntryCard key={entry.userId} entry={entry} />
+            <TradeEntryCard key={entry.userId} entry={entry} formatUsd={formatUsd} />
           ))}
         </ul>
       )}

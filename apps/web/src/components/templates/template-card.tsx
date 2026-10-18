@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { deleteTemplateForm, useTemplateForm } from "../../lib/template-actions";
 import type { TemplateSummary } from "../../lib/templates";
+import { ConfirmSubmitButton } from "./confirm-submit-button";
 import { TemplatePreview } from "./template-preview";
 
 interface TemplateCardProps {
@@ -56,9 +57,12 @@ export function TemplateCard({ template, signedIn }: TemplateCardProps) {
         {template.isOwn && (
           <form action={deleteTemplateForm}>
             <input type="hidden" name="templateId" value={template.id} />
-            <button type="submit" className="sb-tpl-quiet">
+            <ConfirmSubmitButton
+              className="sb-tpl-quiet"
+              message={`¿Eliminar la plantilla "${template.name}"? Los binders creados con ella no cambian.`}
+            >
               Eliminar
-            </button>
+            </ConfirmSubmitButton>
           </form>
         )}
       </div>

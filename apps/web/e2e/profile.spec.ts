@@ -1,17 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { createEmptyLayout } from "@sleevebook/binder-core";
-import {
-  binder,
-  binderVersion,
-  createDb,
-  DEV_USER_ID,
-  ensureDevUser,
-  profile,
-  shareLink,
-  user,
-} from "@sleevebook/db";
-import { eq, inArray } from "drizzle-orm";
-import { createTestUser } from "./auth-helpers";
+import { binder, binderVersion, createDb, profile, shareLink, user } from "@sleevebook/db";
+import { inArray } from "drizzle-orm";
+import { createTestUser, signInAs } from "./auth-helpers";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
@@ -26,26 +17,14 @@ const TAKEN_HANDLE = "f4a-taken";
 const PRIVATE_ID = "f4a-private";
 const PRIVATE_HANDLE = "f4a-oculto";
 
-const TEST_IDS = [OWNER_ID, TAKEN_ID, PRIVATE_ID];
+// The account tests edit their own user, never the shared dev user (other
+// specs running in parallel depend on its profile, e.g. trades opt-in).
+const EDITOR_ID = "f4a-editor";
+const EDITOR_EMAIL = "f4a-editor@sleevebook.local";
 
-let devOriginal: { name: string; handle: string; preferredCurrency: string };
-let devProfileOriginal: typeof profile.$inferSelect | undefined;
+const TEST_IDS = [OWNER_ID, TAKEN_ID, PRIVATE_ID, EDITOR_ID];
 
 test.beforeAll(async () => {
-  await ensureDevUser(db);
-
-  const [devUser] = await db.select().from(user).where(eq(user.id, DEV_USER_ID));
-  if (!devUser) {
-    throw new Error("dev user missing");
-  }
-  devOriginal = {
-    name: devUser.name,
-    handle: devUser.handle,
-    preferredCurrency: devUser.preferredCurrency,
-  };
-  const [devProfile] = await db.select().from(profile).where(eq(profile.userId, DEV_USER_ID));
-  devProfileOriginal = devProfile;
-
   await db.delete(user).where(inArray(user.id, TEST_IDS));
   await createTestUser(db, {
     id: OWNER_ID,
@@ -66,6 +45,12 @@ test.beforeAll(async () => {
     name: "F4A Privada",
   });
   await db.insert(profile).values({ userId: PRIVATE_ID, isPublic: false });
+  await createTestUser(db, {
+    id: EDITOR_ID,
+    email: EDITOR_EMAIL,
+    handle: "f4a-editor",
+    name: "F4A Editora",
+  });
 
   const binders = [
     { name: "F4A Binder Público", slug: "f4a-public", visibility: "public" },
@@ -92,28 +77,16 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
-  await db
-    .update(user)
-    .set({
-      name: devOriginal.name,
-      handle: devOriginal.handle,
-      preferredCurrency: devOriginal.preferredCurrency,
-    })
-    .where(eq(user.id, DEV_USER_ID));
-  if (devProfileOriginal) {
-    const { userId, updatedAt, ...settings } = devProfileOriginal;
-    await db
-      .insert(profile)
-      .values({ userId, ...settings, updatedAt })
-      .onConflictDoUpdate({ target: profile.userId, set: { ...settings, updatedAt } });
-  } else {
-    await db.delete(profile).where(eq(profile.userId, DEV_USER_ID));
-  }
   await db.delete(user).where(inArray(user.id, TEST_IDS));
   await db.$client.end();
 });
 
-test.describe("cuenta (signed in as the dev user)", () => {
+test.describe("cuenta (signed in as an f4a test user)", () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+  test.beforeEach(async ({ page, baseURL }) => {
+    await signInAs(page.request, baseURL ?? "", EDITOR_EMAIL);
+  });
+
   test("saves bio, WhatsApp and privacy, and they persist after reload", async ({ page }) => {
     await page.goto("/cuenta");
     await expect(page.getByRole("heading", { name: "Perfil", exact: true })).toBeVisible();

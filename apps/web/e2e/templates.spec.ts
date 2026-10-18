@@ -183,6 +183,8 @@ test.describe
       const card = page
         .getByRole("listitem")
         .filter({ has: page.getByRole("heading", { name: PRIVATE_NAME, exact: true }) });
+      // "Eliminar" asks for confirmation first.
+      page.once("dialog", (dialog) => dialog.accept());
       await card.getByRole("button", { name: "Eliminar" }).click();
       await expect(page.getByRole("heading", { name: PRIVATE_NAME, exact: true })).toHaveCount(0);
       await db.delete(binderTemplate).where(eq(binderTemplate.id, privateTemplateId));
