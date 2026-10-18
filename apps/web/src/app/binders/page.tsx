@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { AccountBar } from "../../components/auth/account-bar";
 import { BinderCatalogEntry } from "../../components/library/binder-catalog-entry";
+import { SiteNav } from "../../components/site/site-nav";
 import { listBinders } from "../../lib/binders";
 import "../../components/library/catalog.css";
 import { requireUser } from "../../lib/session";
@@ -11,7 +11,7 @@ export default async function BindersPage() {
 
   return (
     <main className="sb-catalog-page">
-      <AccountBar name={current.name} handle={current.handle} />
+      <SiteNav current="/binders" />
       <header
         style={{
           display: "flex",

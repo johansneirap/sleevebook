@@ -34,6 +34,9 @@ export const binder = pgTable("binder", {
   sellerContact: jsonb("seller_contact"),
   // Display currency for this binder's prices: "usd" | "clp" | "eur".
   currency: text("currency").notNull().default("usd"),
+  // Fase 4: set by an admin (OWNER_EMAIL) to pin the binder in /galeria.
+  featuredAt: timestamp("featured_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const binderVersion = pgTable("binder_version", {

@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
+import { env } from "../env";
 import { auth } from "./auth";
 import { db } from "./db";
 
@@ -73,4 +74,11 @@ export async function assertUser(): Promise<CurrentUser> {
     throw new Error("No autorizado");
   }
   return current;
+}
+
+/** Admins (today: OWNER_EMAIL) curate the gallery's featured binders. */
+export function isAdmin(viewer: CurrentUser | null): boolean {
+  return Boolean(
+    viewer && env.OWNER_EMAIL && viewer.email.toLowerCase() === env.OWNER_EMAIL.toLowerCase(),
+  );
 }
