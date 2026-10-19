@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getCurrentUser } from "../../lib/session";
+import { getCurrentUser, isAdmin } from "../../lib/session";
 import { NotificationBell } from "./notification-bell";
 import { SignOutButton } from "./sign-out-button";
 
@@ -91,6 +91,14 @@ export async function SiteNav({ current }: { current?: string }) {
             {link.label}
           </Link>
         ))}
+        {isAdmin(viewer) && (
+          <Link
+            href="/admin/mascaras"
+            aria-current={current === "/admin/mascaras" ? "page" : undefined}
+          >
+            Máscaras de foil
+          </Link>
+        )}
       </nav>
       <div className="sb-site-nav-account">
         {viewer ? (
