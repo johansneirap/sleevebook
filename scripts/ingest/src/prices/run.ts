@@ -6,6 +6,7 @@ import { collectReferencedVariants } from "./referenced";
 import type { FetchedPrice } from "./source";
 import { restrictToUnpriced } from "./source";
 import { createTcgdexSource } from "./tcgdex";
+import { runTradeAlerts } from "./trade-alerts";
 
 export interface PricesSummary {
   /** Distinct referenced variants that have a card in our catalog with a pokemontcg.io id. */
@@ -14,11 +15,12 @@ export interface PricesSummary {
   pricedByTcgdex: number;
   pricedByPokemontcgIo: number;
   unpriced: number;
-  /** Cardmarket EUR averages fetched from TCGdex. Not stored yet (see run notes). */
+  /** Cardmarket EUR averages stored (source "cardmarket", currency "eur"). */
   cardmarketEur: number;
   pricesIngested: number;
   rates: Record<string, number> | null;
   alertsNotified: number;
+  tradeNotifications: number;
 }
 
 async function main(): Promise<PricesSummary> {
@@ -75,24 +77,28 @@ async function main(): Promise<PricesSummary> {
     }
 
     const pricedByPokemontcgIo = new Set(fallbackUsd.map((price) => price.variantId)).size;
-    if (cardmarketEur.length > 0) {
-      // pricing.ts (getLatestPrices) ignores currency and shows the newest row as US$,
-      // so EUR rows stay out of price_point until that query filters by currency.
-      console.warn(
-        `${cardmarketEur.length} Cardmarket EUR prices fetched but not stored: the UI would show them as US$.`,
-      );
-    }
 
     const capturedAt = new Date();
+    // USD rows are TCGplayer's (both sources name it "tcgplayer"); Cardmarket
+    // EUR averages keep their own source and currency so the UI never shows
+    // them as US$ (see apps/web/src/lib/pricing.ts).
     const rows = [
       ...primaryUsd.map((price) => ({
         variantId: price.variantId,
         source: primary.name,
+        currency: "usd" as const,
         amount: price.amount,
       })),
       ...fallbackUsd.map((price) => ({
         variantId: price.variantId,
         source: "tcgplayer",
+        currency: "usd" as const,
+        amount: price.amount,
+      })),
+      ...cardmarketEur.map((price) => ({
+        variantId: price.variantId,
+        source: "cardmarket",
+        currency: "eur" as const,
         amount: price.amount,
       })),
     ];
@@ -102,7 +108,7 @@ async function main(): Promise<PricesSummary> {
           variantId: row.variantId,
           source: row.source,
           condition: null,
-          currency: "usd",
+          currency: row.currency,
           amount: row.amount.toFixed(2),
           capturedAt,
         })),
@@ -118,6 +124,15 @@ async function main(): Promise<PricesSummary> {
       console.warn("Price alerts skipped; prices are stored:", error);
     }
 
+    // Intercambio notifications: same guarantee, a failure never fails the job.
+    let tradeNotifications = 0;
+    try {
+      tradeNotifications = await runTradeAlerts(db, capturedAt);
+      console.log(`Trade alerts: ${tradeNotifications} notifications.`);
+    } catch (error) {
+      console.warn("Trade alerts skipped; prices are stored:", error);
+    }
+
     return {
       variantsReferenced: referenced.variantsReferenced,
       cardsQueried: referenced.cards.length,
@@ -128,6 +143,7 @@ async function main(): Promise<PricesSummary> {
       pricesIngested: rows.length,
       rates,
       alertsNotified,
+      tradeNotifications,
     };
   } finally {
     await db.$client.end();
