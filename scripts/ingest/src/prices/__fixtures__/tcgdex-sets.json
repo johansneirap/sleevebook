@@ -1,0 +1,12 @@
+[
+  { "id": "dp1", "name": "Diamond & Pearl", "cardCount": { "total": 130, "official": 130 } },
+  { "id": "dpp", "name": "DP Black Star Promos", "cardCount": { "total": 56, "official": 56 } },
+  { "id": "sm3.5", "name": "Shining Legends", "cardCount": { "total": 73, "official": 73 } },
+  { "id": "sv01", "name": "Scarlet & Violet", "cardCount": { "total": 198, "official": 198 } },
+  {
+    "id": "sv03.5",
+    "name": "Scarlet & Violet 151",
+    "cardCount": { "total": 207, "official": 165 }
+  },
+  { "id": "base1", "name": "Base Set", "cardCount": { "total": 102, "official": 102 } }
+]

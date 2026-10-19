@@ -1,0 +1,24 @@
+{
+  "id": "dp1-6",
+  "localId": "6",
+  "name": "Lucario",
+  "pricing": {
+    "tcgplayer": {
+      "unit": "USD",
+      "updated": "2026-10-18T06:00:00.000Z",
+      "holofoil": { "lowPrice": 40.0, "midPrice": 66.0, "highPrice": 120.0, "marketPrice": 64.57 },
+      "reverse-holofoil": {
+        "lowPrice": 30.0,
+        "midPrice": 45.0,
+        "highPrice": 80.0,
+        "marketPrice": 44.35
+      }
+    },
+    "cardmarket": {
+      "unit": "EUR",
+      "updated": "2026-10-18T06:00:00.000Z",
+      "avg": 52.1,
+      "trend": 51.0
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import { layoutSchema } from "@sleevebook/binder-core";
 import type { Database } from "@sleevebook/db";
-import { binderVersion, card, cardVariant, externalId, goal } from "@sleevebook/db";
+import { binderVersion, card, cardVariant, externalId, goal, set } from "@sleevebook/db";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { PROVIDER } from "../upsert";
 import type { PriceSourceCard } from "./source";
@@ -68,9 +68,12 @@ export async function collectReferencedVariants(db: Database): Promise<Reference
       variantId: cardVariant.id,
       variant: cardVariant.variant,
       externalCardId: externalId.externalId,
+      setName: set.name,
+      number: card.number,
     })
     .from(cardVariant)
     .innerJoin(card, eq(card.id, cardVariant.cardId))
+    .innerJoin(set, eq(set.id, card.setId))
     .innerJoin(
       externalId,
       and(
@@ -87,7 +90,12 @@ export async function collectReferencedVariants(db: Database): Promise<Reference
     mappedIds.add(row.variantId);
     let entry = cardsById.get(row.externalCardId);
     if (!entry) {
-      entry = { externalCardId: row.externalCardId, variants: [] };
+      entry = {
+        externalCardId: row.externalCardId,
+        setName: row.setName,
+        number: row.number,
+        variants: [],
+      };
       cardsById.set(row.externalCardId, entry);
     }
     entry.variants.push({ variantId: row.variantId, variant: row.variant });
