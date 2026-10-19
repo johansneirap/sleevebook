@@ -295,3 +295,74 @@ describe("fallback partition", () => {
     expect(restrictToUnpriced(cards, new Set())).toEqual(cards);
   });
 });
+
+describe("per-variant outcomes", () => {
+  it("explains why each variant is priced or unpriced", async () => {
+    const { fetchImpl } = tcgdexRoutes();
+    const results = await sourceWith(fetchImpl).diagnose([
+      {
+        externalCardId: "sv3pt5-25",
+        setName: "Scarlet & Violet 151",
+        number: "25",
+        variants: [
+          { variantId: "v-normal", variant: "normal" },
+          { variantId: "v-pokeball", variant: "pokeball" },
+        ],
+      },
+      {
+        externalCardId: "zz9-1",
+        setName: "Nonexistent Set",
+        number: "1",
+        variants: [{ variantId: "v-no-set", variant: "normal" }],
+      },
+      {
+        externalCardId: "sv3pt5-999",
+        setName: "Scarlet & Violet 151",
+        number: "999",
+        variants: [{ variantId: "v-no-card", variant: "normal" }],
+      },
+      {
+        externalCardId: "x-1",
+        variants: [{ variantId: "v-no-name", variant: "normal" }],
+      },
+    ]);
+
+    const outcomes = Object.fromEntries(
+      results.map((result) => [result.variantId, result.outcome]),
+    );
+    expect(outcomes).toEqual({
+      "v-normal": "priced",
+      "v-pokeball": "no-bucket-price",
+      "v-no-set": "set-not-mapped",
+      "v-no-card": "card-not-found",
+      "v-no-name": "no-set-name",
+    });
+    expect(results.find((result) => result.variantId === "v-normal")?.amount).toBe(0.3);
+  });
+
+  it("reads a card whose tcgplayer pricing is null: no USD price, the Cardmarket average is kept", async () => {
+    const nullTcgplayer = {
+      id: "sv03.5-025",
+      localId: "025",
+      pricing: { tcgplayer: null, cardmarket: { avg: 2.5 } },
+    };
+    const { fetchImpl } = tcgdexRoutes({
+      "/v2/en/cards/sv03.5-025": () => json(nullTcgplayer),
+    });
+    const cards: PriceSourceCard[] = [
+      {
+        externalCardId: "sv3pt5-25",
+        setName: "Scarlet & Violet 151",
+        number: "25",
+        variants: [{ variantId: "v-normal", variant: "normal" }],
+      },
+    ];
+    const source = sourceWith(fetchImpl);
+
+    const [result] = await source.diagnose(cards);
+    expect(result?.outcome).toBe("no-bucket-price");
+    expect(await source.fetchUsdPrices(cards)).toEqual([
+      { variantId: "v-normal", amount: 2.5, currency: "eur", source: "cardmarket" },
+    ]);
+  });
+});

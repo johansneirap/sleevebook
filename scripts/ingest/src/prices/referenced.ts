@@ -38,7 +38,15 @@ export interface ReferencedVariants {
  * of every binder, plus every goal's variantIds. Grouped by pokemontcg.io card
  * id so the price source can batch by card.
  */
-export async function collectReferencedVariants(db: Database): Promise<ReferencedVariants> {
+export function isVariantId(id: string): boolean {
+  return UUID_PATTERN.test(id);
+}
+
+/**
+ * Every variant id referenced by the latest layout of a binder or by a goal,
+ * deduplicated. May include ids that are not UUIDs or not in the catalog.
+ */
+export async function collectRequestedVariantIds(db: Database): Promise<string[]> {
   const latestLayouts = await db
     .selectDistinctOn([binderVersion.binderId], { layout: binderVersion.layout })
     .from(binderVersion)
@@ -57,8 +65,12 @@ export async function collectReferencedVariants(db: Database): Promise<Reference
       requested.add(id);
     }
   }
+  return [...requested];
+}
 
-  const validIds = [...requested].filter((id) => UUID_PATTERN.test(id));
+export async function collectReferencedVariants(db: Database): Promise<ReferencedVariants> {
+  const requested = await collectRequestedVariantIds(db);
+  const validIds = requested.filter(isVariantId);
   if (validIds.length === 0) {
     return { cards: [], variantsReferenced: 0, unmappedVariantIds: [] };
   }
@@ -104,6 +116,6 @@ export async function collectReferencedVariants(db: Database): Promise<Reference
   return {
     cards: [...cardsById.values()],
     variantsReferenced: mappedIds.size,
-    unmappedVariantIds: [...requested].filter((id) => !mappedIds.has(id)),
+    unmappedVariantIds: requested.filter((id) => !mappedIds.has(id)),
   };
 }

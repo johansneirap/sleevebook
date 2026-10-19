@@ -25,6 +25,8 @@
     "test": "vitest run --passWithNoTests",
     "start": "tsx src/run.ts",
     "prices": "tsx src/prices/run.ts",
+    "prices:coverage": "tsx src/prices/coverage.ts",
+    "images": "tsx src/images/run.ts",
     "migrate:tracker": "tsx src/tracker/cli.ts"
   }
 }

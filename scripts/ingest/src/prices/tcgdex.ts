@@ -29,15 +29,17 @@ const setDetailSchema = z
   })
   .loose();
 
+// TCGdex sends `tcgplayer: null` (and sometimes `pricing: null`) for cards it
+// has no TCGplayer data for; a strict "optional" rejected the whole card.
 const cardDetailSchema = z
   .object({
     pricing: z
       .object({
-        tcgplayer: z.record(z.string(), z.unknown()).optional(),
+        tcgplayer: z.record(z.string(), z.unknown()).nullish(),
         cardmarket: z.unknown().optional(),
       })
       .loose()
-      .optional(),
+      .nullish(),
   })
   .loose();
 
@@ -156,6 +158,37 @@ export function pokemontcgSetIdOf(externalCardId: string): string | null {
   return dash > 0 ? externalCardId.slice(0, dash) : null;
 }
 
+/**
+ * Why one variant ended up priced or unpriced by TCGdex. "priced" is the only
+ * outcome that stores a price; the rest are the reasons the coverage report shows.
+ */
+export type TcgdexOutcome =
+  | "priced"
+  | "no-set-name"
+  | "set-not-mapped"
+  | "tcgdex-unavailable"
+  | "card-not-found"
+  | "no-bucket-price"
+  | "not-attempted";
+
+export interface TcgdexVariantResult {
+  variantId: string;
+  variant: string;
+  externalCardId: string;
+  outcome: TcgdexOutcome;
+  /** USD amount when outcome is "priced", otherwise null. */
+  amount: number | null;
+  tcgdexSetId?: string;
+  tcgdexCardId?: string;
+  /** Price bucket names TCGdex returned for the card, to spot naming gaps. */
+  tcgdexBuckets?: string[];
+}
+
+export interface TcgdexSource extends PriceSource {
+  /** The outcome of every requested variant, priced or not. Same lookups as fetchUsdPrices. */
+  diagnose(cards: PriceSourceCard[]): Promise<TcgdexVariantResult[]>;
+}
+
 export interface TcgdexOptions {
   baseUrl?: string;
   /** Parallel card workers. */
@@ -178,6 +211,19 @@ export interface TcgdexOptions {
 
 const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+type SetResolution =
+  | { status: "mapped"; id: string }
+  | { status: "unmapped" }
+  | { status: "unavailable" };
+
+interface CardResolution {
+  variants: TcgdexVariantResult[];
+  /** Cardmarket average attached to the "normal" variant, when TCGdex has one. */
+  eur: FetchedPrice | null;
+  /** The card was found in TCGdex (priced or not). */
+  matched: boolean;
+}
+
 /**
  * TCGdex as a PriceSource. Returns TCGplayer USD prices (name "tcgplayer", so
  * the UI and alerts keep reading them) and card-level Cardmarket EUR averages
@@ -186,7 +232,7 @@ const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(r
  * Cards it cannot resolve or price are simply absent from the result; the job
  * sends those variants to the fallback source.
  */
-export function createTcgdexSource(options: TcgdexOptions = {}): PriceSource {
+export function createTcgdexSource(options: TcgdexOptions = {}): TcgdexSource {
   const {
     baseUrl = TCGDEX_BASE_URL,
     concurrency = 4,
@@ -243,7 +289,7 @@ export function createTcgdexSource(options: TcgdexOptions = {}): PriceSource {
   }
 
   let setsPromise: Promise<TcgdexSet[] | null> | undefined;
-  const setIdPromises = new Map<string, Promise<string | null>>();
+  const setIdPromises = new Map<string, Promise<SetResolution>>();
   const setCardsPromises = new Map<string, Promise<TcgdexCardRef[] | null>>();
 
   /** The /sets list, fetched once per source instance. Null when unavailable. */
@@ -265,29 +311,30 @@ export function createTcgdexSource(options: TcgdexOptions = {}): PriceSource {
   }
 
   /** TCGdex set id for our set, by name first, then by set id candidates. */
-  function resolveSetId(setName: string, pokemontcgSetId: string | null): Promise<string | null> {
+  function resolveSetId(setName: string, pokemontcgSetId: string | null): Promise<SetResolution> {
     const key = `${setName}\u0000${pokemontcgSetId ?? ""}`;
     let promise = setIdPromises.get(key);
     if (!promise) {
-      promise = (async () => {
+      promise = (async (): Promise<SetResolution> => {
         const sets = await getSets();
         if (!sets) {
-          return null;
+          return { status: "unavailable" };
         }
         const candidates = pokemontcgSetId ? setIdCandidates(pokemontcgSetId) : [];
         const wantedName = normalizeSetName(setName);
         const byName = sets.filter((set) => normalizeSetName(set.name) === wantedName);
         if (byName.length > 0) {
           const preferred = byName.find((set) => candidates.includes(set.id.toLowerCase()));
-          return (preferred ?? byName[0])?.id ?? null;
+          const chosen = preferred ?? byName[0];
+          return chosen ? { status: "mapped", id: chosen.id } : { status: "unmapped" };
         }
         for (const candidate of candidates) {
           const hit = sets.find((set) => set.id.toLowerCase() === candidate);
           if (hit) {
-            return hit.id;
+            return { status: "mapped", id: hit.id };
           }
         }
-        return null;
+        return { status: "unmapped" };
       })();
       setIdPromises.set(key, promise);
     }
@@ -315,90 +362,160 @@ export function createTcgdexSource(options: TcgdexOptions = {}): PriceSource {
     return promise;
   }
 
-  async function priceCard(
+  /** Every variant of a card gets the same outcome when the card never resolved. */
+  function unresolved(
     card: PriceSourceCard,
-  ): Promise<{ prices: FetchedPrice[]; resolved: boolean }> {
+    outcome: TcgdexOutcome,
+    tcgdexSetId?: string,
+  ): CardResolution {
+    return {
+      variants: card.variants.map(({ variantId, variant }) => ({
+        variantId,
+        variant,
+        externalCardId: card.externalCardId,
+        outcome,
+        amount: null,
+        tcgdexSetId,
+      })),
+      eur: null,
+      matched: false,
+    };
+  }
+
+  async function resolveCard(card: PriceSourceCard): Promise<CardResolution> {
     if (!card.setName || !card.number) {
-      return { prices: [], resolved: false };
+      return unresolved(card, "no-set-name");
     }
-    const tcgdexSetId = await resolveSetId(card.setName, pokemontcgSetIdOf(card.externalCardId));
-    if (!tcgdexSetId) {
-      return { prices: [], resolved: false };
+    const setResolution = await resolveSetId(card.setName, pokemontcgSetIdOf(card.externalCardId));
+    if (setResolution.status === "unavailable") {
+      return unresolved(card, "tcgdex-unavailable");
     }
+    if (setResolution.status === "unmapped") {
+      return unresolved(card, "set-not-mapped");
+    }
+    const tcgdexSetId = setResolution.id;
+
     const cards = await getSetCards(tcgdexSetId);
-    const match = cards ? matchCardByNumber(cards, card.number) : undefined;
+    if (!cards) {
+      return unresolved(card, "tcgdex-unavailable", tcgdexSetId);
+    }
+    const match = matchCardByNumber(cards, card.number);
     if (!match) {
-      return { prices: [], resolved: false };
+      return unresolved(card, "card-not-found", tcgdexSetId);
     }
 
     const json = await getJson(`${baseUrl}/cards/${encodeURIComponent(match.id)}`);
     const parsed = cardDetailSchema.safeParse(json);
     if (!parsed.success) {
-      return { prices: [], resolved: false };
+      return unresolved(card, "tcgdex-unavailable", tcgdexSetId);
     }
-    const tcgplayer = parsed.data.pricing?.tcgplayer;
-    const prices: FetchedPrice[] = [];
-    for (const { variantId, variant } of card.variants) {
+    const tcgplayer = parsed.data.pricing?.tcgplayer ?? undefined;
+    const tcgdexBuckets = Object.keys(tcgplayer ?? {}).filter(
+      (key) => key !== "unit" && key !== "updated",
+    );
+
+    const variants: TcgdexVariantResult[] = card.variants.map(({ variantId, variant }) => {
       const amount = pickTcgdexAmountUsd(tcgplayer, variant);
-      if (amount !== null) {
-        prices.push({ variantId, amount, currency: "usd" });
-      }
-    }
+      return {
+        variantId,
+        variant,
+        externalCardId: card.externalCardId,
+        outcome: amount !== null ? "priced" : "no-bucket-price",
+        amount,
+        tcgdexSetId,
+        tcgdexCardId: match.id,
+        tcgdexBuckets,
+      };
+    });
 
     const cardmarket = cardmarketSchema.safeParse(parsed.data.pricing?.cardmarket);
-    const eur = cardmarket.success ? positive(cardmarket.data.avg) : null;
+    const eurAmount = cardmarket.success ? positive(cardmarket.data.avg) : null;
     const normal = card.variants.find((entry) => entry.variant === "normal");
-    if (eur !== null && normal) {
-      prices.push({
-        variantId: normal.variantId,
-        amount: eur,
-        currency: "eur",
-        source: "cardmarket",
-      });
-    }
+    const eur: FetchedPrice | null =
+      eurAmount !== null && normal
+        ? {
+            variantId: normal.variantId,
+            amount: eurAmount,
+            currency: "eur",
+            source: "cardmarket",
+          }
+        : null;
 
-    return { prices, resolved: true };
+    return { variants, eur, matched: true };
+  }
+
+  /** Resolves every card with a small worker pool, stopping at the run deadline. */
+  async function resolveAll(cards: PriceSourceCard[]) {
+    const startedAt = now();
+    const resolutions: CardResolution[] = [];
+    const skipped: PriceSourceCard[] = [];
+    let next = 0;
+
+    const worker = async () => {
+      while (next < cards.length) {
+        if (now() - startedAt > deadlineMs) {
+          skipped.push(...cards.slice(next));
+          next = cards.length;
+          break;
+        }
+        const card = cards[next++];
+        if (!card) {
+          break;
+        }
+        try {
+          resolutions.push(await resolveCard(card));
+        } catch (error) {
+          log(`TCGdex card ${card.externalCardId} failed: ${String(error)}`);
+          resolutions.push(unresolved(card, "tcgdex-unavailable"));
+        }
+      }
+    };
+
+    await Promise.all(Array.from({ length: Math.min(concurrency, cards.length) }, worker));
+    return { resolutions, skipped };
   }
 
   return {
     name: "tcgplayer",
     async fetchUsdPrices(cards) {
-      const startedAt = now();
+      const { resolutions, skipped } = await resolveAll(cards);
       const prices: FetchedPrice[] = [];
-      let next = 0;
       let resolvedCards = 0;
-      let skippedAtDeadline = 0;
-
-      const worker = async () => {
-        while (next < cards.length) {
-          if (now() - startedAt > deadlineMs) {
-            skippedAtDeadline += cards.length - next;
-            next = cards.length;
-            break;
-          }
-          const card = cards[next++];
-          if (!card) {
-            break;
-          }
-          try {
-            const result = await priceCard(card);
-            prices.push(...result.prices);
-            if (result.resolved) {
-              resolvedCards++;
-            }
-          } catch (error) {
-            log(`TCGdex card ${card.externalCardId} failed: ${String(error)}`);
+      for (const resolution of resolutions) {
+        if (resolution.matched) {
+          resolvedCards++;
+        }
+        for (const variant of resolution.variants) {
+          if (variant.amount !== null) {
+            prices.push({ variantId: variant.variantId, amount: variant.amount, currency: "usd" });
           }
         }
-      };
-
-      await Promise.all(Array.from({ length: Math.min(concurrency, cards.length) }, worker));
+        if (resolution.eur) {
+          prices.push(resolution.eur);
+        }
+      }
 
       log(
         `TCGdex: ${resolvedCards}/${cards.length} cards resolved` +
-          (skippedAtDeadline > 0 ? `; ${skippedAtDeadline} skipped at the deadline` : ""),
+          (skipped.length > 0 ? `; ${skipped.length} skipped at the deadline` : ""),
       );
       return prices;
+    },
+    async diagnose(cards) {
+      const { resolutions, skipped } = await resolveAll(cards);
+      const results = resolutions.flatMap((resolution) => resolution.variants);
+      for (const card of skipped) {
+        for (const { variantId, variant } of card.variants) {
+          results.push({
+            variantId,
+            variant,
+            externalCardId: card.externalCardId,
+            outcome: "not-attempted",
+            amount: null,
+          });
+        }
+      }
+      return results;
     },
   };
 }

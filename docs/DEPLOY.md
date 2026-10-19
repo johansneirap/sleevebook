@@ -99,3 +99,29 @@ El pre-deploy solo aplica migraciones de **esquema** (tablas vacías). Antes de 
 2. **Catálogo**: correr `pnpm --filter @sleevebook/ingest start` apuntando a producción para cargar sets/cartas/variantes. El código actual (desde el fix de octubre 2026) hace batch por set dentro de una transacción; aun así, contra una conexión con latencia real (el proxy público de Railway, o la futura ejecución del cron diario) puede ser lento o inestable — preferir correrlo desde dentro de la red privada de Railway (mismo proyecto) en vez del proxy público si es posible.
 
 Si en algún momento se recrea la base desde cero, repetir ambos pasos antes de usar la app.
+
+## 8. Copia de imágenes de cartas a R2 (antes del 1-mar-2027)
+
+Las imágenes de las cartas hoy apuntan a `images.pokemontcg.io`, que se apaga el **1-mar-2027**. El job `images` las copia a nuestro bucket R2 (`cards/<carta>-<variante>/{thumbnail,medium,high}.jpg`) y guarda las URLs en `card_variant.images.r2`; la app usa esas URLs cuando existen. La entrada `pokemontcg.io` se conserva.
+
+- **Orden**: primero las variantes referenciadas por el último layout de cada binder y por cada objetivo o lista de deseos; luego, con `--all`, el resto del catálogo por lotes. Es reanudable: las variantes con `images.r2` se saltan.
+- **Diario** (`.github/workflows/prices.yml`, último paso): solo referenciadas, tope de 500 imágenes por corrida.
+- **Manual** (desde tu máquina, con `.env` cargado; `--cap` y `--limit` son los topes de la corrida):
+  ```sh
+  pnpm --filter @sleevebook/ingest images --dry-run          # descarga y deriva, no sube ni escribe
+  pnpm --filter @sleevebook/ingest images --cap 500          # solo referenciadas
+  pnpm --filter @sleevebook/ingest images --all --limit 5000 # lote del catálogo; repetir hasta terminar
+  ```
+
+**Secrets de GitHub Actions** que el job necesita (Settings → Secrets and variables → Actions). Los valores son los mismos que tienen las variables del servicio en Railway (secciones 3 y 6); copiarlos, no inventarlos:
+
+| Secret | Valor |
+|---|---|
+| `DATABASE_URL` | ya existe (lo usa el job de precios) |
+| `S3_ENDPOINT` | endpoint de R2 (`https://<account>.r2.cloudflarestorage.com`) |
+| `S3_BUCKET` | nombre del bucket |
+| `S3_ACCESS_KEY_ID` | del token R2 |
+| `S3_SECRET_ACCESS_KEY` | del token R2 |
+| `PUBLIC_ASSETS_URL` | dominio público del bucket (`https://assets.sleevebook.com`) |
+
+Con la CLI de GitHub, sin dejar el valor en el historial: `gh secret set S3_SECRET_ACCESS_KEY` (lee el valor por entrada estándar). Sin estos secrets el paso falla con "Missing environment variables"; el job de precios no depende de él.
