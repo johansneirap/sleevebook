@@ -217,13 +217,11 @@ test.beforeAll(async () => {
     })
     .returning({ id: binder.id });
   otherBinderId = (otherRow as { id: string }).id;
-  await db
-    .insert(binderVersion)
-    .values({
-      binderId: otherBinderId,
-      versionNumber: 1,
-      layout: createEmptyLayout({ rows: 2, cols: 2 }, 1),
-    });
+  await db.insert(binderVersion).values({
+    binderId: otherBinderId,
+    versionNumber: 1,
+    layout: createEmptyLayout({ rows: 2, cols: 2 }, 1),
+  });
 });
 
 test.afterAll(async () => {

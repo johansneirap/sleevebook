@@ -411,9 +411,9 @@ Seis fases; cada una termina con algo usable. La fase 1 tiene que poder reproduc
 
 ### Fase 5 — Fidelidad y alcance
 
-- [ ] Holo con WebGL y relieve (N3); máscaras de foil por carta (N4)
-- [ ] Escaneo de cartas con cámara
-- [ ] Segundo TCG (One Piece o Lorcana)
+- [x] Holo con WebGL y relieve (N3); máscaras de foil por carta (N4) (WebGL propio sin three.js; máscaras las cura el administrador — ver registro)
+- [x] Escaneo de cartas con cámara (Claude Vision con Haiku; límite diario por usuario — ver registro)
+- [ ] Segundo TCG (One Piece o Lorcana) — postergado por decisión del usuario (2026-10-19)
 
 ## Decisiones abiertas y registro
 
@@ -477,3 +477,6 @@ Alcance, backend y hosting quedaron decididos el 13-10-2026; antes del primer li
 | 2026-10-17 | Avisos dentro de la app (tabla `notification`): precio cuando el mercado cruza el objetivo (una vez por cruce) en el job de precios, y set nuevo con especies de tus objetivos o seguidas en el ingest del catálogo | Decisión del usuario: sin proveedor de correo ni DNS por ahora. El tipo "intercambio" existe en la bandeja pero aún no lo genera nada |
 | 2026-10-19 | TCGdex como fuente principal de precios (gratis, sin key; TCGplayer en USD y Cardmarket en EUR); pokemontcg.io v2 como respaldo para las cartas que TCGdex no puede valorar, hasta su apagado el 1-mar-2027 | pokemontcg.io ya no emite API keys y tiene caídas 500/502. TCGdex es open source, sin límite publicado, y sus precios TCGplayer coinciden con los de pokemontcg.io |
 | 2026-10-19 | Imágenes de cartas copiadas a nuestro bucket R2: primero las referenciadas por binders, objetivos y listas de deseos, luego el catálogo por lotes; la app usa esas copias | Las URLs de images.pokemontcg.io dejan de existir al apagarse (1-mar-2027); el job diario copia hasta 500 por corrida y es reanudable |
+| 2026-10-19 | Holo N3 en WebGL propio (un quad, un shader: relieve por Sobel de luminancia, iridiscencia de película delgada, destellos) en el detalle de carta, con caída al holo CSS si no hay WebGL; máscaras N4 por variante (`foil_mask`, zonas normalizadas dentro/fuera/toda/sin) editables solo por el administrador en /admin/mascaras | three.js no hace falta para un solo quad. La imagen se pide con fetch CORS (cache reload) porque Chrome reusaba la copia sin CORS de las miniaturas y WebGL quedaba bloqueado. Las máscaras de la comunidad quedan para después |
+| 2026-10-19 | Escaneo con cámara en /escanear: la foto se recorta y reduce en el navegador, Claude Haiku (`claude-haiku-5-5`, salida estructurada) lee nombre, número y set, y se busca en el catálogo; el usuario confirma antes de guardar. Límite diario por usuario (SCAN_DAILY_LIMIT, 30), registro en `scan_log`; la foto nunca se guarda | Decisión del usuario (Claude Vision, ~US$0,005 por escaneo, sin mensualidad). Sin ANTHROPIC_API_KEY la página explica que no está disponible |
+| 2026-10-19 | Segundo TCG postergado | Decisión del usuario: Fase 5 se queda en fidelidad visual y escaneo |
