@@ -32,6 +32,12 @@ jobs:
       # Copies the pokemontcg.io images of referenced variants to our R2 bucket
       # (at most 500 per day). Runs after the prices step: if prices fail, the job
       # stops there and this step waits for the next daily run.
+      # Read-only report of why referenced variants are unpriced (diagnostics).
+      - name: Price coverage report
+        run: pnpm --filter @sleevebook/ingest prices:coverage
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
       # Skipped (not failed) until the R2 secrets exist in GitHub Actions
       # (docs/DEPLOY.md §8). Secrets can't be read in `if:`, so check them
       # in the shell.
