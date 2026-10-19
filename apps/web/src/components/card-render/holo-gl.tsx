@@ -133,12 +133,18 @@ void main() {
   // Shimmer lifts the darks a little, like light through a thin film.
   col = 1.0 - (1.0 - col) * (1.0 - film * foil * 0.05);
 
-  // Sparkle: sparse cells that twinkle as the tilt changes.
-  vec2 cell = floor(uv * vec2(120.0, 170.0));
+  // Sparkle: rare, soft round glints (never whole square cells -- those read
+  // as dead white pixels), each at a random spot inside its cell, twinkling
+  // with the tilt. Cells are square on the 63:88 card.
+  vec2 g = uv * vec2(63.0, 88.0);
+  vec2 cell = floor(g);
   float h = hash(cell);
-  float star = step(0.985, h);
-  float twinkle = pow(max(sin(h * 40.0 + uTilt.x * 9.0 + uTilt.y * 7.0 + uv.x * 3.0), 0.0), 8.0);
-  col += star * twinkle * w * uFoil * 2.0 * vec3(1.0, 0.98, 0.94);
+  vec2 center = vec2(hash(cell + 1.7), hash(cell + 4.3)) * 0.6 + 0.2;
+  vec2 dv = fract(g) - center;
+  float glint = exp(-dot(dv, dv) * 28.0);
+  float star = smoothstep(0.990, 0.997, h);
+  float twinkle = pow(max(sin(h * 40.0 + uTilt.x * 9.0 + uTilt.y * 7.0), 0.0), 10.0);
+  col += star * twinkle * glint * w * uFoil * vec3(1.0, 0.97, 0.9);
 
   // Glare pool that follows the pointer, and the specular.
   float d = distance(uv, uPointer);
