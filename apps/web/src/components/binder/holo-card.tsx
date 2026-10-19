@@ -1,9 +1,11 @@
 "use client";
 
+import type { FoilMask } from "@sleevebook/binder-core";
 import { motion, useMotionTemplate, useSpring, useTransform } from "motion/react";
 import { useRef } from "react";
 import { sleeveOverlayStyle } from "../../lib/theme-presets";
 import { usePrefersReducedMotion } from "../../lib/use-prefers-reduced-motion";
+import { foilMaskCssImage } from "../card-render/foil-mask-css";
 
 export interface HoloCardProps {
   imageUrl: string | null;
@@ -11,6 +13,8 @@ export interface HoloCardProps {
   variant: string;
   sleeve?: string;
   width?: number;
+  /** Where the foil shines (N4). Absent or null keeps the radial art-window masks. */
+  mask?: FoilMask | null;
 }
 
 const ASPECT_RATIO = 88 / 63;
@@ -53,6 +57,7 @@ export function HoloCard({
   variant,
   sleeve = "clear",
   width = 260,
+  mask,
 }: HoloCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -93,7 +98,8 @@ export function HoloCard({
 
   const height = Math.round(width * ASPECT_RATIO);
   const foilGradient = FOIL_GRADIENTS[variant];
-  const foilMask = FOIL_MASKS[variant];
+  // With a mask, the foil follows its zones (none = no foil layer at all).
+  const foilMask = mask ? foilMaskCssImage(mask) : FOIL_MASKS[variant];
 
   return (
     <div style={{ perspective: 1000 }}>
@@ -140,7 +146,7 @@ export function HoloCard({
           />
         )}
 
-        {!prefersReducedMotion && foilGradient && (
+        {!prefersReducedMotion && foilGradient && foilMask && (
           <motion.div
             style={{
               position: "absolute",
@@ -153,6 +159,8 @@ export function HoloCard({
               opacity: foilOpacity,
               maskImage: foilMask,
               WebkitMaskImage: foilMask,
+              maskSize: mask ? "100% 100%" : undefined,
+              WebkitMaskSize: mask ? "100% 100%" : undefined,
             }}
           />
         )}

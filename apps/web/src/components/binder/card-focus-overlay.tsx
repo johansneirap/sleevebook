@@ -1,14 +1,15 @@
 "use client";
 
+import { defaultFoilMask } from "@sleevebook/binder-core";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import type { VariantDisplay } from "../../lib/binders";
 import { usePrefersReducedMotion } from "../../lib/use-prefers-reduced-motion";
+import { HoloGl } from "../card-render/holo-gl";
 import { type PocketMeta, STATUS_LABELS } from "../seller-public/types";
 import { useWantList } from "../seller-public/want-list";
 import { CardBack } from "./card-back";
 import { FlipCard } from "./flip-card";
-import { HoloCard } from "./holo-card";
 
 const CARD_ASPECT_RATIO = 88 / 63;
 const CARD_MAX_WIDTH = 340;
@@ -320,10 +321,11 @@ export function CardFocusOverlay({
             flipped={flipped}
             width={cardWidth}
             front={
-              <HoloCard
+              <HoloGl
                 imageUrl={display.imageUrl}
                 name={display.name}
                 variant={display.variant}
+                mask={display.foilMask ?? defaultFoilMask(display.variant)}
                 sleeve={sleeve}
                 width={cardWidth}
               />
