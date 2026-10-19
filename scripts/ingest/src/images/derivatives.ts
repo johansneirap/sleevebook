@@ -12,10 +12,13 @@ const THUMBNAIL_SIZE = { width: 245, height: 342 };
 const MEDIUM_SIZE = { width: 490, height: 684 };
 
 export async function deriveImageSizes(original: Buffer): Promise<ImageDerivatives> {
-  const [thumbnail, medium] = await Promise.all([
+  // "high" keeps the original resolution but is re-encoded as JPEG: it's
+  // stored as high.jpg with Content-Type image/jpeg (the sources are PNGs).
+  const [thumbnail, medium, high] = await Promise.all([
     sharp(original).resize(THUMBNAIL_SIZE).jpeg().toBuffer(),
     sharp(original).resize(MEDIUM_SIZE).jpeg().toBuffer(),
+    sharp(original).jpeg({ quality: 92 }).toBuffer(),
   ]);
 
-  return { thumbnail, medium, high: original };
+  return { thumbnail, medium, high };
 }
