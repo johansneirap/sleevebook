@@ -12,11 +12,14 @@ export interface VariantImageUrls {
   high: string;
 }
 
-type Size = "thumbnail" | "medium" | "high";
+export type ImageSize = "thumbnail" | "medium" | "high";
 
-function keyFor(variantKey: string, size: Size): string {
+/** Object key of one derived size, e.g. "cards/sv1-112-normal/high.jpg". */
+export function variantImageKey(variantKey: string, size: ImageSize): string {
   return `cards/${variantKey}/${size}.jpg`;
 }
+
+const keyFor = variantImageKey;
 
 function urlFor(publicAssetsUrl: string, key: string): string {
   return `${publicAssetsUrl.replace(/\/$/, "")}/${key}`;
