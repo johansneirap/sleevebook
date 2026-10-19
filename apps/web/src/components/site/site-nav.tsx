@@ -68,6 +68,7 @@ const LINKS = [
   { href: "/plantillas", label: "Plantillas" },
   { href: "/intercambios", label: "Intercambios" },
   { href: "/deseos", label: "Mis deseos" },
+  { href: "/escanear", label: "Escanear" },
   { href: "/binders", label: "Mis binders" },
 ] as const;
 

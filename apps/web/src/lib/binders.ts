@@ -1,4 +1,10 @@
-import type { BinderMode, Currency, Layout, SellerContact } from "@sleevebook/binder-core";
+import type {
+  BinderMode,
+  Currency,
+  FoilMask,
+  Layout,
+  SellerContact,
+} from "@sleevebook/binder-core";
 import { currencySchema, layoutSchema, sellerContactSchema } from "@sleevebook/binder-core";
 import { binder, binderVersion, card, cardVariant, set } from "@sleevebook/db";
 import { desc, eq, inArray } from "drizzle-orm";
@@ -80,6 +86,8 @@ export async function getBinderWithLayout(binderId: string): Promise<BinderWithL
 
 export interface VariantDisplay {
   id: string;
+  /** Fase 5 (N4): where the foil shines; filled by the foil-mask loader, absent = default by variant. */
+  foilMask?: FoilMask | null;
   name: string;
   number: string;
   rarity: string | null;

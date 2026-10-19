@@ -27,6 +27,11 @@ const envSchema = z.object({
   // "1" enables an email+password login for local dev and e2e. Ignored in
   // production builds.
   AUTH_DEV_LOGIN: optional(z.string()),
+  // Fase 5: camera scanning through Claude Vision. Without a key /escanear
+  // explains it's not configured.
+  ANTHROPIC_API_KEY: optional(z.string().min(1)),
+  // Scans per user per day (cost cap).
+  SCAN_DAILY_LIMIT: optional(z.coerce.number().int().positive()),
 });
 
 export const env = envSchema.parse(process.env);

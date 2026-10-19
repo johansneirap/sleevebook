@@ -29,6 +29,13 @@
       "when": 1792289943136,
       "tag": "0003_chilly_greymalkin",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792407432741,
+      "tag": "0004_lyrical_puff_adder",
+      "breakpoints": true
     }
   ]
 }
