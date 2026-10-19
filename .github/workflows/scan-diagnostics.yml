@@ -10,6 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          psql "$DATABASE_URL" -c "select created_at, status, input_tokens, output_tokens, left(reading::text, 300) as reading from scan_log order by created_at desc limit 15;"
+          psql "$DATABASE_URL" -c "select created_at, status, input_tokens, output_tokens, coalesce(reading->>'error', left(reading::text, 300)) as reading from scan_log order by created_at desc limit 15;"
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
