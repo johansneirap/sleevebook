@@ -12,6 +12,17 @@ export const TCGDEX_BUCKET_KEY: Record<string, string> = {
   masterball: "masterball",
 };
 
+/**
+ * Second choice when the primary bucket is missing. Wizards-era sets (Base,
+ * Jungle, Fossil, Team Rocket, Gym, Neo) price the common printing as
+ * "unlimited" / "unlimited-holofoil"; our catalog doesn't model 1st edition,
+ * so 1st-edition buckets (pricier) are never used.
+ */
+export const TCGDEX_BUCKET_FALLBACK: Record<string, string> = {
+  normal: "unlimited",
+  holo: "unlimited-holofoil",
+};
+
 const setsSchema = z.array(z.object({ id: z.string(), name: z.string() }).loose());
 
 type TcgdexSet = z.infer<typeof setsSchema>[number];
@@ -137,19 +148,23 @@ export function pickTcgdexAmountUsd(
   tcgplayer: Record<string, unknown> | undefined,
   variant: string,
 ): number | null {
-  const wanted = TCGDEX_BUCKET_KEY[variant];
-  if (!wanted || !tcgplayer) {
+  if (!tcgplayer) {
     return null;
   }
-  const entry = Object.entries(tcgplayer).find(([key]) => bucketKey(key) === wanted);
-  if (!entry) {
-    return null;
+  for (const wanted of [TCGDEX_BUCKET_KEY[variant], TCGDEX_BUCKET_FALLBACK[variant]]) {
+    if (!wanted) {
+      continue;
+    }
+    const entry = Object.entries(tcgplayer).find(([key]) => bucketKey(key) === wanted);
+    const parsed = entry ? bucketSchema.safeParse(entry[1]) : undefined;
+    const amount = parsed?.success
+      ? (positive(parsed.data.marketPrice) ?? positive(parsed.data.midPrice))
+      : null;
+    if (amount !== null) {
+      return amount;
+    }
   }
-  const parsed = bucketSchema.safeParse(entry[1]);
-  if (!parsed.success) {
-    return null;
-  }
-  return positive(parsed.data.marketPrice) ?? positive(parsed.data.midPrice);
+  return null;
 }
 
 /** pokemontcg.io card ids look like "sv1-112"; the set id is everything before the last dash. */

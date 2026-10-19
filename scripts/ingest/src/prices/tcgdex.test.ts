@@ -135,6 +135,22 @@ describe("price bucket selection", () => {
     expect(pickTcgdexAmountUsd(lucario, "reverse")).toBe(44.35);
   });
 
+  it("uses the Wizards-era unlimited buckets, never 1st edition", () => {
+    const vintage = {
+      unit: "USD",
+      "1st-edition-holofoil": { marketPrice: 900 },
+      "unlimited-holofoil": { marketPrice: 120.5 },
+      "1st-edition": { marketPrice: 40 },
+      unlimited: { marketPrice: 3.25 },
+    };
+    expect(pickTcgdexAmountUsd(vintage, "holo")).toBe(120.5);
+    expect(pickTcgdexAmountUsd(vintage, "normal")).toBe(3.25);
+    expect(
+      pickTcgdexAmountUsd({ "1st-edition-holofoil": { marketPrice: 900 } }, "holo"),
+    ).toBeNull();
+    expect(pickTcgdexAmountUsd(vintage, "reverse")).toBeNull();
+  });
+
   it("falls back to midPrice when marketPrice is null", () => {
     const pikachu = (
       fixture("tcgdex-card-sv03-5-025.json") as { pricing: { tcgplayer: Record<string, unknown> } }
