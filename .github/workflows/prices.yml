@@ -32,8 +32,16 @@ jobs:
       # Copies the pokemontcg.io images of referenced variants to our R2 bucket
       # (at most 500 per day). Runs after the prices step: if prices fail, the job
       # stops there and this step waits for the next daily run.
+      # Skipped (not failed) until the R2 secrets exist in GitHub Actions
+      # (docs/DEPLOY.md §8). Secrets can't be read in `if:`, so check them
+      # in the shell.
       - name: Copy referenced card images to R2
-        run: pnpm --filter @sleevebook/ingest images --cap 500
+        run: |
+          if [ -z "$S3_ENDPOINT" ] || [ -z "$S3_BUCKET" ]; then
+            echo "::notice::R2 secrets not configured; skipping image copy"
+            exit 0
+          fi
+          pnpm --filter @sleevebook/ingest images --cap 500
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
