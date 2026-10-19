@@ -13,12 +13,24 @@ export interface WishlistRowData {
   imageUrl: string | null;
   /** Market price already formatted in the viewer's currency, or null. */
   priceLabel: string | null;
+  /** Cardmarket EUR average (raw amount), shown as a quiet second line when present. */
+  cardmarketEur?: number | null;
   targetPriceUsd: number | null;
   note: string | null;
 }
 
 const MAX_TARGET_USD = 100000;
 const MAX_NOTE_LENGTH = 140;
+
+const EUR_FORMAT = new Intl.NumberFormat("de-DE", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+/** "12,30 €": Cardmarket shows euros with a decimal comma. */
+export function formatCardmarketEur(amount: number): string {
+  return `${EUR_FORMAT.format(amount)} €`;
+}
 
 /** One wishlist entry: thumbnail, price, USD price alert and note. */
 export function WishlistRow({ entry }: { entry: WishlistRowData }) {
@@ -116,16 +128,27 @@ export function WishlistRow({ entry }: { entry: WishlistRowData }) {
             {entry.setName} · {entry.number} · {entry.variant}
           </p>
         </div>
-        <p
-          className="sb-data"
-          style={{
-            margin: 0,
-            fontSize: 15,
-            color: entry.priceLabel ? "var(--linen)" : "var(--smoke)",
-          }}
-        >
-          {entry.priceLabel ?? "sin precio"}
-        </p>
+        <div style={{ textAlign: "right" }}>
+          <p
+            className="sb-data"
+            style={{
+              margin: 0,
+              fontSize: 15,
+              color: entry.priceLabel ? "var(--linen)" : "var(--smoke)",
+            }}
+          >
+            {entry.priceLabel ?? "sin precio"}
+          </p>
+          {typeof entry.cardmarketEur === "number" && (
+            <p
+              className="sb-data"
+              data-testid="wishlist-cardmarket"
+              style={{ margin: "2px 0 0", fontSize: 12, color: "var(--smoke)" }}
+            >
+              Cardmarket: {formatCardmarketEur(entry.cardmarketEur)}
+            </p>
+          )}
+        </div>
       </div>
 
       <form

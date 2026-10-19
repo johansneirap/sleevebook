@@ -2,13 +2,15 @@ import { wishlistItem } from "@sleevebook/db";
 import { desc, eq } from "drizzle-orm";
 import { getVariantDisplays, type VariantDisplay } from "./binders";
 import { db } from "./db";
-import { getLatestPrices } from "./pricing";
+import { getLatestEurPrices, getLatestPrices } from "./pricing";
 
 export interface WishlistEntry {
   variantId: string;
   display: VariantDisplay;
   /** Latest market price in USD, or null when we have none yet. */
   priceUsd: number | null;
+  /** Cardmarket EUR average, or null when we have none yet. */
+  priceEur: number | null;
   /** Price alert threshold in USD, or null. */
   targetPriceUsd: number | null;
   note: string | null;
@@ -34,9 +36,10 @@ export async function getWishlist(userId: string): Promise<WishlistEntry[]> {
   }
 
   const variantIds = rows.map((row) => row.variantId);
-  const [displays, prices] = await Promise.all([
+  const [displays, prices, eurPrices] = await Promise.all([
     getVariantDisplays(variantIds),
     getLatestPrices(variantIds),
+    getLatestEurPrices(variantIds),
   ]);
 
   const entries: WishlistEntry[] = [];
@@ -50,6 +53,7 @@ export async function getWishlist(userId: string): Promise<WishlistEntry[]> {
       variantId: row.variantId,
       display,
       priceUsd: prices[row.variantId]?.amountUsd ?? null,
+      priceEur: eurPrices[row.variantId]?.amountEur ?? null,
       targetPriceUsd: row.targetPriceUsd === null ? null : Number(row.targetPriceUsd),
       note: row.note,
       createdAt: row.createdAt.toISOString(),
