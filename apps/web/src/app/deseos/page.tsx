@@ -89,6 +89,7 @@ export default async function WishlistPage({ searchParams }: PageProps) {
     setName: entry.display.setName,
     imageUrl: entry.display.imageUrl,
     priceLabel: entry.priceUsd === null ? null : displayMoney(entry.priceUsd).text,
+    cardmarketEur: entry.priceEur,
     targetPriceUsd: entry.targetPriceUsd,
     note: entry.note,
   }));
