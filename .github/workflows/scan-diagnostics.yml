@@ -1,0 +1,15 @@
+name: Scan diagnostics
+
+# Manual, read-only: the latest camera scans (status, tokens, what was read or
+# the error detail). No photos are ever stored.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  scans:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          psql "$DATABASE_URL" -c "select created_at, status, input_tokens, output_tokens, left(reading::text, 300) as reading from scan_log order by created_at desc limit 15;"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
