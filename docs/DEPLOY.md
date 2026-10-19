@@ -58,7 +58,7 @@ OWNER_EMAIL=<tu correo de Google: la primera cuenta con ese correo hereda los bi
 ```
 
 1. En [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → *Create credentials* → *OAuth client ID* → tipo *Web application* (si lo pide, configurá antes la pantalla de consentimiento en modo *External* / *Testing* y agregá los correos de la beta como *test users*).
-2. *Authorized JavaScript origins*: el valor de `BETTER_AUTH_URL` (hoy `https://sleevebookweb-production.up.railway.app`).
+2. *Authorized JavaScript origins*: el valor de `BETTER_AUTH_URL` (hoy `https://sleevebook.com`).
 3. *Authorized redirect URIs*: `<BETTER_AUTH_URL>/api/auth/callback/google`.
 4. Copiá client id y secret a las variables de Railway. `BETTER_AUTH_URL` tiene que ser exactamente la URL pública del servicio (sin `/` final) o Google rechaza el callback.
 
