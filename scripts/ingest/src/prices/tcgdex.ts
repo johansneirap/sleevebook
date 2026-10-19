@@ -250,10 +250,11 @@ interface CardResolution {
 export function createTcgdexSource(options: TcgdexOptions = {}): TcgdexSource {
   const {
     baseUrl = TCGDEX_BASE_URL,
-    concurrency = 4,
-    requestDelayMs = 150,
-    maxAttempts = 3,
-    backoffMs = 1_000,
+    // TCGdex answers 503 to bursts: stay gentle and back off for up to ~30s.
+    concurrency = 2,
+    requestDelayMs = 250,
+    maxAttempts = 5,
+    backoffMs = 2_000,
     requestTimeoutMs = 20_000,
     deadlineMs = 15 * 60_000,
     fetch: fetchImpl = fetch,
