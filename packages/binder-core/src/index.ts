@@ -7,6 +7,7 @@ export * from "./panel";
 export * from "./pocket-code";
 export * from "./pricing";
 export * from "./reflow";
+export * from "./scan-match";
 export * from "./sectionize";
 export * from "./seller";
 export * from "./slice-panel";
