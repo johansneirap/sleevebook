@@ -44,6 +44,8 @@ async function logScan(
     outputTokens?: number | null;
     reading?: CardReading | null;
     matchedVariantId?: string | null;
+    /** For "error" rows: what failed (SDK class, HTTP status, message), for diagnosis. */
+    errorDetail?: string;
   } = {},
 ): Promise<void> {
   await db.insert(scanLog).values({
@@ -51,7 +53,7 @@ async function logScan(
     status,
     inputTokens: fields.inputTokens ?? null,
     outputTokens: fields.outputTokens ?? null,
-    reading: fields.reading ?? null,
+    reading: fields.reading ?? (fields.errorDetail ? { error: fields.errorDetail } : null),
     matchedVariantId: fields.matchedVariantId ?? null,
   });
 }
@@ -78,7 +80,13 @@ async function failScan(
   } else {
     console.error("[scan] error inesperado:", error);
   }
-  await logScan(userId, "error");
+  const detail =
+    error instanceof Anthropic.APIError
+      ? `${error.constructor.name} ${error.status ?? ""} ${error.message}`
+      : error instanceof Error
+        ? `${error.name}: ${error.message}`
+        : String(error);
+  await logScan(userId, "error", { errorDetail: detail.slice(0, 500) });
   return { status: "error", candidates: [], remainingToday, message };
 }
 
@@ -133,7 +141,10 @@ export async function scanCard(formData: FormData): Promise<ScanResult> {
 
   if (stopReason === "refusal" || stopReason === "max_tokens" || !reading) {
     console.error("[scan] lectura sin resultado utilizable, stop_reason:", stopReason);
-    await logScan(user.id, "error", tokens);
+    await logScan(user.id, "error", {
+      ...tokens,
+      errorDetail: `stop_reason ${stopReason ?? "?"}, parsed ${reading ? "ok" : "null"}`,
+    });
     return { status: "error", candidates: [], remainingToday, message: FAILED_MESSAGE };
   }
 

@@ -7,7 +7,24 @@ import type { SCAN_ACCEPTED_TYPES } from "./scan-types";
 /** Model for card reading. Exact id, no date suffix. */
 export const SCAN_MODEL = "claude-haiku-5-5";
 
-/** What Claude reads off the photo. Nullable (not optional) for structured outputs. */
+/**
+ * What we ask Claude for. Deliberately loose: structured outputs drop enum and
+ * numeric-range constraints from the schema sent to the API (they end up as
+ * plain descriptions), and the SDK then validates the reply against this zod
+ * schema -- a strict enum/range here made valid replies like "Reverse Holo"
+ * or a confidence of 85 fail as "unreadable". Normalized in normalizeReading.
+ */
+const RawReadingSchema = z.object({
+  isCard: z.boolean(),
+  name: z.string(),
+  setName: z.string().nullable(),
+  number: z.string().nullable(),
+  setTotal: z.string().nullable(),
+  finish: z.string().nullable().describe('One of "holo", "reverse", "normal", or null'),
+  language: z.string().nullable(),
+  confidence: z.number().describe("0 to 1"),
+});
+
 export const ReadingSchema = z.object({
   isCard: z.boolean(),
   name: z.string(),
@@ -19,6 +36,30 @@ export const ReadingSchema = z.object({
   confidence: z.number().min(0).max(1),
 });
 export type CardReading = z.infer<typeof ReadingSchema>;
+
+/** "Reverse Holo" -> "reverse", "holofoil" -> "holo", 85 -> 0.85, "" -> null. */
+export function normalizeReading(raw: z.infer<typeof RawReadingSchema>): CardReading {
+  const finishText = raw.finish?.trim().toLowerCase() ?? "";
+  const finish = finishText.includes("reverse")
+    ? "reverse"
+    : finishText.includes("holo") || finishText.includes("foil")
+      ? "holo"
+      : finishText.includes("normal") || finishText.includes("non")
+        ? "normal"
+        : null;
+  const scaled = raw.confidence > 1 ? raw.confidence / 100 : raw.confidence;
+  const blank = (value: string | null) => (value && value.trim() !== "" ? value.trim() : null);
+  return {
+    isCard: raw.isCard,
+    name: raw.name.trim(),
+    setName: blank(raw.setName),
+    number: blank(raw.number),
+    setTotal: blank(raw.setTotal),
+    finish,
+    language: blank(raw.language),
+    confidence: Math.min(1, Math.max(0, Number.isFinite(scaled) ? scaled : 0)),
+  };
+}
 
 export type ScanMediaType = (typeof SCAN_ACCEPTED_TYPES)[number];
 
@@ -67,7 +108,7 @@ export async function readCardImage(
   const response = await getClient(env.ANTHROPIC_API_KEY).messages.parse({
     model: SCAN_MODEL,
     max_tokens: 1024,
-    output_config: { effort: "low", format: zodOutputFormat(ReadingSchema) },
+    output_config: { effort: "low", format: zodOutputFormat(RawReadingSchema) },
     messages: [
       {
         role: "user",
@@ -80,7 +121,7 @@ export async function readCardImage(
   });
   return {
     stopReason: response.stop_reason,
-    reading: response.parsed_output ?? null,
+    reading: response.parsed_output ? normalizeReading(response.parsed_output) : null,
     inputTokens: response.usage.input_tokens,
     outputTokens: response.usage.output_tokens,
   };
