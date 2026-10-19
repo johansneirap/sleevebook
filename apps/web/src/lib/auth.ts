@@ -48,6 +48,23 @@ async function uniqueHandle(seed: string): Promise<string> {
   }
 }
 
+/**
+ * The owner (OWNER_EMAIL) adopts everything created before login existed,
+ * owned by the placeholder DEV_USER_ID. Idempotent: once nothing belongs to
+ * DEV_USER_ID the updates touch no rows.
+ */
+async function claimLegacyData(userId: string, email: string): Promise<void> {
+  const ownerEmail = env.OWNER_EMAIL?.trim().toLowerCase();
+  if (!ownerEmail || userId === DEV_USER_ID || email.trim().toLowerCase() !== ownerEmail) {
+    return;
+  }
+  await db.transaction(async (tx) => {
+    await tx.update(binder).set({ userId }).where(eq(binder.userId, DEV_USER_ID));
+    await tx.update(cardInstance).set({ userId }).where(eq(cardInstance.userId, DEV_USER_ID));
+    await tx.update(artAsset).set({ userId }).where(eq(artAsset.userId, DEV_USER_ID));
+  });
+}
+
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
@@ -82,26 +99,23 @@ export const auth = betterAuth({
             handle: await uniqueHandle(newUser.name || newUser.email.split("@")[0] || ""),
           },
         }),
-        // The owner's first sign-in adopts everything created before login
-        // existed (owned by the placeholder DEV_USER_ID).
         after: async (created) => {
-          if (!env.OWNER_EMAIL || created.email.toLowerCase() !== env.OWNER_EMAIL.toLowerCase()) {
-            return;
+          await claimLegacyData(created.id, created.email);
+        },
+      },
+    },
+    // Also on every sign-in: if OWNER_EMAIL was set after the owner's account
+    // already existed, the next login still adopts the legacy data.
+    session: {
+      create: {
+        after: async (created) => {
+          const [owner] = await db
+            .select({ email: userTable.email })
+            .from(userTable)
+            .where(eq(userTable.id, created.userId));
+          if (owner) {
+            await claimLegacyData(created.userId, owner.email);
           }
-          await db.transaction(async (tx) => {
-            await tx
-              .update(binder)
-              .set({ userId: created.id })
-              .where(eq(binder.userId, DEV_USER_ID));
-            await tx
-              .update(cardInstance)
-              .set({ userId: created.id })
-              .where(eq(cardInstance.userId, DEV_USER_ID));
-            await tx
-              .update(artAsset)
-              .set({ userId: created.id })
-              .where(eq(artAsset.userId, DEV_USER_ID));
-          });
         },
       },
     },

@@ -1,8 +1,12 @@
 import { z } from "zod";
 
-// Unset and empty ("FOO=") both mean "not configured".
+// Unset and empty ("FOO=") both mean "not configured"; values are trimmed
+// (stray spaces from pasting into the hosting dashboard).
 const optional = <T extends z.ZodType>(schema: T) =>
-  z.preprocess((value) => (value === "" ? undefined : value), schema.optional());
+  z.preprocess((value) => {
+    const trimmed = typeof value === "string" ? value.trim() : value;
+    return trimmed === "" ? undefined : trimmed;
+  }, schema.optional());
 
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
