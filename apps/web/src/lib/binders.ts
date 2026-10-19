@@ -9,6 +9,7 @@ import { currencySchema, layoutSchema, sellerContactSchema } from "@sleevebook/b
 import { binder, binderVersion, card, cardVariant, set } from "@sleevebook/db";
 import { desc, eq, inArray } from "drizzle-orm";
 import { db } from "./db";
+import { getFoilMasks } from "./foil-masks";
 
 export interface BinderSummary {
   id: string;
@@ -141,6 +142,8 @@ export async function getVariantDisplays(
     .innerJoin(set, eq(set.id, card.setId))
     .where(inArray(cardVariant.id, variantIds));
 
+  const masks = await getFoilMasks(rows.map((row) => row.id));
+
   for (const row of rows) {
     map.set(row.id, {
       id: row.id,
@@ -150,6 +153,7 @@ export async function getVariantDisplays(
       setName: row.setName,
       variant: row.variant,
       imageUrl: extractImageUrl(row.images),
+      foilMask: masks.get(row.id) ?? null,
     });
   }
 

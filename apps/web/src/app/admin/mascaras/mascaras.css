@@ -1,0 +1,146 @@
+/* Admin foil mask list. Tokens live in globals.css. */
+.sb-mask-intro {
+  margin: 16px 0 0;
+  max-width: 60ch;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--smoke);
+}
+
+.sb-mask-filters {
+  margin-top: 32px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 16px;
+}
+
+.sb-mask-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sb-mask-field input,
+.sb-mask-field select {
+  min-height: 40px;
+  padding: 8px 12px;
+  font: inherit;
+  color: var(--linen);
+  background: var(--velvet-raised);
+  border: 1px solid color-mix(in srgb, var(--linen) 16%, transparent);
+  border-radius: 2px;
+}
+
+.sb-mask-count {
+  margin: 20px 0 0;
+  font-size: 13px;
+  color: var(--smoke);
+}
+
+.sb-mask-grid {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.sb-mask-item {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--linen) 10%, transparent);
+  border-radius: 2px;
+  background: var(--velvet-raised);
+}
+
+.sb-mask-link {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.sb-mask-thumb {
+  display: block;
+  width: 52px;
+  height: 73px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--leather-deep);
+}
+
+.sb-mask-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sb-mask-text {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.sb-mask-name {
+  font-family: var(--font-display);
+  font-size: 18px;
+  line-height: 1.2;
+  color: var(--linen);
+  overflow-wrap: anywhere;
+}
+
+.sb-mask-meta,
+.sb-mask-variant {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--smoke);
+}
+
+.sb-mask-chip {
+  justify-self: start;
+  grid-column: 2;
+  padding: 1px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  font-family: var(--font-ui);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.14em;
+  font-size: 11px;
+  color: var(--smoke);
+}
+
+.sb-mask-chip-edited {
+  color: var(--foil);
+  border-color: var(--foil);
+}
+
+.sb-mask-pager {
+  margin-top: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--smoke);
+}
+
+.sb-mask-pager a {
+  color: var(--linen);
+}
+
+.sb-mask-pager a:hover,
+.sb-mask-pager a:focus-visible {
+  color: var(--foil);
+}
+
+.sb-mask-link:hover .sb-mask-name,
+.sb-mask-link:focus-visible .sb-mask-name {
+  color: var(--foil);
+}
