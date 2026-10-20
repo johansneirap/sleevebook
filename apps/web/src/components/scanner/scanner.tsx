@@ -160,13 +160,13 @@ export function Scanner({ binders }: ScannerProps) {
 
         <div className="sb-scan-side">
           {notice && (
-            <p className="sb-scan-error" role="alert" data-tone="warn">
+            <p className="sb-scan-notice" role="alert">
               {notice}
             </p>
           )}
 
           {phase === "reading" && (
-            <section className="sb-scan-panel" aria-live="polite">
+            <section className="sb-scan-card" aria-live="polite">
               <p className="sb-scan-error">{SCANNER_COPY.reading}</p>
               <div className="sb-scan-progress" aria-hidden />
             </section>
@@ -183,8 +183,8 @@ export function Scanner({ binders }: ScannerProps) {
           )}
 
           {phase === "camera" && (
-            <section className="sb-scan-panel" aria-labelledby="scan-tips-title">
-              <h2 id="scan-tips-title" className="sb-catalog-eyebrow">
+            <section className="sb-scan-card" aria-labelledby="scan-tips-title">
+              <h2 id="scan-tips-title" className="sb-scan-title-small">
                 {SCANNER_COPY.tipsTitle}
               </h2>
               <ul className="sb-scan-tips">
@@ -196,16 +196,20 @@ export function Scanner({ binders }: ScannerProps) {
           )}
 
           {history.length > 0 && (
-            <section aria-labelledby="scan-history-title" style={{ display: "grid", gap: 12 }}>
-              <h2 id="scan-history-title" className="sb-catalog-eyebrow">
+            <section aria-labelledby="scan-history-title" className="sb-scan-card">
+              <h2 id="scan-history-title" className="sb-scan-title-small">
                 {SCANNER_COPY.historyTitle}
               </h2>
               <ul className="sb-scan-history">
                 {history.map((entry) => (
                   <li key={entry.id}>
-                    <span>{entry.name}</span>
+                    <span style={{ fontWeight: 700 }}>{entry.name}</span>
                     {entry.meta && <span className="sb-scan-meta sb-data">{entry.meta}</span>}
-                    <span className="sb-scan-meta" style={{ color: "var(--foil-dim)" }}>
+                    <span
+                      className="sb-scan-chip"
+                      data-tone="accent"
+                      style={{ marginTop: 4, justifySelf: "start" }}
+                    >
                       {entry.action}
                     </span>
                   </li>

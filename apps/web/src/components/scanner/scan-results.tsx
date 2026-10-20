@@ -41,11 +41,11 @@ export function ScanResultPanel({ result, binders, onAction, onAgain }: ScanResu
   if (result.status !== "ok" || !result.reading) {
     const message = result.status === "ok" ? SCANNER_COPY.noMatchTitle : STATUS_COPY[result.status];
     return (
-      <section className="sb-scan-panel" aria-labelledby="scan-result-title">
+      <section className="sb-scan-card" aria-labelledby="scan-result-title">
         <p id="scan-result-title" className="sb-scan-error">
           {message}
         </p>
-        <button type="button" className="sb-scan-capture" onClick={onAgain}>
+        <button type="button" className="sb-scan-btn sb-scan-btn-primary" onClick={onAgain}>
           {SCANNER_COPY.again}
         </button>
       </section>
@@ -88,11 +88,9 @@ function OkResult({
   const line = readingLine(reading);
 
   return (
-    <section className="sb-scan-panel" aria-labelledby="scan-result-title">
+    <section className="sb-scan-card" aria-labelledby="scan-result-title">
       <div style={{ display: "grid", gap: 6 }}>
-        <p className="sb-label sb-catalog-eyebrow" style={{ fontSize: 12, color: "var(--smoke)" }}>
-          Leímos
-        </p>
+        <p className="sb-scan-eyebrow">Leímos</p>
         <h2 id="scan-result-title" className="sb-scan-reading">
           {line}
         </h2>
@@ -135,7 +133,7 @@ function OkResult({
       )}
 
       <div>
-        <button type="button" className="sb-scan-upload" onClick={onAgain}>
+        <button type="button" className="sb-scan-btn" onClick={onAgain}>
           {SCANNER_COPY.again}
         </button>
       </div>
@@ -211,20 +209,20 @@ function CandidateRow({ candidate, best, binders, onAction, onDismiss }: Candida
           width={72}
           height={100}
           loading="lazy"
-          style={{ width: 72, height: "auto", borderRadius: 3, alignSelf: "start" }}
+          style={{ width: 72, height: "auto", borderRadius: 10, alignSelf: "start" }}
         />
       ) : (
         <span
           aria-hidden
-          style={{ width: 72, height: 100, borderRadius: 3, background: "var(--leather)" }}
+          style={{ width: 72, height: 100, borderRadius: 10, background: "var(--surface-2)" }}
         />
       )}
 
       <div style={{ minWidth: 0 }}>
         {best && (
-          <p className="sb-label" style={{ margin: "0 0 4px", fontSize: 11, color: "var(--foil)" }}>
+          <span className="sb-scan-chip" data-tone="accent">
             {SCANNER_COPY.bestMatch}
-          </p>
+          </span>
         )}
         <p className="sb-scan-candidate-name">{candidate.name}</p>
         <p className="sb-scan-meta sb-data">
@@ -234,7 +232,7 @@ function CandidateRow({ candidate, best, binders, onAction, onDismiss }: Candida
         {candidate.variant && <p className="sb-scan-meta">{candidate.variant}</p>}
 
         {placed ? (
-          <p className="sb-scan-meta" style={{ margin: "12px 0 0", color: "var(--linen)" }}>
+          <p className="sb-scan-meta" style={{ margin: "12px 0 0", color: "var(--ink)" }}>
             Colocada en {placed.pocketCode} de «{placed.binderName}».{" "}
             <Link
               href={`/binders/${placed.binderId}?spread=${placed.spread}`}
@@ -247,7 +245,7 @@ function CandidateRow({ candidate, best, binders, onAction, onDismiss }: Candida
           <div className="sb-scan-candidate-actions">
             <button
               type="button"
-              className="sb-scan-upload"
+              className="sb-scan-btn sb-scan-btn-primary"
               onClick={handleWishlist}
               disabled={wishlist === "saving" || wishlist === "done"}
             >
@@ -260,32 +258,32 @@ function CandidateRow({ candidate, best, binders, onAction, onDismiss }: Candida
             {binders.length > 0 ? (
               <button
                 type="button"
-                className="sb-scan-text-button"
+                className="sb-scan-btn"
                 aria-expanded={placeOpen}
                 onClick={() => setPlaceOpen((open) => !open)}
               >
                 {SCANNER_COPY.binderAdd}
               </button>
             ) : (
-              <Link href="/binders/new" className="sb-scan-link">
+              <Link href="/binders/new" className="sb-scan-btn">
                 {SCANNER_COPY.createBinder}
               </Link>
             )}
-            <button type="button" className="sb-scan-text-button" onClick={onDismiss}>
+            <button type="button" className="sb-scan-btn sb-scan-btn-ghost" onClick={onDismiss}>
               {SCANNER_COPY.notThis}
             </button>
           </div>
         )}
 
         {wishlist === "error" && (
-          <p className="sb-scan-meta" role="alert" style={{ color: "var(--foil)" }}>
+          <p className="sb-scan-error-inline" role="alert">
             No pudimos agregarla a tus deseos. Intenta de nuevo.
           </p>
         )}
 
         {placeOpen && !placed && binders.length > 0 && (
-          <div className="sb-scan-place" style={{ marginTop: 12 }}>
-            <label style={{ flex: "1 1 180px", display: "grid", gap: 4 }}>
+          <div className="sb-scan-place">
+            <label>
               <span className="sb-scan-meta">Binder</span>
               <select value={binderId} onChange={(event) => setBinderId(event.target.value)}>
                 {binders.map((binder) => (
@@ -297,7 +295,7 @@ function CandidateRow({ candidate, best, binders, onAction, onDismiss }: Candida
             </label>
             <button
               type="button"
-              className="sb-scan-upload"
+              className="sb-scan-btn sb-scan-btn-primary"
               onClick={handlePlace}
               disabled={placing || !binderId}
             >
@@ -307,11 +305,7 @@ function CandidateRow({ candidate, best, binders, onAction, onDismiss }: Candida
         )}
 
         {placeMessage && (
-          <p
-            className="sb-scan-meta"
-            role="alert"
-            style={{ margin: "10px 0 0", color: "var(--foil)" }}
-          >
+          <p className="sb-scan-error-inline" role="alert" style={{ margin: "10px 0 0" }}>
             {placeMessage}
           </p>
         )}

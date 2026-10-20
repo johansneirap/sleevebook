@@ -48,7 +48,7 @@ export function CameraView({
   }
 
   return (
-    <div className="sb-scan-camera" style={{ display: "grid", gap: 0 }}>
+    <div className="sb-scan-card sb-scan-camera">
       <div className="sb-scan-stage">
         <video
           ref={videoRef}
@@ -82,7 +82,7 @@ export function CameraView({
           <div className="sb-scan-centered" role="status">
             <p>{CAMERA_ERROR_COPY[camera.reason]}</p>
             {camera.reason !== "insecure" && (
-              <button type="button" className="sb-scan-upload" onClick={onRetry}>
+              <button type="button" className="sb-scan-btn" onClick={onRetry}>
                 Reintentar cámara
               </button>
             )}
@@ -99,10 +99,7 @@ export function CameraView({
         >
           {SCANNER_COPY.capture}
         </button>
-        <label
-          className={`sb-scan-upload${failed ? "" : " sb-scan-upload-prominent"}`}
-          style={{ justifySelf: "stretch" }}
-        >
+        <label className="sb-scan-upload">
           {SCANNER_COPY.upload}
           <input
             type="file"
