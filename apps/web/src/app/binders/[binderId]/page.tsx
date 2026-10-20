@@ -104,10 +104,10 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
         style={{
           display: "flex",
           flexWrap: "wrap",
-          alignItems: "flex-end",
+          alignItems: "center",
           justifyContent: "space-between",
-          gap: "12px 40px",
-          marginBottom: 16,
+          gap: "12px 24px",
+          marginBottom: 20,
         }}
       >
         <BinderTitle>{binderData.name}</BinderTitle>
@@ -116,8 +116,8 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
             style={{
               display: "flex",
               flexWrap: "wrap",
-              alignItems: "flex-end",
-              gap: "8px 36px",
+              alignItems: "center",
+              gap: 8,
             }}
           >
             {progress && (

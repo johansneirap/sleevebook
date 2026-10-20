@@ -136,7 +136,7 @@ export function PageTurn({ src, dest, front, back, under }: PageTurnProps) {
           position: "absolute",
           inset: 0,
           pointerEvents: "none",
-          background: `linear-gradient(${horizontal ? (toStart !== isBack ? "to right" : "to left") : toStart !== isBack ? "to bottom" : "to top"}, rgba(0,0,0,0.45), rgba(0,0,0,0) 75%)`,
+          background: `linear-gradient(${horizontal ? (toStart !== isBack ? "to right" : "to left") : toStart !== isBack ? "to bottom" : "to top"}, rgba(27,32,51,0.28), rgba(27,32,51,0) 75%)`,
         }}
         initial={{ opacity: 0 }}
         animate={{ opacity: [0, 0.8, 0] }}
@@ -163,7 +163,7 @@ export function PageTurn({ src, dest, front, back, under }: PageTurnProps) {
         width: rect.width,
         height: rect.height,
         pointerEvents: "none",
-        background: "rgba(0,0,0,0.5)",
+        background: "rgba(27,32,51,0.3)",
       }}
       initial={{ opacity: 0 }}
       animate={{ opacity: keyframes }}

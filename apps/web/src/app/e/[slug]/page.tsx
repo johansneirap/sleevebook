@@ -67,10 +67,10 @@ export default async function EmbedBinderPage({ params, searchParams }: PageProp
             className="sb-display"
             style={{
               margin: 0,
-              fontSize: "clamp(22px, 4vw, 30px)",
-              lineHeight: 1.1,
-              fontWeight: 400,
-              color: "var(--linen)",
+              fontSize: "clamp(20px, 3.4vw, 24px)",
+              lineHeight: 1.15,
+              fontWeight: 800,
+              color: "var(--ink)",
               overflowWrap: "anywhere",
             }}
           >
@@ -81,14 +81,7 @@ export default async function EmbedBinderPage({ params, searchParams }: PageProp
             target="_blank"
             rel="noopener noreferrer"
             className="sb-label"
-            style={{
-              fontSize: 11,
-              color: "var(--smoke)",
-              textTransform: "uppercase",
-              textDecoration: "none",
-              borderBottom: "1px solid var(--rule)",
-              paddingBottom: 2,
-            }}
+            style={{ fontSize: 12, color: "var(--muted)", textDecoration: "underline" }}
           >
             Ver en Sleevebook
           </a>
