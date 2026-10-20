@@ -26,40 +26,21 @@ export default async function SaveTemplatePage({ params }: PageProps) {
   const tokens = resolveThemeTokens(layout.theme);
 
   return (
-    <main className="sb-catalog-page" style={{ maxWidth: 720 }}>
-      <p style={{ margin: 0 }}>
-        <Link
-          href={`/binders/${binderId}/editar`}
-          className="sb-catalog-eyebrow"
-          style={{ textDecoration: "none" }}
-        >
+    <main className="sb-catalog-page sb-tpl-save-page">
+      <p className="sb-tpl-save-head">
+        <Link href={`/binders/${binderId}/editar`} className="sb-tpl-back">
           &larr; Volver al editor
         </Link>
       </p>
-      <h1 className="sb-catalog-title" style={{ marginTop: 28 }}>
+      <h1 className="sb-catalog-title" style={{ marginTop: 20 }}>
         Guardar como plantilla
       </h1>
-      <p
-        style={{
-          margin: "14px 0 0",
-          fontFamily: "var(--font-ui)",
-          color: "var(--smoke)",
-          maxWidth: 560,
-        }}
-      >
+      <p className="sb-tpl-save-lead">
         Una plantilla guarda el diseño de este binder para crear otros iguales. Nunca guarda sus
         cartas.
       </p>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
-          gap: 28,
-          alignItems: "start",
-          marginTop: 36,
-        }}
-      >
+      <div className="sb-tpl-save-grid">
         <TemplatePreview
           rows={rows}
           cols={cols}
@@ -67,7 +48,7 @@ export default async function SaveTemplatePage({ params }: PageProps) {
           panels={layout.panels}
           size="detail"
         />
-        <dl className="sb-tpl-included" style={{ margin: 0 }}>
+        <dl className="sb-tpl-included">
           <div>
             <dt>Se guarda</dt>
             <dd>

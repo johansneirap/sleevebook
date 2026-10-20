@@ -64,7 +64,7 @@ export default async function GalleriaPage({ searchParams }: PageProps) {
           Comunidad · {gallery.total} {gallery.total === 1 ? "binder público" : "binders públicos"}
         </p>
         <h1 className="sb-catalog-title">Galería</h1>
-        <p style={{ margin: "16px 0 0", maxWidth: "52ch", lineHeight: 1.6, color: "var(--smoke)" }}>
+        <p className="sb-gallery-intro">
           Colecciones que sus dueños compartieron con un link público. Abre una para verla como en
           el visor.
         </p>
@@ -80,9 +80,7 @@ export default async function GalleriaPage({ searchParams }: PageProps) {
             placeholder="Buscar por nombre"
           />
           {sort !== "recientes" ? <input type="hidden" name="sort" value={sort} /> : null}
-          <button type="submit" className="sb-foil-action">
-            Buscar
-          </button>
+          <button type="submit">Buscar</button>
         </form>
       </search>
 

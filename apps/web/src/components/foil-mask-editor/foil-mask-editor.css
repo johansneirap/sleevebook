@@ -1,22 +1,23 @@
-/* Admin foil mask editor (render level N4). Tokens live in globals.css. */
+/* Editor de máscara de foil (Estante v2): escenario de la carta y paneles como tarjetas. */
 .sb-foil-editor {
   display: grid;
   grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
-  gap: 40px;
+  gap: 24px;
   align-items: start;
+  font-family: var(--font-ui);
 }
 
 .sb-foil-editor-column {
   min-width: 0;
   display: grid;
-  gap: 16px;
+  gap: 14px;
   align-content: start;
 }
 
 @media (max-width: 760px) {
   .sb-foil-editor {
     grid-template-columns: minmax(0, 1fr);
-    gap: 24px;
+    gap: 20px;
   }
 }
 
@@ -24,10 +25,10 @@
   position: relative;
   width: min(360px, 100%);
   aspect-ratio: 63 / 88;
-  border-radius: 4.5%;
+  border-radius: 16px;
   overflow: hidden;
-  background: var(--leather-deep);
-  box-shadow: 0 18px 40px -20px rgb(0 0 0 / 0.7);
+  background: var(--surface-2);
+  box-shadow: var(--shadow);
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
@@ -49,11 +50,9 @@
   inset: 0;
   display: grid;
   place-items: center;
-  font-family: var(--font-ui);
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--smoke);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
 }
 
 .sb-foil-editor-preview {
@@ -86,9 +85,9 @@
   padding: 0;
   font: inherit;
   color: inherit;
-  border-radius: 0;
-  border: 1px solid var(--foil);
-  background: color-mix(in srgb, var(--foil) 10%, transparent);
+  border-radius: 4px;
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
   cursor: move;
   outline: none;
   touch-action: none;
@@ -96,7 +95,7 @@
 
 .sb-foil-editor-zone[data-selected="true"] {
   border-width: 2px;
-  background: color-mix(in srgb, var(--foil) 22%, transparent);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
 .sb-foil-editor-zone[data-ignored="true"] {
@@ -105,154 +104,243 @@
 }
 
 .sb-foil-editor-zone:focus-visible {
-  box-shadow: 0 0 0 2px var(--linen);
+  box-shadow:
+    0 0 0 2px #ffffff,
+    0 0 0 4px var(--accent);
 }
 
 .sb-foil-editor-zone-draft {
   border-style: dashed;
   pointer-events: none;
-  background: color-mix(in srgb, var(--linen) 8%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 .sb-foil-editor-zone-number {
   position: absolute;
   top: 2px;
-  left: 3px;
-  font-family: var(--font-data);
+  left: 4px;
   font-size: 11px;
-  font-variant-numeric: tabular-nums;
-  color: var(--linen);
-  text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
-  pointer-events: none;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(27, 32, 51, 0.6);
 }
 
 .sb-foil-editor-handle {
   position: absolute;
-  z-index: 3;
   width: 14px;
   height: 14px;
-  box-sizing: border-box;
   transform: translate(-50%, -50%);
-  border: 1px solid var(--foil);
-  border-radius: 2px;
-  background: var(--velvet);
-  touch-action: none;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--accent);
+  box-sizing: border-box;
+  z-index: 3;
 }
 
-.sb-foil-editor-caption,
-.sb-foil-editor-help {
+.sb-foil-editor-caption {
   margin: 0;
-  font-family: var(--font-ui);
   font-size: 13px;
   line-height: 1.5;
-  color: var(--smoke);
-  max-width: 60ch;
+  color: var(--muted);
 }
 
 .sb-foil-editor-status {
-  margin: 0;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 16px;
-  font-family: var(--font-ui);
+  gap: 8px 10px;
+  margin: 0;
   font-size: 13px;
-  color: var(--smoke);
+  color: var(--muted);
 }
 
 .sb-foil-editor-chip {
-  display: inline-block;
-  padding: 2px 10px;
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  font-family: var(--font-ui);
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.14em;
-  font-size: 12px;
-  color: var(--smoke);
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 2px 12px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .sb-foil-editor-chip-edited {
-  color: var(--foil);
-  border-color: var(--foil);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
 }
 
 .sb-foil-editor-unsaved {
-  color: var(--linen);
-  font-style: italic;
+  font-weight: 600;
+  color: var(--warning);
 }
 
-.sb-foil-editor-tools,
+.sb-foil-editor-help {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.sb-foil-editor-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Segmented mode selector: one card per mode, the chosen one in accent. */
+.sb-foil-editor-modes {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+}
+
+.sb-foil-editor-modes > legend {
+  float: left;
+  width: 100%;
+  margin: 0 0 8px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.sb-foil-editor-mode {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  cursor: pointer;
+  transition:
+    background-color 200ms var(--ease-out-expo),
+    border-color 200ms var(--ease-out-expo);
+}
+
+.sb-foil-editor-mode input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  pointer-events: none;
+}
+
+.sb-foil-editor-mode:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.sb-foil-editor-mode:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.sb-foil-editor-mode > span > span {
+  display: block;
+}
+
+.sb-foil-editor-mode-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.sb-foil-editor-hint {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
 .sb-foil-editor-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 20px;
-}
-
-.sb-foil-editor-tools button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.sb-foil-editor-modes {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  display: grid;
-  gap: 10px;
-}
-
-.sb-foil-editor-modes legend {
-  margin-bottom: 6px;
-  padding: 0;
-}
-
-.sb-foil-editor-mode {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 10px;
-  align-items: start;
-  padding: 8px 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--linen) 10%, transparent);
-  cursor: pointer;
-}
-
-.sb-foil-editor-mode input {
-  margin-top: 4px;
-  accent-color: var(--foil);
-}
-
-.sb-foil-editor-mode-label {
-  display: block;
-  font-family: var(--font-ui);
-  font-size: 14px;
-  color: var(--linen);
-}
-
-.sb-foil-editor-hint {
-  display: block;
-  margin-top: 2px;
-  font-family: var(--font-ui);
-  font-size: 13px;
-  color: var(--smoke);
+  gap: 8px;
 }
 
 .sb-foil-editor-message {
-  min-height: 1.5em;
   margin: 0;
-  font-family: var(--font-ui);
+  min-height: 1.4em;
   font-size: 14px;
-  color: var(--foil);
+  font-weight: 600;
+  color: var(--success);
 }
 
 .sb-foil-editor-message-error {
-  color: var(--linen);
+  color: var(--danger);
+}
+
+/* Buttons used by the editor and the list. */
+.sb-mask-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 200ms var(--ease-out-expo);
+}
+
+.sb-mask-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sb-mask-btn-primary {
+  border: 0;
+  background: var(--accent);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.sb-mask-btn-primary:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+.sb-mask-btn-secondary {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.sb-mask-btn-secondary:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+/* The side panel: every block is a card. */
+.sb-foil-editor-column + .sb-foil-editor-column > * {
+  padding: 16px 18px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.sb-foil-editor-column + .sb-foil-editor-column > .sb-foil-editor-message,
+.sb-foil-editor-column + .sb-foil-editor-column > .sb-foil-editor-actions {
+  padding: 0;
+  background: none;
+  box-shadow: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .sb-foil-editor-sheen {
     animation: none;
-    transform: translateX(40px);
+  }
+  .sb-foil-editor-mode,
+  .sb-mask-btn {
+    transition: none;
   }
 }

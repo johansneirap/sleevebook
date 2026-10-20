@@ -272,7 +272,7 @@ export function AccountForm({ initial, publicHost }: AccountFormProps) {
       </section>
 
       <div className="sb-account-actions">
-        <button type="submit" className="sb-foil-action" disabled={pending}>
+        <button type="submit" className="sb-account-save" disabled={pending}>
           {pending ? "Guardando…" : "Guardar cambios"}
         </button>
         {state.status === "saved" && (

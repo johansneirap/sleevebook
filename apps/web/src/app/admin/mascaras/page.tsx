@@ -10,6 +10,7 @@ import {
 } from "../../../lib/foil-masks";
 import { isAdmin, requireUser } from "../../../lib/session";
 import "../../../components/library/catalog.css";
+import "../../../components/foil-mask-editor/foil-mask-editor.css";
 import "./mascaras.css";
 
 export const metadata: Metadata = {
@@ -123,7 +124,7 @@ export default async function MascarasPage({ searchParams }: PageProps) {
             ))}
           </select>
         </label>
-        <button type="submit" className="sb-foil-action">
+        <button type="submit" className="sb-mask-btn sb-mask-btn-primary">
           Filtrar
         </button>
       </form>

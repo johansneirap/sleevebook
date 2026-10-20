@@ -33,8 +33,8 @@ export default async function AccountPage() {
         <p className="sb-catalog-eyebrow">Tu cuenta</p>
         <h1 className="sb-catalog-title">{account.name}</h1>
         {saved.isPublic && (
-          <p style={{ margin: "14px 0 0" }}>
-            <Link href={`/u/${account.handle}`} className="sb-quiet-button">
+          <p style={{ margin: "12px 0 0" }}>
+            <Link href={`/u/${account.handle}`} className="sb-account-link">
               Ver mi perfil público
             </Link>
           </p>

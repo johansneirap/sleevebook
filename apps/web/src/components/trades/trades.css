@@ -1,40 +1,49 @@
-/* Intercambios page. Tokens live in globals.css; page shell classes come from catalog.css. */
+/* Intercambios (Estante v2): una tarjeta por persona, tiras de cartas, botones de contacto. */
 .sb-trade-intro {
-  margin: 18px 0 0;
+  margin: 12px 0 0;
   max-width: 62ch;
+  font-family: var(--font-ui);
   font-size: 15px;
   line-height: 1.6;
-  color: var(--smoke);
+  color: var(--muted);
 }
 
 .sb-trade-empty {
-  margin: 40px 0 0;
-  font-family: var(--font-display);
-  font-size: 22px;
-  line-height: 1.35;
-  color: var(--smoke);
-  max-width: 40ch;
+  margin: 20px 0 0;
+  padding: 28px 20px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--muted);
+  text-align: center;
 }
 
 .sb-trade-list {
   list-style: none;
-  margin: 40px 0 0;
+  margin: 20px 0 0;
   padding: 0;
-  border-top: 1px solid var(--rule);
+  display: grid;
+  gap: 16px;
 }
 
 .sb-trade-entry {
   display: grid;
   gap: 16px;
-  padding: 26px 0 28px;
-  border-bottom: 1px solid color-mix(in srgb, var(--linen) 10%, transparent);
+  padding: 18px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font-family: var(--font-ui);
 }
 
 .sb-trade-head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 14px;
+  gap: 8px 14px;
 }
 
 .sb-trade-avatar,
@@ -53,10 +62,10 @@
 .sb-trade-monogram {
   display: inline-grid;
   place-items: center;
-  border: 1px solid var(--rule);
-  font-family: var(--font-display);
-  font-size: 20px;
-  color: var(--linen);
+  background: var(--accent-soft);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent-strong);
 }
 
 .sb-trade-identity {
@@ -67,37 +76,36 @@
 
 .sb-trade-name {
   margin: 0;
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: clamp(22px, 3.4vw, 28px);
-  line-height: 1.1;
-  color: var(--linen);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ink);
   overflow-wrap: anywhere;
 }
 
 .sb-trade-handle {
-  font-family: var(--font-data);
-  font-size: 13px;
-  color: var(--smoke);
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
   text-decoration: none;
-  transition: color 240ms var(--ease-out-expo);
 }
 
 .sb-trade-handle:hover,
 .sb-trade-handle:focus-visible {
-  color: var(--foil);
+  color: var(--accent);
 }
 
 .sb-trade-tag {
   margin-left: auto;
-  padding: 3px 10px;
-  border: 1px solid var(--foil-dim);
-  border-radius: 2px;
-  font-family: var(--font-ui);
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.14em;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--success-soft);
   font-size: 12px;
-  color: var(--foil);
+  font-weight: 600;
+  color: var(--success);
   white-space: nowrap;
 }
 
@@ -105,59 +113,63 @@
   display: grid;
   gap: 8px;
   margin: 0;
+  min-width: 0;
 }
 
 .sb-trade-row-label {
   margin: 0;
-  font-family: var(--font-ui);
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.14em;
-  font-size: 12px;
-  color: var(--smoke);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
 }
 
+/* One horizontal strip of card thumbnails. */
 .sb-trade-cards {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 4px 2px 8px;
   display: flex;
-  flex-wrap: wrap;
   gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
 }
 
 .sb-trade-card {
-  width: 88px;
+  flex: none;
+  width: 84px;
   margin: 0;
   display: grid;
-  gap: 5px;
+  gap: 6px;
+  scroll-snap-align: start;
 }
 
 .sb-trade-thumb,
 .sb-trade-thumb-blank {
   display: block;
-  width: 88px;
+  width: 84px;
   aspect-ratio: 2.5 / 3.5;
-  border-radius: 4px;
+  border-radius: 8px;
   box-sizing: border-box;
 }
 
 .sb-trade-thumb {
   object-fit: cover;
-  background: var(--velvet-raised);
+  background: var(--surface-2);
+  box-shadow: 0 1px 2px rgba(27, 32, 51, 0.12);
 }
 
 .sb-trade-thumb-blank {
-  border: 1px dashed var(--rule);
-  background: var(--velvet-raised);
+  border: 1px dashed var(--line);
+  background: var(--surface-2);
 }
 
 .sb-trade-card figcaption {
   display: grid;
-  gap: 1px;
-  font-size: 11px;
+  gap: 2px;
+  font-size: 12px;
   line-height: 1.3;
-  color: var(--smoke);
-  overflow-wrap: anywhere;
+  color: var(--muted);
 }
 
 .sb-trade-card figcaption > span {
@@ -168,37 +180,66 @@
 }
 
 .sb-trade-card figcaption .sb-data {
-  font-size: 11px;
+  font-size: 12px;
+  color: var(--ink);
 }
 
+/* Contact buttons: secondary buttons, 44px targets. */
 .sb-trade-contact {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 18px;
+  gap: 8px;
   font-family: var(--font-ui);
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.14em;
-  font-size: 12px;
 }
 
 .sb-trade-contact a {
-  color: var(--smoke);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
   text-decoration: none;
-  border-bottom: 1px solid transparent;
-  padding-bottom: 2px;
-  transition: color 240ms var(--ease-out-expo);
+  transition: background-color 200ms var(--ease-out-expo);
 }
 
 .sb-trade-contact a:hover,
 .sb-trade-contact a:focus-visible {
-  color: var(--foil);
-  border-bottom-color: var(--foil-dim);
+  background: var(--accent-soft);
+}
+
+.sb-trade-action {
+  margin: 20px 0 0;
+}
+
+/* Page-level primary button (e.g. "Ir a mi cuenta"). */
+.sb-trade-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #ffffff;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.sb-trade-btn:hover {
+  background: var(--accent-strong);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .sb-trade-handle,
-  .sb-trade-contact a {
+  .sb-trade-contact a,
+  .sb-trade-btn {
     transition: none;
   }
 }

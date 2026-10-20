@@ -24,8 +24,8 @@ export default async function IntercambiosPage() {
           Mientras estén desactivados no cruzamos tus cartas con nadie y no apareces en las
           coincidencias de otros coleccionistas. Puedes volver a activarlos en tu cuenta.
         </p>
-        <p style={{ margin: "28px 0 0" }}>
-          <Link href="/cuenta" className="sb-foil-action">
+        <p className="sb-trade-action">
+          <Link href="/cuenta" className="sb-trade-btn">
             Ir a mi cuenta
           </Link>
         </p>

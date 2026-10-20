@@ -357,7 +357,7 @@ export function FoilMaskEditor({
                 <linearGradient id={sheenGradient} x1="0" x2="1" y1="0" y2="0">
                   {/* CSS variables only resolve in style, not in SVG presentation attributes. */}
                   <stop offset="0" style={{ stopColor: "var(--foil)", stopOpacity: 0 }} />
-                  <stop offset="0.5" style={{ stopColor: "var(--linen)", stopOpacity: 0.9 }} />
+                  <stop offset="0.5" style={{ stopColor: "#ffffff", stopOpacity: 0.9 }} />
                   <stop offset="1" style={{ stopColor: "var(--foil)", stopOpacity: 0 }} />
                 </linearGradient>
               </defs>
@@ -458,12 +458,16 @@ export function FoilMaskEditor({
         </p>
 
         <div className="sb-foil-editor-tools">
-          <button type="button" className="sb-quiet-button" onClick={addDefaultZone}>
+          <button
+            type="button"
+            className="sb-mask-btn sb-mask-btn-secondary"
+            onClick={addDefaultZone}
+          >
             Añadir zona
           </button>
           <button
             type="button"
-            className="sb-quiet-button"
+            className="sb-mask-btn sb-mask-btn-secondary"
             disabled={selected === null}
             onClick={() => {
               if (selected !== null) {
@@ -497,7 +501,7 @@ export function FoilMaskEditor({
         <div className="sb-foil-editor-actions">
           <button
             type="button"
-            className="sb-foil-action"
+            className="sb-mask-btn sb-mask-btn-primary"
             disabled={!dirty || pending}
             onClick={handleSave}
           >
@@ -505,7 +509,7 @@ export function FoilMaskEditor({
           </button>
           <button
             type="button"
-            className="sb-quiet-button"
+            className="sb-mask-btn sb-mask-btn-secondary"
             disabled={pending}
             onClick={handleReset}
           >
@@ -513,7 +517,7 @@ export function FoilMaskEditor({
           </button>
           <Link
             href="/admin/mascaras"
-            className="sb-quiet-button"
+            className="sb-mask-btn sb-mask-btn-secondary"
             onClick={(event) => {
               if (dirty && !window.confirm("Descartar los cambios sin guardar?")) {
                 event.preventDefault();

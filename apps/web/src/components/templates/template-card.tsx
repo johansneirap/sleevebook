@@ -23,7 +23,7 @@ export function TemplateCard({ template, signedIn }: TemplateCardProps) {
         theme={fragment.theme}
         panels={fragment.panels}
       />
-      <div style={{ display: "grid", gap: 8, minWidth: 0 }}>
+      <div className="sb-tpl-card-body">
         <h2 className="sb-tpl-name">{template.name}</h2>
         <p className="sb-tpl-meta">
           <span>@{template.author.handle}</span>
@@ -42,14 +42,14 @@ export function TemplateCard({ template, signedIn }: TemplateCardProps) {
         {signedIn ? (
           <form action={useTemplateForm}>
             <input type="hidden" name="templateId" value={template.id} />
-            <button type="submit" className="sb-foil-action">
+            <button type="submit" className="sb-tpl-primary">
               Usar plantilla
             </button>
           </form>
         ) : (
           <Link
             href={`/entrar?next=${encodeURIComponent("/plantillas")}`}
-            className="sb-foil-action"
+            className="sb-tpl-primary"
           >
             Usar plantilla
           </Link>
