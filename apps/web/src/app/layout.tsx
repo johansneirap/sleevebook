@@ -1,19 +1,17 @@
-import { Geist_Mono, Hanken_Grotesk, Instrument_Serif } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
 
-const display = Instrument_Serif({
+// One family for the whole app (docs/DESIGN_BRIEF.md v2): titles, text and numbers.
+const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
-  variable: "--font-instrument-serif",
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-jakarta",
 });
-const ui = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-hanken-grotesk" });
-const data = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es" className={`${display.variable} ${ui.variable} ${data.variable}`}>
+    <html lang="es" className={jakarta.variable}>
       <body>{children}</body>
     </html>
   );

@@ -1,72 +1,72 @@
-# Sleevebook — Design brief
+# Sleevebook — Design brief (v2, "Estante")
 
-> Guárdalo en `docs/DESIGN_BRIEF.md`. Úsalo como respuesta a `/teach-impeccable` y como contexto en cualquier tarea de UI.
+> Reemplaza a la v1 "la galería privada" (2026-10-19): el usuario la encontró demasiado lujosa y de revista para jugadores y coleccionistas de TCG. Referencia visual aprobada: el lienzo [Sleevebook — nuevas direcciones visuales](https://claude.ai/artifact/UXGU24zvijTbojmV9Enqjz), artboards "A · Estante" y "A + binder de verdad" (laptop y móvil).
 
-## Concepto: la galería privada
+## Concepto: app amable, binder de verdad
 
-Sleevebook no es una app de inventario: es una **sala privada donde se exhibe una colección**. Visitar un binder tiene que sentirse como entrar a una galería de noche o abrir un estuche de relojería: silencio, luz dirigida, materiales nobles y cada pieza presentada con ceremonia.
+Sleevebook es una **aplicación** para jugadores y coleccionistas: clara, cercana, rápida de usar. La interfaz se comporta como una buena app de colección (navegación evidente, tarjetas, chips, botones que se ven como botones). **El binder es la excepción con oficio**: se presenta como un objeto físico real (tapa con textura y costura, lomo con anillas, hojas de papel, fundas con brillo) y en laptop se exhibe con calidad distinguida.
 
-- **Tres palabras:** íntimo, preciso, luminoso.
-- **Referencias de sensación (no de copia):** vitrinas de relojería, casas de subasta, libros de arte encuadernados en tela, la caja de un producto premium al abrirse.
-- **Lo que NO es:** dashboard SaaS, gradientes morados, tarjetas con sombras genéricas, emojis, colores de marca Pokémon, interfaz "gamer" con neón.
+- **Tres palabras:** amable, clara, coleccionable.
+- **Lo que NO es:** revista/editorial de lujo (nada de serif de revista, terciopelo, oro), dashboard SaaS gris, gradientes morados, emojis, colores de marca Pokémon, neón gamer, grilla plana como representación del binder.
 
-## Materiales y color
+## Color (tokens en `apps/web/src/app/globals.css`)
 
-La interfaz es el estuche; las cartas son la joya. La UI se retira para que el foil y el arte de las cartas brillen.
-
-| Token | Uso | Dirección |
+| Token | Valor | Uso |
 |---|---|---|
-| `--velvet` | Fondo principal | Casi negro con tinte cálido (no `#000`): terciopelo oscuro |
-| `--leather` | Superficie del binder, paneles | Marrón-negro o verde botella muy oscuro, con textura sutil de cuero/tela |
-| `--linen` | Texto principal | Blanco hueso cálido, nunca blanco puro |
-| `--smoke` | Texto secundario | Gris cálido con 60–70 % de contraste |
-| `--foil` | Acento único | Dorado champaña, usado con mucha moderación: filetes, estados activos, el número de avance |
-| `--sleeve` | Fundas | Transparencia con reflejo especular; nunca opaco |
+| `--bg` | `#F5F6FA` | Fondo de la app |
+| `--surface` | `#FFFFFF` | Tarjetas, barras, paneles |
+| `--surface-2` | `#F1F3F8` | Campos, chips neutros, hover suave |
+| `--ink` | `#1B2033` | Texto principal |
+| `--muted` | `#5B6278` | Texto secundario (contraste AA sobre blanco y `--bg`) |
+| `--line` | `#E3E6EF` | Bordes y separadores |
+| `--accent` | `#3451D1` | Acento único de la interfaz: acciones primarias, estado activo, progreso |
+| `--accent-strong` | `#2238A8` | Hover/pressed del acento |
+| `--accent-soft` | `#EEF1FD` | Fondo de navegación activa y chips del acento |
+| `--success` / `--success-soft` | `#127A45` / `#E8F7EE` | Completo, disponible |
+| `--warning` / `--warning-soft` | `#8A5A00` / `#FFF4D6` | Reservado, avisos |
+| `--danger` / `--danger-soft` | `#B42318` / `#FDECEA` | Vendido, eliminar, errores |
+| `--coral` | `#FF6B4A` | Punto de avisos sin leer (solo ese uso) |
 
-- Un solo acento. El color fuerte lo ponen las cartas.
-- Modo claro opcional como "papel de algodón y tinta", pero el modo oscuro es la experiencia principal.
+El color fuerte lo ponen las cartas y la tapa de cada binder. La interfaz usa un solo acento.
+
+**Binder (objeto):** la tapa toma el color del tema del binder (`--binder-cover`, por defecto `#2F4A8A`; tono profundo calculado), con textura sutil y costura punteada; hojas color papel (`#FBFBF7` con degradé hacia el lomo); anillas metálicas (grises con brillo); fundas transparentes con reflejo especular diagonal. Los temas (`clasico`, `oscuro`, `vintage`, `neon`) cambian tapa, papel y funda, nunca la interfaz alrededor.
 
 ## Tipografía
 
-- **Display:** serif de alto contraste con carácter editorial (candidatas libres: Instrument Serif, Gloock, Bodoni Moda, Cormorant Garamond). Usar en titulares grandes y con mucho aire, nunca en botones.
-- **Texto e interfaz:** grotesca limpia y precisa (candidatas: Hanken Grotesk, Manrope, Geist). Nada de Inter ni Roboto.
-- **Datos:** mono discreta con cifras tabulares para precios, códigos `S3·B·5` y porcentajes.
-- Mayúsculas pequeñas con tracking amplio para etiquetas ("MASTER SET", "SHEET 3").
+- Una familia: **Plus Jakarta Sans** (`--font-ui`; también `--font-display` y `--font-data` apuntan a ella).
+- Títulos: 700–800, tracking −0.01em. H1 de página 24–28 px; dentro de tarjetas 18–22 px. Nada de títulos gigantes: el binder es el protagonista.
+- Texto 14–16 px, 400–500. Etiquetas 12–13 px 600, sin mayúsculas forzadas.
+- Números (precios, conteos, códigos): `font-variant-numeric: tabular-nums` (clase `.sb-data`).
 
-## Movimiento: lento, físico, con intención
+## Forma y espacio
 
-El movimiento es el lujo. Nada aparece de golpe; todo tiene peso.
+- Radios: 10 px (botones pequeños, chips de borde), 12–14 px (botones, campos), 16–20 px (tarjetas), 999 px (chips/píldoras).
+- Sombras suaves y cortas: `0 1px 2px rgba(27,32,51,.06), 0 8px 24px rgba(27,32,51,.06)`. El binder tiene su propia sombra profunda (objeto sobre la mesa).
+- Espaciado en múltiplos de 4; páginas con 20 px de margen en móvil y 40 px en laptop; contenido hasta 1320 px.
+- Objetivos táctiles ≥ 44 px.
 
-| Momento | Comportamiento | Duración / curva |
-|---|---|---|
-| Entrar a un binder | El binder cerrado aparece en la luz, se abre la tapa y la cámara se acerca a la primera cara | 1,2–1,8 s total, coreografiado |
-| Pasar página | La hoja se curva desde la esquina y cae con inercia; la sombra se mueve con ella | 600–900 ms, seguible con el dedo |
-| Sacar una carta | Se desliza fuera de la funda, se eleva hacia el centro y el fondo se oscurece | Spring suave (sin rebote visible) |
-| Inclinar carta | El foil responde a puntero o giroscopio con reflejo especular | Seguimiento inmediato, retorno con spring |
-| Reordenar | Las cartas vuelan a su nuevo lugar en paralelo, con escalonado mínimo | 500–700 ms, FLIP |
-| Cambiar de vista | Transiciones compartidas entre páginas (View Transitions / shared layout) | 400–600 ms |
-| Hover | Luz que se desplaza sobre la superficie, no cambios de color bruscos | 200–300 ms |
+## Componentes
 
-- Curvas de salida largas (ease-out exponencial); evitar `linear` y rebotes caricaturescos.
-- Scroll suave (Lenis) solo en páginas editoriales, no en el editor.
-- Animar solo `transform` y `opacity`; 60 fps en móvil de gama media.
-- `prefers-reduced-motion`: fundidos breves, sin inclinación ni curvatura.
-- Sonido opcional y apagado por defecto: un roce de funda y un giro de página muy sutiles.
+- **Navegación:** laptop = barra superior blanca (logo, enlaces en píldora con estado activo `--accent-soft`, buscador, botón "Escanear", avatar). Móvil = barra inferior con 5 destinos (Binders, Deseos, Escanear al centro como botón destacado, Cambios, Cuenta) y cabecera simple con volver/título/acciones.
+- **Botón primario:** fondo `--accent`, texto blanco, 600–700. **Secundario:** blanco con borde `--line`. **Fantasma:** texto `--accent` sin borde.
+- **Tarjeta:** `--surface`, radio 20, sombra suave, padding 16–20.
+- **Chips:** píldoras pequeñas para estado (Completo, 155/155, US$, Vendido, Reservado).
+- **Progreso:** barra de 8 px redondeada en `--accent` (o `--success` al 100 %).
+- **Vacíos:** texto amable + acción clara.
 
-## Composición
+## El binder
 
-- Mucho espacio negativo. El binder es el centro; la UI vive en los bordes y se oculta mientras se hojea.
-- Luz dirigida: un halo suave detrás del binder abierto, como un foco de vitrina.
-- Detalles de oficio: filetes finos dorados, numeración tipo catálogo, texturas a baja opacidad, esquinas precisas.
-- Las cifras importantes (valor, % de avance) se presentan como en un catálogo de subasta: grandes, en serif, con su etiqueta en versalitas.
+- **Laptop:** spread abierto al centro sobre una "mesa" clara con luz suave (degradé radial blanco → `--bg`); tapa con margen visible alrededor de las hojas, costura punteada, lomo central con tres anillas; cada carta en su funda. Pasar página con la curvatura 3D, sacar/voltear carta, binder cerrado que gira: se mantienen y deben sentirse premium.
+- **Móvil:** una hoja a la vez (lomo y anillas al costado izquierdo), se pasa deslizando con el dedo o con botones; puntos de página. Animaciones livianas: deslizamiento/fundido, sin curvatura 3D ni giro del binder cerrado (se muestra la tapa estática con "Abrir"). El detalle de carta y el holo se mantienen.
+- Encima del binder, solo una franja compacta: nombre, chips de progreso y valor, acciones. Nada de cifras gigantes.
 
-## Pantallas clave para diseñar primero
+## Movimiento
 
-1. **Portada pública de un binder** (lo que ve alguien que abre un link): binder cerrado, título, dueño, avance, botón "Abrir".
-2. **Binder abierto** con dos caras visibles, navegación mínima y detalle de carta al tocar.
-3. **Detalle de carta**: carta grande con foil interactivo, datos de catálogo, precio con fuente y fecha.
-4. **Landing de Sleevebook**: el hero es un binder real hojeándose solo, no un texto con un botón.
+- Microinteracciones 150–250 ms, `--ease-out-expo`; transform/opacity solamente.
+- `prefers-reduced-motion`: sin inclinación ni curvatura; fundidos.
 
-## Criterio de calidad
+## Accesibilidad
 
-Antes de dar una pantalla por terminada: ¿un coleccionista la sacaría como captura para mostrarla? ¿Se siente como abrir algo valioso? Si parece una app genérica con cartas encima, no está lista.
+- Contraste AA (4.5:1 texto, 3:1 elementos grandes y bordes de control).
+- Foco visible: anillo de 2 px `--accent` con 2 px de separación.
+- Botones reales, labels reales, `aria-label` en botones de solo ícono, íconos SVG de trazo (nunca emoji).

@@ -1,51 +1,83 @@
-/* Design tokens from docs/DESIGN_BRIEF.md ("la galería privada"). Only
-   tokens and font hooks live here for now -- pages opt in to them; the
-   per-binder theme (ThemedMain / theme-presets.ts) still owns binder pages. */
+/* Design tokens from docs/DESIGN_BRIEF.md (v2, "Estante"): a friendly app
+   around a binder that looks like the real object. */
 :root {
-  --velvet: #14110f;
-  --velvet-raised: #1d1916;
-  --leather: #2a201a;
-  --leather-deep: #1a1411;
-  --linen: #ede6da;
-  --smoke: #a39a8e;
-  --foil: #d4b77c;
-  --foil-dim: #8f7a52;
-  --sleeve: rgba(255, 255, 255, 0.08);
-  --rule: color-mix(in srgb, var(--foil) 45%, transparent);
+  --bg: #f5f6fa;
+  --surface: #ffffff;
+  --surface-2: #f1f3f8;
+  --ink: #1b2033;
+  --muted: #5b6278;
+  --line: #e3e6ef;
+  --accent: #3451d1;
+  --accent-strong: #2238a8;
+  --accent-soft: #eef1fd;
+  --success: #127a45;
+  --success-soft: #e8f7ee;
+  --warning: #8a5a00;
+  --warning-soft: #fff4d6;
+  --danger: #b42318;
+  --danger-soft: #fdecea;
+  --coral: #ff6b4a;
 
-  --font-display: var(--font-instrument-serif), "Bodoni Moda", Georgia, serif;
-  --font-ui: var(--font-hanken-grotesk), "Helvetica Neue", Arial, sans-serif;
-  --font-data: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --shadow: 0 1px 2px rgba(27, 32, 51, 0.06), 0 8px 24px rgba(27, 32, 51, 0.06);
+
+  /* The binder object (overridden per binder by its theme). */
+  --binder-cover: #2f4a8a;
+  --binder-cover-deep: #1d2e56;
+  --binder-paper: #fbfbf7;
+  --binder-paper-edge: #ecece4;
+
+  --font-ui: var(--font-jakarta), "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-ui);
+  --font-data: var(--font-ui);
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Legacy v1 ("galería privada") names, aliased to v2 so pages keep
+     working while they migrate. New code uses the v2 names above. */
+  --velvet: var(--bg);
+  --velvet-raised: var(--surface);
+  --leather: var(--binder-cover);
+  --leather-deep: var(--binder-cover-deep);
+  --linen: var(--ink);
+  --smoke: var(--muted);
+  --foil: var(--accent);
+  --foil-dim: var(--accent-strong);
+  --sleeve: rgba(220, 224, 236, 0.35);
+  --rule: var(--line);
 }
 
+/* Small label: 12-13px semibold, no forced caps. */
 .sb-label {
   font-family: var(--font-ui);
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.14em;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
+/* Titles: bold sans (the v1 serif display is gone). */
 .sb-display {
   font-family: var(--font-display);
-  font-weight: 400;
-  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
 }
 
+/* Numbers: prices, counts, codes. */
 .sb-data {
   font-family: var(--font-data);
   font-variant-numeric: tabular-nums;
 }
 
-/* Base element styles: the UI is the case, the cards are the jewel. */
 html {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
   margin: 0;
-  background: var(--velvet);
-  color: var(--linen);
+  background: var(--bg);
+  color: var(--ink);
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
 }
@@ -54,19 +86,18 @@ h1,
 h2,
 h3 {
   font-family: var(--font-display);
-  font-weight: 400;
-  letter-spacing: 0.005em;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 a {
-  color: var(--foil);
-  text-decoration-color: var(--rule);
+  color: var(--accent);
   text-underline-offset: 3px;
-  transition: color 240ms var(--ease-out-expo);
+  transition: color 180ms var(--ease-out-expo);
 }
 
 a:hover {
-  color: var(--linen);
+  color: var(--accent-strong);
 }
 
 button,
@@ -75,41 +106,43 @@ select,
 textarea {
   font: inherit;
   font-size: 0.875rem;
-  color: var(--linen);
-  background: var(--velvet-raised);
-  border: 1px solid color-mix(in srgb, var(--linen) 16%, transparent);
-  border-radius: 2px;
-  padding: 0.35em 0.75em;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.5em 0.85em;
   transition:
-    border-color 240ms var(--ease-out-expo),
-    background-color 240ms var(--ease-out-expo);
+    border-color 180ms var(--ease-out-expo),
+    background-color 180ms var(--ease-out-expo);
 }
 
 button {
   cursor: pointer;
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.1em;
+  font-weight: 600;
 }
 
-button:hover:not(:disabled),
+button:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
 input:hover,
 select:hover,
 textarea:hover {
-  border-color: var(--rule);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
 }
 
 button:disabled {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: default;
 }
 
 :focus-visible {
-  outline: 1px solid var(--foil);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--foil) 35%, transparent);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
