@@ -31,7 +31,7 @@ export function NewBinderForm({ defaultRows, defaultCols }: NewBinderFormProps) 
   const [sheets, setSheets] = useState("20");
 
   return (
-    <form action={createBinder} style={{ display: "grid", gap: 36, marginTop: 40 }}>
+    <form action={createBinder} style={{ display: "grid", gap: 20, marginTop: 24 }}>
       <label className="sb-field">
         <span className="sb-field-label">Nombre</span>
         <input type="text" name="name" placeholder="Mi binder" required />

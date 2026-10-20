@@ -1,37 +1,84 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { duplicateBinder, renameBinder, setBinderStatus } from "../../lib/binder-actions";
 import type { BinderSummary } from "../../lib/binders";
+import type { GoalProgress } from "../../lib/goals";
 import { DeleteBinderForm } from "../binder/delete-binder-form";
 
 interface BinderCatalogEntryProps {
   binder: BinderSummary;
-  lot: number;
+  index: number;
+  cover: string;
+  goal: GoalProgress | null;
 }
 
-// One lot of the private catalogue: lot number, serif name, small-caps meta,
-// and quiet owner actions. Accessible names of the actions are kept as-is.
-export function BinderCatalogEntry({ binder: b, lot }: BinderCatalogEntryProps) {
+const STATUS_LABELS: Record<string, string> = {
+  draft: "Borrador",
+  published: "Publicado",
+  archived: "Archivado",
+};
+
+// One binder card: a mini closed binder, name, format, status, goal progress
+// and the owner actions (kept as plain forms so they work without JS).
+export function BinderCatalogEntry({ binder: b, index, cover, goal }: BinderCatalogEntryProps) {
   const archived = b.status === "archived";
+  const statusLabel = STATUS_LABELS[b.status] ?? b.status;
+  const statusTone = archived
+    ? "sb-chip--warning"
+    : b.status === "published"
+      ? "sb-chip--accent"
+      : "";
+  const percentage = goal?.percentage ?? 0;
 
   return (
-    <li className="sb-catalog-entry" style={{ animationDelay: `${Math.min(lot - 1, 12) * 70}ms` }}>
+    <li
+      className="sb-catalog-entry"
+      style={{ "--sb-stagger": `${Math.min(index, 12) * 60}ms` } as CSSProperties}
+    >
       <div className="sb-catalog-face">
-        <span className="sb-catalog-lot" aria-hidden="true">
-          Nº {String(lot).padStart(2, "0")}
-        </span>
+        <div
+          className="sb-mini-binder"
+          aria-hidden="true"
+          style={{ "--sb-cover": cover } as CSSProperties}
+        >
+          <span className="sb-mini-binder-spine" />
+          <span className="sb-mini-binder-stitch" />
+          <span className="sb-mini-binder-label" />
+        </div>
 
         <div className="sb-catalog-body">
-          <Link href={`/binders/${b.id}`} className="sb-catalog-name">
-            {b.name}
-          </Link>
+          <div className="sb-catalog-head">
+            <Link href={`/binders/${b.id}`} className="sb-catalog-name">
+              {b.name}
+            </Link>
+            <span className={`sb-chip ${statusTone}`.trim()}>{statusLabel}</span>
+          </div>
 
           <p className="sb-catalog-meta">
             <span className="sb-data">
               {b.formatRows}×{b.formatCols}
             </span>
             <span>{`${b.sheets} hojas`}</span>
-            <span className={archived ? "sb-catalog-status-archived" : undefined}>{b.status}</span>
           </p>
+
+          {goal ? (
+            <div className="sb-catalog-progress">
+              <p className="sb-catalog-progress-text">
+                <span className="sb-data">{`${goal.owned} de ${goal.total}`}</span> cartas ·{" "}
+                <span className="sb-data">{`${percentage}%`}</span>
+              </p>
+              <div
+                className={`sb-progress${percentage >= 100 ? " sb-progress--done" : ""}`}
+                role="progressbar"
+                aria-label={`Progreso del objetivo de ${b.name}`}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={percentage}
+              >
+                <span style={{ width: `${Math.min(percentage, 100)}%` }} />
+              </div>
+            </div>
+          ) : null}
 
           <div className="sb-owner-actions">
             <form action={renameBinder} className="sb-rename">

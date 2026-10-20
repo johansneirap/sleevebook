@@ -14,7 +14,7 @@ export function DeleteBinderForm({ binderId }: { binderId: string }) {
       style={{ display: "inline" }}
     >
       <input type="hidden" name="binderId" value={binderId} />
-      <button type="submit" className="sb-quiet-button">
+      <button type="submit" className="sb-quiet-button sb-quiet-button--danger">
         Eliminar
       </button>
     </form>

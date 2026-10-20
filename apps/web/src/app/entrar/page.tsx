@@ -26,45 +26,75 @@ export default async function SignInPage({ searchParams }: PageProps) {
   return (
     <main
       style={{
-        minHeight: "100svh",
+        minHeight: "100dvh",
         display: "grid",
         placeItems: "center",
-        padding: "48px 16px",
-        background: "radial-gradient(ellipse at 50% 20%, var(--velvet-raised), var(--velvet) 70%)",
+        padding: "32px 20px",
+        boxSizing: "border-box",
+        background: "var(--bg)",
       }}
     >
       <section
         style={{
-          width: "min(380px, 100%)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 28,
-          textAlign: "center",
+          width: "min(400px, 100%)",
+          boxSizing: "border-box",
+          display: "grid",
+          gap: 24,
+          padding: "32px 28px",
+          borderRadius: 20,
+          border: "1px solid var(--line)",
+          background: "var(--surface)",
+          boxShadow: "var(--shadow)",
         }}
       >
-        <div>
+        <div style={{ display: "grid", justifyItems: "center", gap: 16, textAlign: "center" }}>
           <Link
             href="/"
-            className="sb-display"
-            style={{ fontSize: 22, color: "var(--linen)", textDecoration: "none" }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 10,
+              color: "var(--ink)",
+              fontSize: 18,
+              fontWeight: 800,
+              textDecoration: "none",
+            }}
           >
+            <span
+              aria-hidden="true"
+              style={{
+                display: "grid",
+                placeItems: "center",
+                width: 34,
+                height: 34,
+                borderRadius: 10,
+                background: "var(--accent)",
+                color: "#ffffff",
+                fontSize: 17,
+                fontWeight: 800,
+              }}
+            >
+              S
+            </span>
             Sleevebook
           </Link>
-          <h1
-            className="sb-display"
-            style={{ margin: "28px 0 10px", fontSize: 44, fontWeight: 400, color: "var(--linen)" }}
-          >
-            Entrar
-          </h1>
-          <p style={{ margin: 0, color: "var(--smoke)", lineHeight: 1.6 }}>
-            Tus binders, tu lista de deseos y tus avisos, en tu cuenta.
-          </p>
+          <div>
+            <h1
+              className="sb-display"
+              style={{ margin: 0, fontSize: 28, fontWeight: 800, color: "var(--ink)" }}
+            >
+              Entrar
+            </h1>
+            <p style={{ margin: "8px 0 0", color: "var(--muted)", lineHeight: 1.6 }}>
+              Tus binders, tu lista de deseos y tus avisos, en tu cuenta.
+            </p>
+          </div>
         </div>
 
         {googleLoginEnabled ? (
           <GoogleSignInButton next={next} />
         ) : (
-          <p className="sb-label" style={{ margin: 0, fontSize: 11, color: "var(--smoke)" }}>
+          <p style={{ margin: 0, fontSize: 14, color: "var(--muted)", textAlign: "center" }}>
             El acceso con Google aún no está configurado.
           </p>
         )}

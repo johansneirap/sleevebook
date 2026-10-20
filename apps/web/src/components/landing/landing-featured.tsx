@@ -6,27 +6,27 @@ import { GalleryCard } from "../gallery/gallery-card";
 const LANDING_FEATURED_LIMIT = 3;
 
 const SECTION: CSSProperties = {
-  padding: "clamp(40px, 8vh, 80px) clamp(16px, 5vw, 56px)",
-  maxWidth: 1040,
+  maxWidth: 1320,
+  margin: "0 auto",
+  padding: "clamp(24px, 5vh, 48px) clamp(20px, 5vw, 56px) clamp(40px, 8vh, 72px)",
+  boxSizing: "border-box",
 };
 
 const HEAD: CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
-  alignItems: "baseline",
+  alignItems: "center",
   justifyContent: "space-between",
   gap: 12,
   margin: 0,
-  paddingTop: 18,
-  position: "relative",
 };
 
 const GRID: CSSProperties = {
   listStyle: "none",
-  margin: "24px 0 0",
+  margin: "20px 0 0",
   padding: 0,
   display: "grid",
-  gap: "36px 28px",
+  gap: 20,
   gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 280px), 1fr))",
 };
 
@@ -44,28 +44,16 @@ export async function LandingFeatured() {
       data-testid="landing-featured"
     >
       <div style={HEAD}>
-        <span
-          aria-hidden
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 1,
-            background: "linear-gradient(90deg, transparent, var(--foil), transparent)",
-          }}
-        />
         <h2
           id="landing-featured-title"
           className="sb-label"
-          style={{ margin: 0, color: "var(--smoke)", fontSize: 12, fontWeight: 400 }}
+          style={{ margin: 0, color: "var(--ink)", fontSize: 18, fontWeight: 800 }}
         >
           Destacados
         </h2>
         <Link
           href="/galeria"
-          className="sb-label"
-          style={{ color: "var(--smoke)", fontSize: 12, textDecoration: "none" }}
+          style={{ color: "var(--accent)", fontSize: 14, fontWeight: 700, textDecoration: "none" }}
         >
           Ver la galería
         </Link>
