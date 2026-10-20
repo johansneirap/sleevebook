@@ -305,7 +305,7 @@ export function LandingHero() {
             lineHeight: 1.6,
           }}
         >
-          Catalogá tus cartas, mirá qué te falta para completar un set y compartí tu binder con un
+          Cataloga tus cartas, mira qué te falta para completar un set y comparte tu binder con un
           link.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>

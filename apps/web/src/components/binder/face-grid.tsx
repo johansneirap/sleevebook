@@ -46,7 +46,7 @@ export const FACE_CSS = `
    (63:88 cards, 6px gaps, 36px side padding, ~70px of label + padding), so a
    whole spread is visible without zooming. */
 .sb-face {
-  --sb-page-h: calc(100svh - 300px);
+  --sb-page-h: calc(100svh - 380px);
   width: max(
     220px,
     min(

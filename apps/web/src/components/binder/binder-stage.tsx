@@ -17,6 +17,22 @@ const DESK_CSS = `
   padding: clamp(20px, 3vw, 32px) clamp(8px, 2vw, 24px) clamp(16px, 2vw, 24px);
   background: radial-gradient(ellipse 70% 60% at 50% 50%, #ffffff, var(--bg) 72%);
 }
+/* Laptop: the close control floats in the desk's corner so the binder keeps
+   the vertical space; phones keep it in the flow above the page. */
+.sb-close-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+@media (min-width: 768px) {
+  .sb-close-row {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    margin: 0;
+    z-index: 3;
+  }
+}
 .sb-close {
   min-height: 40px;
   padding: 0 14px;
@@ -164,7 +180,7 @@ export function BinderStage({
           />
         ) : (
           <>
-            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+            <div className="sb-close-row">
               <button type="button" className="sb-close" onClick={() => setClosed(true)}>
                 Cerrar binder
               </button>

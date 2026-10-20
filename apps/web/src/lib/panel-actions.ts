@@ -87,7 +87,7 @@ export async function addPanel(binderId: string, input: AddPanelInput): Promise<
     if (existing.kind !== "empty") {
       return {
         ok: false,
-        error: `El bolsillo ${code} ya tiene contenido. Vaciá esos bolsillos antes de poner un panel ahí.`,
+        error: `El bolsillo ${code} ya tiene contenido. Vacía esos bolsillos antes de poner un panel ahí.`,
       };
     }
   }

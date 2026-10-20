@@ -220,7 +220,7 @@ export async function computeImportLayout(
     const available = Math.max(totalCapacity - startIndex, 0);
     return {
       ok: false,
-      error: `No entran todas las cartas: se necesitan ${toPlace.length} bolsillos y hay ${available} disponibles desde ese punto. Aumentá las hojas o elegí otro destino.`,
+      error: `No entran todas las cartas: se necesitan ${toPlace.length} bolsillos y hay ${available} disponibles desde ese punto. Aumenta las hojas o elige otro destino.`,
     };
   }
 
@@ -231,7 +231,7 @@ export async function computeImportLayout(
     if (existing.kind !== "empty") {
       return {
         ok: false,
-        error: `El bolsillo ${code} ya tiene contenido. Elegí otro destino o vaciá esos bolsillos primero.`,
+        error: `El bolsillo ${code} ya tiene contenido. Elige otro destino o vacía esos bolsillos primero.`,
       };
     }
     pockets[code] = toPlace[i] as PocketValue;

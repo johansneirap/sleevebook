@@ -7,10 +7,11 @@ export const dynamic = "force-dynamic";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-const VELVET = "radial-gradient(ellipse at 50% 30%, #2a221c 0%, #14110f 70%)";
-const LINEN = "#ede6da";
-const SMOKE = "#a39a8e";
-const FOIL = "#d4b77c";
+// Design brief v2 ("Estante"): light desk, ink text, one blue accent.
+const VELVET = "radial-gradient(ellipse at 50% 35%, #ffffff 0%, #f5f6fa 75%)";
+const LINEN = "#1b2033";
+const SMOKE = "#5b6278";
+const FOIL = "#3451d1";
 
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -60,7 +61,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
       }}
     >
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <div style={{ fontSize: 18, letterSpacing: 6, color: FOIL }}>SLEEVEBOOK</div>
+        <div style={{ fontSize: 22, fontWeight: 700, color: FOIL }}>Sleevebook</div>
         <div style={{ fontSize: 60, lineHeight: 1.05, maxWidth: 1000 }}>{name}</div>
       </div>
       {cards.length > 0 ? (
@@ -73,7 +74,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
               width={176}
               height={246}
               alt=""
-              style={{ borderRadius: 8, boxShadow: "0 18px 40px rgba(0,0,0,0.6)" }}
+              style={{ borderRadius: 8, boxShadow: "0 12px 28px rgba(27,32,51,0.28)" }}
             />
           ))}
         </div>
@@ -85,17 +86,17 @@ export default async function Image({ params }: { params: Promise<{ slug: string
             width: 220,
             height: 268,
             borderRadius: 6,
-            background: "linear-gradient(160deg, #3a2c22, #1d1612)",
-            border: `1px solid ${FOIL}`,
+            background: "linear-gradient(160deg, #2f4a8a, #1d2e56)",
+            border: "1px dashed rgba(255,255,255,0.35)",
             alignItems: "flex-end",
             justifyContent: "center",
             paddingBottom: 26,
-            color: FOIL,
-            fontSize: 14,
-            letterSpacing: 4,
+            color: "#ffffff",
+            fontSize: 16,
+            fontWeight: 700,
           }}
         >
-          BINDER
+          Binder
         </div>
       )}
       <div style={{ display: "flex", fontSize: 18, color: SMOKE }}>Colección en Sleevebook</div>

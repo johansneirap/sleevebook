@@ -141,5 +141,5 @@ test("?spread=0 skips the closed view and shows the first spread", async ({ page
   await page.goto(`/binders/${binderId}?spread=0`);
   await expect(page.getByTestId("closed-binder")).toHaveCount(0);
   await expect(page.getByText("Hoja 1 · Frente")).toBeVisible();
-  await expect(page.getByText("Spread 1 / 2")).toBeVisible();
+  await expect(page.getByText("Doble página 1 / 2")).toBeVisible();
 });

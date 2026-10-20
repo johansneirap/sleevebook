@@ -401,16 +401,32 @@
   border-radius: 6px;
 }
 
-/* Title plate (blank paper label) on the cover. */
+/* Title plate on the cover. The name is drawn from data-label by CSS so
+   it doesn't duplicate the card's real (accessible) heading. */
 .sb-mini-binder-label {
   position: absolute;
   right: 12%;
   bottom: 14%;
-  width: 40%;
-  height: 24%;
+  width: 46%;
+  min-height: 24%;
+  box-sizing: border-box;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
   border-radius: 4px;
   background: linear-gradient(180deg, #fdfdf9, #f1f1ea);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+.sb-mini-binder-label::before {
+  content: attr(data-label);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ink);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .sb-catalog-body {

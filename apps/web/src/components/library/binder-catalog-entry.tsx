@@ -43,7 +43,7 @@ export function BinderCatalogEntry({ binder: b, index, cover, goal }: BinderCata
         >
           <span className="sb-mini-binder-spine" />
           <span className="sb-mini-binder-stitch" />
-          <span className="sb-mini-binder-label" />
+          <span className="sb-mini-binder-label" data-label={b.name} />
         </div>
 
         <div className="sb-catalog-body">

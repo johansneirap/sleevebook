@@ -28,7 +28,7 @@ test("create, rename, duplicate, archive and delete a binder", async ({ page }) 
   // A freshly created binder lands on its closed cover (no ?spread param).
   await expect(page.getByTestId("closed-binder")).toBeVisible();
   await page.getByRole("button", { name: "Abrir binder" }).click();
-  await expect(page.getByText("Spread 1 / 3")).toBeVisible();
+  await expect(page.getByText("Doble página 1 / 3")).toBeVisible();
 
   await page.goto("/binders");
   const rowFor = (name: string) =>

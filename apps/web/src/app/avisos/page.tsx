@@ -47,30 +47,32 @@ export default async function AvisosPage({
   const nextBefore = items.length === PAGE_SIZE && last ? last.createdAt.toISOString() : null;
 
   return (
-    <main className="sb-catalog-page">
+    <>
       <SiteNav current="/avisos" />
-      <header className="sb-avisos-header">
-        <div>
-          <p className="sb-catalog-eyebrow">Bandeja privada · {unread} sin leer</p>
-          <h1 className="sb-catalog-title">Avisos</h1>
+      <main className="sb-catalog-page">
+        <header className="sb-avisos-header">
+          <div>
+            <p className="sb-catalog-eyebrow">Bandeja privada · {unread} sin leer</p>
+            <h1 className="sb-catalog-title">Avisos</h1>
+          </div>
+          <form action={markAllRead}>
+            <button type="submit" className="sb-avisos-btn" disabled={unread === 0}>
+              Marcar todo como leído
+            </button>
+          </form>
+        </header>
+
+        <div className="sb-avisos-grid">
+          <section aria-labelledby="avisos-bandeja">
+            <h2 id="avisos-bandeja" className="sb-label sb-avisos-subtitle">
+              Bandeja
+            </h2>
+            <NotificationList items={inbox} nextBefore={nextBefore} />
+          </section>
+
+          <SpeciesPanel derived={derived} followed={followed} />
         </div>
-        <form action={markAllRead}>
-          <button type="submit" className="sb-avisos-btn" disabled={unread === 0}>
-            Marcar todo como leído
-          </button>
-        </form>
-      </header>
-
-      <div className="sb-avisos-grid">
-        <section aria-labelledby="avisos-bandeja">
-          <h2 id="avisos-bandeja" className="sb-label sb-avisos-subtitle">
-            Bandeja
-          </h2>
-          <NotificationList items={inbox} nextBefore={nextBefore} />
-        </section>
-
-        <SpeciesPanel derived={derived} followed={followed} />
-      </div>
-    </main>
+      </main>
+    </>
   );
 }

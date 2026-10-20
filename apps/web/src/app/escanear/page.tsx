@@ -9,20 +9,21 @@ export default async function ScanPage() {
   const binders = await listBinders(viewer.id);
 
   return (
-    <main className="sb-scan-page">
+    <>
       <SiteNav current="/escanear" />
+      <main className="sb-scan-page">
+        <header className="sb-scan-head">
+          <h1 className="sb-scan-title">Escanear carta</h1>
+          <p className="sb-scan-lead">
+            Apunta a la carta y la leemos. Tú eliges cuál es antes de guardar nada.{" "}
+            <Link href="/deseos" className="sb-scan-link">
+              Buscar a mano
+            </Link>
+          </p>
+        </header>
 
-      <header className="sb-scan-head">
-        <h1 className="sb-scan-title">Escanear carta</h1>
-        <p className="sb-scan-lead">
-          Apunta a la carta y la leemos. Tú eliges cuál es antes de guardar nada.{" "}
-          <Link href="/deseos" className="sb-scan-link">
-            Buscar a mano
-          </Link>
-        </p>
-      </header>
-
-      <Scanner binders={binders.map((binder) => ({ id: binder.id, name: binder.name }))} />
-    </main>
+        <Scanner binders={binders.map((binder) => ({ id: binder.id, name: binder.name }))} />
+      </main>
+    </>
   );
 }

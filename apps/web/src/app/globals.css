@@ -34,19 +34,6 @@
   --font-data: var(--font-ui);
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-
-  /* Legacy v1 ("galería privada") names, aliased to v2 so pages keep
-     working while they migrate. New code uses the v2 names above. */
-  --velvet: var(--bg);
-  --velvet-raised: var(--surface);
-  --leather: var(--binder-cover);
-  --leather-deep: var(--binder-cover-deep);
-  --linen: var(--ink);
-  --smoke: var(--muted);
-  --foil: var(--accent);
-  --foil-dim: var(--accent-strong);
-  --sleeve: rgba(220, 224, 236, 0.35);
-  --rule: var(--line);
 }
 
 /* Small label: 12-13px semibold, no forced caps. */

@@ -96,91 +96,93 @@ export default async function MascarasPage({ searchParams }: PageProps) {
   const items = filtered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
 
   return (
-    <main className="sb-catalog-page">
+    <>
       <SiteNav current="/admin/mascaras" />
-      <header>
-        <p className="sb-catalog-eyebrow">
-          Administración · {editedCount} de {foilCards.length} con máscara propia
-        </p>
-        <h1 className="sb-catalog-title">Máscaras de foil</h1>
-        <p className="sb-mask-intro">
-          Dónde brilla el foil de cada carta. Solo aparecen holo, reverse, pokeball y master ball de
-          los binders. Sin máscara propia, la carta usa la máscara por defecto de su variante.
-        </p>
-      </header>
+      <main className="sb-catalog-page">
+        <header>
+          <p className="sb-catalog-eyebrow">
+            Administración · {editedCount} de {foilCards.length} con máscara propia
+          </p>
+          <h1 className="sb-catalog-title">Máscaras de foil</h1>
+          <p className="sb-mask-intro">
+            Dónde brilla el foil de cada carta. Solo aparecen holo, reverse, pokeball y master ball
+            de los binders. Sin máscara propia, la carta usa la máscara por defecto de su variante.
+          </p>
+        </header>
 
-      <form action="/admin/mascaras" method="get" className="sb-mask-filters">
-        <label className="sb-mask-field">
-          <span className="sb-label">Buscar por nombre</span>
-          <input type="search" name="q" defaultValue={q} placeholder="Nombre de la carta" />
-        </label>
-        <label className="sb-mask-field">
-          <span className="sb-label">Estado</span>
-          <select name="estado" defaultValue={status}>
-            {STATUSES.map((value) => (
-              <option key={value} value={value}>
-                {STATUS_LABEL[value]}
-              </option>
+        <form action="/admin/mascaras" method="get" className="sb-mask-filters">
+          <label className="sb-mask-field">
+            <span className="sb-label">Buscar por nombre</span>
+            <input type="search" name="q" defaultValue={q} placeholder="Nombre de la carta" />
+          </label>
+          <label className="sb-mask-field">
+            <span className="sb-label">Estado</span>
+            <select name="estado" defaultValue={status}>
+              {STATUSES.map((value) => (
+                <option key={value} value={value}>
+                  {STATUS_LABEL[value]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="submit" className="sb-mask-btn sb-mask-btn-primary">
+            Filtrar
+          </button>
+        </form>
+
+        <p className="sb-mask-count sb-data" aria-live="polite">
+          {filtered.length} {filtered.length === 1 ? "carta" : "cartas"}
+        </p>
+
+        {items.length === 0 ? (
+          <p className="sb-catalog-empty">No hay cartas con foil que coincidan con el filtro.</p>
+        ) : (
+          <ul className="sb-mask-grid">
+            {items.map((card) => (
+              <li key={card.id} className="sb-mask-item">
+                <Link href={`/admin/mascaras/${card.id}`} className="sb-mask-link">
+                  <span className="sb-mask-thumb">
+                    {card.imageUrl ? (
+                      // biome-ignore lint/performance/noImgElement: thumbnails from the catalog CDN
+                      <img src={card.imageUrl} alt="" width={63} height={88} loading="lazy" />
+                    ) : null}
+                  </span>
+                  <span className="sb-mask-text">
+                    <span className="sb-mask-name">{card.name}</span>
+                    <span className="sb-mask-meta sb-data">
+                      {card.setName} · {card.number}
+                    </span>
+                    <span className="sb-mask-variant">
+                      {FOIL_VARIANT_LABEL[card.variant] ?? card.variant}
+                    </span>
+                  </span>
+                  <span className={`sb-mask-chip${card.foilMask ? " sb-mask-chip-edited" : ""}`}>
+                    {card.foilMask ? "Editada" : "Por defecto"}
+                  </span>
+                </Link>
+              </li>
             ))}
-          </select>
-        </label>
-        <button type="submit" className="sb-mask-btn sb-mask-btn-primary">
-          Filtrar
-        </button>
-      </form>
+          </ul>
+        )}
 
-      <p className="sb-mask-count sb-data" aria-live="polite">
-        {filtered.length} {filtered.length === 1 ? "carta" : "cartas"}
-      </p>
-
-      {items.length === 0 ? (
-        <p className="sb-catalog-empty">No hay cartas con foil que coincidan con el filtro.</p>
-      ) : (
-        <ul className="sb-mask-grid">
-          {items.map((card) => (
-            <li key={card.id} className="sb-mask-item">
-              <Link href={`/admin/mascaras/${card.id}`} className="sb-mask-link">
-                <span className="sb-mask-thumb">
-                  {card.imageUrl ? (
-                    // biome-ignore lint/performance/noImgElement: thumbnails from the catalog CDN
-                    <img src={card.imageUrl} alt="" width={63} height={88} loading="lazy" />
-                  ) : null}
-                </span>
-                <span className="sb-mask-text">
-                  <span className="sb-mask-name">{card.name}</span>
-                  <span className="sb-mask-meta sb-data">
-                    {card.setName} · {card.number}
-                  </span>
-                  <span className="sb-mask-variant">
-                    {FOIL_VARIANT_LABEL[card.variant] ?? card.variant}
-                  </span>
-                </span>
-                <span className={`sb-mask-chip${card.foilMask ? " sb-mask-chip-edited" : ""}`}>
-                  {card.foilMask ? "Editada" : "Por defecto"}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {pageCount > 1 ? (
-        <nav aria-label="Paginación" className="sb-mask-pager">
-          {current > 1 ? (
-            <Link href={adminHref({ q, status, page: current - 1 })}>Anterior</Link>
-          ) : (
-            <span aria-hidden="true">Anterior</span>
-          )}
-          <span className="sb-data">
-            {current} / {pageCount}
-          </span>
-          {current < pageCount ? (
-            <Link href={adminHref({ q, status, page: current + 1 })}>Siguiente</Link>
-          ) : (
-            <span aria-hidden="true">Siguiente</span>
-          )}
-        </nav>
-      ) : null}
-    </main>
+        {pageCount > 1 ? (
+          <nav aria-label="Paginación" className="sb-mask-pager">
+            {current > 1 ? (
+              <Link href={adminHref({ q, status, page: current - 1 })}>Anterior</Link>
+            ) : (
+              <span aria-hidden="true">Anterior</span>
+            )}
+            <span className="sb-data">
+              {current} / {pageCount}
+            </span>
+            {current < pageCount ? (
+              <Link href={adminHref({ q, status, page: current + 1 })}>Siguiente</Link>
+            ) : (
+              <span aria-hidden="true">Siguiente</span>
+            )}
+          </nav>
+        ) : null}
+      </main>
+    </>
   );
 }

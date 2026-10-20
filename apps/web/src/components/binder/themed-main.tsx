@@ -19,7 +19,9 @@ export function ThemedMain({ children }: { theme?: Layout["theme"]; children: Re
         style={{
           maxWidth: 1320,
           marginInline: "auto",
-          paddingBlock: "clamp(20px, 2.6vw, 32px)",
+          paddingTop: "clamp(20px, 2.6vw, 32px)",
+          // Room for the phone tab bar (SiteNav sets --sb-tabbar-h; 0 on laptop).
+          paddingBottom: "calc(var(--sb-tabbar-h, 0px) + clamp(20px, 2.6vw, 32px))",
           paddingInline: "clamp(16px, 2.8vw, 40px)",
         }}
       >

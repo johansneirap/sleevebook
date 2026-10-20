@@ -10,6 +10,7 @@ import { BinderStage } from "../../../components/binder/binder-stage";
 import { OwnerToolbar } from "../../../components/binder/owner-toolbar";
 import { ThemedMain } from "../../../components/binder/themed-main";
 import { loadSellerPocketData } from "../../../components/seller-public/seller-pocket-data";
+import { SiteNav } from "../../../components/site/site-nav";
 import { collectVariantIds, getBinderWithLayout, getVariantDisplays } from "../../../lib/binders";
 import { getGoalProgress } from "../../../lib/goals";
 import { getExchangeRates } from "../../../lib/money";
@@ -85,70 +86,73 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
   const isPublished = binderData.status === "published";
 
   return (
-    <ThemedMain theme={binderData.layout.theme}>
-      <OwnerToolbar
-        binderId={binderId}
-        isPublished={isPublished}
-        shareInfo={isPublished ? shareInfo : null}
-        siteUrl={siteUrl}
-        binderName={binderData.name}
-        missingHref={
-          progress && progress.missingVariantIds.length > 0
-            ? `/binders/${binderId}/faltan`
-            : undefined
-        }
-      />
+    <>
+      <SiteNav current="/binders" />
+      <ThemedMain theme={binderData.layout.theme}>
+        <OwnerToolbar
+          binderId={binderId}
+          isPublished={isPublished}
+          shareInfo={isPublished ? shareInfo : null}
+          siteUrl={siteUrl}
+          binderName={binderData.name}
+          missingHref={
+            progress && progress.missingVariantIds.length > 0
+              ? `/binders/${binderId}/faltan`
+              : undefined
+          }
+        />
 
-      {/* Compact: the open binder below is the protagonist of this page. */}
-      <header
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "12px 24px",
-          marginBottom: 20,
-        }}
-      >
-        <BinderTitle>{binderData.name}</BinderTitle>
-        {(totalValueUsd > 0 || progress) && (
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            {progress && (
-              <ProgressFigure
-                owned={progress.owned}
-                total={progress.total}
-                percentage={progress.percentage}
-              />
-            )}
-            {totalValueUsd > 0 && <ValueFigure {...valueFigure} />}
-          </div>
-        )}
-      </header>
+        {/* Compact: the open binder below is the protagonist of this page. */}
+        <header
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "12px 24px",
+            marginBottom: 20,
+          }}
+        >
+          <BinderTitle>{binderData.name}</BinderTitle>
+          {(totalValueUsd > 0 || progress) && (
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              {progress && (
+                <ProgressFigure
+                  owned={progress.owned}
+                  total={progress.total}
+                  percentage={progress.percentage}
+                />
+              )}
+              {totalValueUsd > 0 && <ValueFigure {...valueFigure} />}
+            </div>
+          )}
+        </header>
 
-      <BinderStage
-        name={binderData.name}
-        theme={binderData.layout.theme}
-        startClosed={spreadParam === undefined}
-        basePath={`/binders/${binderId}`}
-        initialIndex={index}
-        sheets={binderData.sheets}
-        opening={binderData.layout.opening}
-        format={format}
-        pockets={pockets}
-        panels={binderData.layout.panels}
-        displays={displays}
-        sleeve={binderData.layout.theme.sleeve}
-        pocketMeta={sellerData?.pocketMeta}
-        wishlistVariantIds={wishlistVariantIds}
-        canWish
-      />
-    </ThemedMain>
+        <BinderStage
+          name={binderData.name}
+          theme={binderData.layout.theme}
+          startClosed={spreadParam === undefined}
+          basePath={`/binders/${binderId}`}
+          initialIndex={index}
+          sheets={binderData.sheets}
+          opening={binderData.layout.opening}
+          format={format}
+          pockets={pockets}
+          panels={binderData.layout.panels}
+          displays={displays}
+          sleeve={binderData.layout.theme.sleeve}
+          pocketMeta={sellerData?.pocketMeta}
+          wishlistVariantIds={wishlistVariantIds}
+          canWish
+        />
+      </ThemedMain>
+    </>
   );
 }

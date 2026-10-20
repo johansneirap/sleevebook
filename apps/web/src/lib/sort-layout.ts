@@ -190,7 +190,7 @@ export async function computeSortedLayoutUnchecked(
   if (ordered.length > availableCapacity) {
     return {
       ok: false,
-      error: `No entran todas las cartas con este agrupamiento: necesita ${ordered.length} bolsillos y el binder tiene ${availableCapacity} disponibles (descontando los paneles de arte). Aumentá las hojas o desactivá "empezar en cara nueva".`,
+      error: `No entran todas las cartas con este agrupamiento: necesita ${ordered.length} bolsillos y el binder tiene ${availableCapacity} disponibles (descontando los paneles de arte). Aumenta las hojas o desactiva "empezar en cara nueva".`,
     };
   }
   while (ordered.length < availableCapacity) {

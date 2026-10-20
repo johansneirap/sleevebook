@@ -96,7 +96,7 @@ const CONTROL_CSS = `
 // Sized from the viewport height (leaving room for the header and the
 // controls below) so the closed binder is the protagonist, like the open one.
 const SIZE_VARS = {
-  "--w": "max(200px, min(70vw, calc((100svh - 400px) * 0.82), 460px))",
+  "--w": "max(200px, min(70vw, calc((100svh - 470px) * 0.82), 460px))",
   "--h": "calc(var(--w) / 0.82)",
   "--d": "calc(var(--w) * 0.09)",
 } as CSSProperties;

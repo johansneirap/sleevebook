@@ -370,7 +370,7 @@ export function BinderPageTurner({
           className="sb-data"
           style={{ fontSize: 13, fontWeight: 600, minWidth: 96, textAlign: "center" }}
         >
-          Spread {index + 1} / {spreads.length}
+          Doble página {index + 1} / {spreads.length}
         </span>
         {index < spreads.length - 1 ? (
           <a

@@ -20,54 +20,55 @@ export default async function TemplatesPage({ searchParams }: PageProps) {
   const created = nueva ? all.find((template) => template.id === nueva) : undefined;
 
   return (
-    <main className="sb-catalog-page">
+    <>
       <SiteNav current="/plantillas" />
+      <main className="sb-catalog-page">
+        <p className="sb-catalog-eyebrow">Diseños para compartir</p>
+        <h1 className="sb-catalog-title" style={{ marginTop: 10 }}>
+          Plantillas
+        </h1>
+        <p className="sb-tpl-intro">
+          Formato, apertura, tema, paneles de arte y secciones. Una plantilla nunca incluye cartas.
+        </p>
 
-      <p className="sb-catalog-eyebrow">Diseños para compartir</p>
-      <h1 className="sb-catalog-title" style={{ marginTop: 10 }}>
-        Plantillas
-      </h1>
-      <p className="sb-tpl-intro">
-        Formato, apertura, tema, paneles de arte y secciones. Una plantilla nunca incluye cartas.
-      </p>
+        {viewer && (
+          <nav aria-label="Filtrar plantillas">
+            <ul className="sb-tpl-tabs">
+              <li>
+                <Link href="/plantillas" aria-current={onlyMine ? undefined : "page"}>
+                  Todas
+                </Link>
+              </li>
+              <li>
+                <Link href="/plantillas?vista=mias" aria-current={onlyMine ? "page" : undefined}>
+                  Mías
+                </Link>
+              </li>
+            </ul>
+          </nav>
+        )}
 
-      {viewer && (
-        <nav aria-label="Filtrar plantillas">
-          <ul className="sb-tpl-tabs">
-            <li>
-              <Link href="/plantillas" aria-current={onlyMine ? undefined : "page"}>
-                Todas
-              </Link>
-            </li>
-            <li>
-              <Link href="/plantillas?vista=mias" aria-current={onlyMine ? "page" : undefined}>
-                Mías
-              </Link>
-            </li>
+        {created && (
+          <p className="sb-tpl-notice" role="status">
+            Plantilla guardada: «{created.name}» ya aparece{" "}
+            {created.visibility === "public" ? "en la galería" : "solo para ti"}.
+          </p>
+        )}
+
+        {shown.length === 0 ? (
+          <p className="sb-tpl-empty">
+            {onlyMine
+              ? "Aún no has guardado plantillas. Abre un binder y elige «Guardar como plantilla»."
+              : "Todavía no hay plantillas públicas."}
+          </p>
+        ) : (
+          <ul className="sb-tpl-grid">
+            {shown.map((template) => (
+              <TemplateCard key={template.id} template={template} signedIn={Boolean(viewer)} />
+            ))}
           </ul>
-        </nav>
-      )}
-
-      {created && (
-        <p className="sb-tpl-notice" role="status">
-          Plantilla guardada: «{created.name}» ya aparece{" "}
-          {created.visibility === "public" ? "en la galería" : "solo para ti"}.
-        </p>
-      )}
-
-      {shown.length === 0 ? (
-        <p className="sb-tpl-empty">
-          {onlyMine
-            ? "Aún no has guardado plantillas. Abre un binder y elige «Guardar como plantilla»."
-            : "Todavía no hay plantillas públicas."}
-        </p>
-      ) : (
-        <ul className="sb-tpl-grid">
-          {shown.map((template) => (
-            <TemplateCard key={template.id} template={template} signedIn={Boolean(viewer)} />
-          ))}
-        </ul>
-      )}
-    </main>
+        )}
+      </main>
+    </>
   );
 }

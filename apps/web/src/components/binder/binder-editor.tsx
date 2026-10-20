@@ -935,8 +935,8 @@ export function BinderEditor({
 
           {selectedCodes.length === 0 && (
             <p className="sb-ed-inspector-hint">
-              Hacé click en un bolsillo para editarlo, o arrastrá una carta a otro bolsillo.
-              Shift/Cmd-click para seleccionar varios.
+              Toca un bolsillo para editarlo, o arrastra una carta a otro bolsillo. Shift/Cmd-click
+              para seleccionar varios.
             </p>
           )}
 

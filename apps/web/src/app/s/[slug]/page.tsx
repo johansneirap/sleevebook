@@ -8,6 +8,7 @@ import { SellerContactButtons } from "../../../components/seller-public/seller-c
 import { loadSellerPocketData } from "../../../components/seller-public/seller-pocket-data";
 import { SellerTray } from "../../../components/seller-public/seller-tray";
 import { SellerPublicProvider } from "../../../components/seller-public/want-list";
+import { SiteNav } from "../../../components/site/site-nav";
 import { collectVariantIds, getBinderWithLayout, getVariantDisplays } from "../../../lib/binders";
 import { getGoalProgress } from "../../../lib/goals";
 import { getCurrentUser } from "../../../lib/session";
@@ -132,21 +133,24 @@ export default async function PublicBinderPage({ params, searchParams }: PagePro
   );
 
   return (
-    <ThemedMain theme={binderData.layout.theme}>
-      {sellerData ? (
-        <SellerPublicProvider
-          slug={slug}
-          binderName={binderData.name}
-          currency={binderData.currency}
-          contact={binderData.sellerContact}
-          catalog={sellerData.catalog}
-        >
-          {body}
-          <SellerTray />
-        </SellerPublicProvider>
-      ) : (
-        body
-      )}
-    </ThemedMain>
+    <>
+      <SiteNav />
+      <ThemedMain theme={binderData.layout.theme}>
+        {sellerData ? (
+          <SellerPublicProvider
+            slug={slug}
+            binderName={binderData.name}
+            currency={binderData.currency}
+            contact={binderData.sellerContact}
+            catalog={sellerData.catalog}
+          >
+            {body}
+            <SellerTray />
+          </SellerPublicProvider>
+        ) : (
+          body
+        )}
+      </ThemedMain>
+    </>
   );
 }

@@ -356,13 +356,13 @@ export function FoilMaskEditor({
                 </mask>
                 <linearGradient id={sheenGradient} x1="0" x2="1" y1="0" y2="0">
                   {/* CSS variables only resolve in style, not in SVG presentation attributes. */}
-                  <stop offset="0" style={{ stopColor: "var(--foil)", stopOpacity: 0 }} />
+                  <stop offset="0" style={{ stopColor: "#d4b77c", stopOpacity: 0 }} />
                   <stop offset="0.5" style={{ stopColor: "#ffffff", stopOpacity: 0.9 }} />
-                  <stop offset="1" style={{ stopColor: "var(--foil)", stopOpacity: 0 }} />
+                  <stop offset="1" style={{ stopColor: "#d4b77c", stopOpacity: 0 }} />
                 </linearGradient>
               </defs>
               <g mask={mask.mode === "full" ? undefined : `url(#${maskId})`}>
-                <rect width="100" height="100" style={{ fill: "var(--foil)", fillOpacity: 0.42 }} />
+                <rect width="100" height="100" style={{ fill: "#d4b77c", fillOpacity: 0.42 }} />
                 <g transform="skewX(-16)">
                   <rect
                     className="sb-foil-editor-sheen"

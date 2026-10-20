@@ -47,17 +47,19 @@ export default async function PublicProfilePage({ params }: PageProps) {
   const wishlist = saved.wishlistPublic ? await getPublicWishlist(owner.id) : null;
 
   return (
-    <main className="sb-catalog-page">
+    <>
       <SiteNav />
-      <ProfileHeader
-        name={owner.name}
-        handle={owner.handle}
-        image={owner.image}
-        bio={saved.bio}
-        contact={saved.contact}
-      />
-      <PublicBinders binders={binders} />
-      {wishlist && <PublicWishlist items={wishlist} />}
-    </main>
+      <main className="sb-catalog-page">
+        <ProfileHeader
+          name={owner.name}
+          handle={owner.handle}
+          image={owner.image}
+          bio={saved.bio}
+          contact={saved.contact}
+        />
+        <PublicBinders binders={binders} />
+        {wishlist && <PublicWishlist items={wishlist} />}
+      </main>
+    </>
   );
 }

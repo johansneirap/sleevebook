@@ -57,96 +57,99 @@ export default async function GalleriaPage({ searchParams }: PageProps) {
   const hasItems = gallery.items.length > 0;
 
   return (
-    <main className="sb-catalog-page">
+    <>
       <SiteNav current="/galeria" />
-      <header>
-        <p className="sb-catalog-eyebrow">
-          Comunidad · {gallery.total} {gallery.total === 1 ? "binder público" : "binders públicos"}
-        </p>
-        <h1 className="sb-catalog-title">Galería</h1>
-        <p className="sb-gallery-intro">
-          Colecciones que sus dueños compartieron con un link público. Abre una para verla como en
-          el visor.
-        </p>
-      </header>
-
-      <search>
-        <form action="/galeria" method="get" className="sb-gallery-search">
-          <input
-            type="search"
-            name="q"
-            defaultValue={q}
-            aria-label="Buscar binders por nombre"
-            placeholder="Buscar por nombre"
-          />
-          {sort !== "recientes" ? <input type="hidden" name="sort" value={sort} /> : null}
-          <button type="submit">Buscar</button>
-        </form>
-      </search>
-
-      <nav aria-label="Orden" className="sb-gallery-sort">
-        <Link
-          href={galleryHref({ q, sort: "recientes" })}
-          aria-current={sort === "recientes" ? "page" : undefined}
-        >
-          Recientes
-        </Link>
-        <Link
-          href={galleryHref({ q, sort: "populares" })}
-          aria-current={sort === "populares" ? "page" : undefined}
-        >
-          Populares
-        </Link>
-      </nav>
-
-      {showFeatured ? (
-        <section aria-labelledby="gallery-featured-title" className="sb-gallery-section">
-          <h2 id="gallery-featured-title" className="sb-gallery-section-title">
-            Destacados
-          </h2>
-          <ul className="sb-gallery-grid sb-gallery-grid-featured">
-            {gallery.featured.map((item) => (
-              <GalleryCard key={item.id} binder={item} featured canFeature={canFeature} />
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      <section aria-labelledby="gallery-all-title" className="sb-gallery-section">
-        <h2 id="gallery-all-title" className="sb-gallery-section-title">
-          {q ? `Resultados para «${q}»` : "Binders públicos"}
-        </h2>
-
-        {hasItems ? (
-          <ul className="sb-gallery-grid">
-            {gallery.items.map((item) => (
-              <GalleryCard key={item.id} binder={item} canFeature={canFeature} />
-            ))}
-          </ul>
-        ) : (
-          <p className="sb-gallery-empty">
-            {q
-              ? `No hay binders públicos que coincidan con «${q}».`
-              : "Todavía no hay binders públicos en la galería."}
+      <main className="sb-catalog-page">
+        <header>
+          <p className="sb-catalog-eyebrow">
+            Comunidad · {gallery.total}{" "}
+            {gallery.total === 1 ? "binder público" : "binders públicos"}
           </p>
-        )}
+          <h1 className="sb-catalog-title">Galería</h1>
+          <p className="sb-gallery-intro">
+            Colecciones que sus dueños compartieron con un link público. Abre una para verla como en
+            el visor.
+          </p>
+        </header>
 
-        {gallery.pageCount > 1 ? (
-          <nav aria-label="Paginación" className="sb-gallery-pager">
-            {gallery.page > 1 ? (
-              <Link href={galleryHref({ q, sort, page: gallery.page - 1 })}>Anterior</Link>
-            ) : (
-              <span aria-disabled="true">Anterior</span>
-            )}
-            <span className="sb-data">{`Página ${gallery.page} de ${gallery.pageCount}`}</span>
-            {gallery.page < gallery.pageCount ? (
-              <Link href={galleryHref({ q, sort, page: gallery.page + 1 })}>Siguiente</Link>
-            ) : (
-              <span aria-disabled="true">Siguiente</span>
-            )}
-          </nav>
+        <search>
+          <form action="/galeria" method="get" className="sb-gallery-search">
+            <input
+              type="search"
+              name="q"
+              defaultValue={q}
+              aria-label="Buscar binders por nombre"
+              placeholder="Buscar por nombre"
+            />
+            {sort !== "recientes" ? <input type="hidden" name="sort" value={sort} /> : null}
+            <button type="submit">Buscar</button>
+          </form>
+        </search>
+
+        <nav aria-label="Orden" className="sb-gallery-sort">
+          <Link
+            href={galleryHref({ q, sort: "recientes" })}
+            aria-current={sort === "recientes" ? "page" : undefined}
+          >
+            Recientes
+          </Link>
+          <Link
+            href={galleryHref({ q, sort: "populares" })}
+            aria-current={sort === "populares" ? "page" : undefined}
+          >
+            Populares
+          </Link>
+        </nav>
+
+        {showFeatured ? (
+          <section aria-labelledby="gallery-featured-title" className="sb-gallery-section">
+            <h2 id="gallery-featured-title" className="sb-gallery-section-title">
+              Destacados
+            </h2>
+            <ul className="sb-gallery-grid sb-gallery-grid-featured">
+              {gallery.featured.map((item) => (
+                <GalleryCard key={item.id} binder={item} featured canFeature={canFeature} />
+              ))}
+            </ul>
+          </section>
         ) : null}
-      </section>
-    </main>
+
+        <section aria-labelledby="gallery-all-title" className="sb-gallery-section">
+          <h2 id="gallery-all-title" className="sb-gallery-section-title">
+            {q ? `Resultados para «${q}»` : "Binders públicos"}
+          </h2>
+
+          {hasItems ? (
+            <ul className="sb-gallery-grid">
+              {gallery.items.map((item) => (
+                <GalleryCard key={item.id} binder={item} canFeature={canFeature} />
+              ))}
+            </ul>
+          ) : (
+            <p className="sb-gallery-empty">
+              {q
+                ? `No hay binders públicos que coincidan con «${q}».`
+                : "Todavía no hay binders públicos en la galería."}
+            </p>
+          )}
+
+          {gallery.pageCount > 1 ? (
+            <nav aria-label="Paginación" className="sb-gallery-pager">
+              {gallery.page > 1 ? (
+                <Link href={galleryHref({ q, sort, page: gallery.page - 1 })}>Anterior</Link>
+              ) : (
+                <span aria-disabled="true">Anterior</span>
+              )}
+              <span className="sb-data">{`Página ${gallery.page} de ${gallery.pageCount}`}</span>
+              {gallery.page < gallery.pageCount ? (
+                <Link href={galleryHref({ q, sort, page: gallery.page + 1 })}>Siguiente</Link>
+              ) : (
+                <span aria-disabled="true">Siguiente</span>
+              )}
+            </nav>
+          ) : null}
+        </section>
+      </main>
+    </>
   );
 }

@@ -36,30 +36,32 @@ export default async function MascaraEditorPage({ params }: PageProps) {
   const variantLabel = FOIL_VARIANT_LABEL[display.variant] ?? display.variant;
 
   return (
-    <main className="sb-catalog-page">
+    <>
       <SiteNav current="/admin/mascaras" />
-      <header>
-        <p className="sb-catalog-eyebrow">
-          <Link href="/admin/mascaras">Máscaras de foil</Link> · Editor
-        </p>
-        <h1 className="sb-catalog-title">{display.name}</h1>
-        <p className="sb-catalog-meta sb-data" style={{ marginTop: 12 }}>
-          <span>{display.setName}</span>
-          <span>#{display.number}</span>
-          <span>{variantLabel}</span>
-        </p>
-      </header>
+      <main className="sb-catalog-page">
+        <header>
+          <p className="sb-catalog-eyebrow">
+            <Link href="/admin/mascaras">Máscaras de foil</Link> · Editor
+          </p>
+          <h1 className="sb-catalog-title">{display.name}</h1>
+          <p className="sb-catalog-meta sb-data" style={{ marginTop: 12 }}>
+            <span>{display.setName}</span>
+            <span>#{display.number}</span>
+            <span>{variantLabel}</span>
+          </p>
+        </header>
 
-      <div style={{ marginTop: 40 }}>
-        <FoilMaskEditor
-          variantId={display.id}
-          cardName={display.name}
-          variantKind={display.variant}
-          imageUrl={display.imageUrl}
-          initialMask={saved ?? defaultFoilMask(display.variant)}
-          initialEdited={saved !== null}
-        />
-      </div>
-    </main>
+        <div style={{ marginTop: 40 }}>
+          <FoilMaskEditor
+            variantId={display.id}
+            cardName={display.name}
+            variantKind={display.variant}
+            imageUrl={display.imageUrl}
+            initialMask={saved ?? defaultFoilMask(display.variant)}
+            initialEdited={saved !== null}
+          />
+        </div>
+      </main>
+    </>
   );
 }
