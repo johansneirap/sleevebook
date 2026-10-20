@@ -16,10 +16,13 @@ import {
   useState,
 } from "react";
 import { usePrefersReducedMotion } from "../../lib/use-prefers-reduced-motion";
+import { useCompactLayout } from "./use-compact-layout";
 
 export interface ClosedBinderProps {
   name: string;
+  /** Cover color (the theme's). */
   coverColor: string;
+  /** Ink printed on the cover: the name, the label and the stitching. */
   accentColor: string;
   coverImageUrl?: string | null;
   opening: "side" | "top";
@@ -38,48 +41,44 @@ const OPEN_ROTATE_SECONDS = 0.45;
 const OPEN_SWING_SECONDS = 0.6;
 const OPEN_DONE_MS = 1050;
 const FADE_MS = 150;
-const SERIF = "var(--font-display)";
-const UI = "var(--font-ui)";
 
-// Controls: quiet small-caps buttons for the views, one foil-hairline primary action.
+// Controls: quiet app chips for the views, one solid primary action.
 const CONTROL_CSS = `
 .sb-cover-quiet,
 .sb-cover-open {
   font-family: var(--font-ui);
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.18em;
   line-height: 1;
   transition:
-    color 260ms var(--ease-out-expo),
-    background-color 260ms var(--ease-out-expo),
-    box-shadow 260ms var(--ease-out-expo);
+    color 200ms var(--ease-out-expo),
+    background-color 200ms var(--ease-out-expo),
+    box-shadow 200ms var(--ease-out-expo);
 }
 .sb-cover-quiet {
-  padding: 8px 10px;
-  border: 0;
-  background: none;
-  color: var(--smoke);
-  font-size: 12px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
 }
-.sb-cover-quiet:hover,
-.sb-cover-quiet:focus-visible {
-  color: var(--linen);
+.sb-cover-quiet:hover:not(:disabled) {
+  background: var(--surface-2);
 }
 .sb-cover-open {
-  padding: 13px 40px;
-  border: 1px solid var(--foil);
-  background: color-mix(in srgb, var(--velvet) 60%, transparent);
-  color: var(--linen);
-  font-size: 13px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  box-shadow: 0 0 0 0 color-mix(in srgb, var(--foil) 0%, transparent);
+  min-height: 48px;
+  padding: 0 28px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  box-shadow: 0 8px 20px rgba(52, 81, 209, 0.3);
 }
-.sb-cover-open:hover:not(:disabled),
-.sb-cover-open:focus-visible {
-  color: var(--foil);
-  background: color-mix(in srgb, var(--foil) 9%, transparent);
-  box-shadow: 0 0 28px 0 color-mix(in srgb, var(--foil) 18%, transparent);
+.sb-cover-open:hover:not(:disabled) {
+  background: var(--accent-strong);
 }
 .sb-cover-open:disabled {
   opacity: 0.5;
@@ -112,8 +111,9 @@ const FACE: CSSProperties = {
 const PAGE_EDGE: CSSProperties = {
   position: "absolute",
   backfaceVisibility: "hidden",
-  background: "repeating-linear-gradient(90deg, #ece3cc 0 2px, #d9cdb1 2px 3px), #ece3cc",
-  boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.12)",
+  background:
+    "repeating-linear-gradient(90deg, var(--binder-paper, #fbfbf7) 0 2px, var(--binder-paper-edge, #ecece4) 2px 3px), var(--binder-paper, #fbfbf7)",
+  boxShadow: "inset 0 0 0 1px rgba(27,32,51,0.12)",
 };
 
 interface DragState {
@@ -131,10 +131,22 @@ function nearestEquivalent(current: number, target: number): number {
   return target + 360 * Math.round((current - target) / 360);
 }
 
-function leatherStyle(coverColor: string): CSSProperties {
+// Cloth cover: a faint weave and a soft light from the top-left corner over the theme color.
+function clothStyle(coverColor: string): CSSProperties {
   return {
-    background: `radial-gradient(120% 80% at 18% 0%, rgba(255,255,255,0.10), transparent 60%), linear-gradient(160deg, rgba(255,255,255,0.03), rgba(0,0,0,0.28)), ${coverColor}`,
-    boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.35)",
+    background: `radial-gradient(120% 80% at 18% 0%, rgba(255,255,255,0.14), transparent 60%), repeating-linear-gradient(0deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 3px), linear-gradient(160deg, rgba(255,255,255,0.06), rgba(0,0,0,0.22)), ${coverColor}`,
+    boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.25)",
+  };
+}
+
+// Dashed stitching inset from the edge of a cover panel.
+function stitching(ink: string, inset: number): CSSProperties {
+  return {
+    position: "absolute",
+    inset,
+    borderRadius: 8,
+    border: `1.5px dashed color-mix(in srgb, ${ink} 30%, transparent)`,
+    pointerEvents: "none",
   };
 }
 
@@ -147,6 +159,7 @@ export function ClosedBinder({
   onOpen,
 }: ClosedBinderProps) {
   const reduced = usePrefersReducedMotion();
+  const compact = useCompactLayout();
   const rotation = useMotionValue(FRONT_ANGLE);
   const swing = useMotionValue(0);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -254,7 +267,8 @@ export function ClosedBinder({
     if (phase !== "idle") {
       return;
     }
-    if (reduced) {
+    // Phones and reduced motion: no 3D swing, just a short fade into the binder.
+    if (reduced || compact) {
       setPhase("fading");
       later(onOpen, FADE_MS);
       return;
@@ -268,6 +282,110 @@ export function ClosedBinder({
       });
     }, OPEN_ROTATE_SECONDS * 1000);
     later(onOpen, OPEN_DONE_MS);
+  }
+
+  const wrapperStyle: CSSProperties = {
+    opacity: phase === "fading" ? 0 : 1,
+    transition: `opacity ${FADE_MS}ms ease-out`,
+  };
+
+  if (compact) {
+    // Phones: the cover lies flat on the desk. No rotation, no 3D.
+    return (
+      <div
+        style={{ ...wrapperStyle, display: "flex", flexDirection: "column", alignItems: "center" }}
+      >
+        <style>{CONTROL_CSS}</style>
+        <div
+          data-testid="closed-binder"
+          style={{
+            position: "relative",
+            width: "min(72vw, 280px)",
+            aspectRatio: "0.82 / 1",
+            borderRadius: "6px 14px 14px 6px",
+            overflow: "hidden",
+            boxShadow: "0 24px 40px -18px rgba(27,32,51,0.5)",
+            ...clothStyle(coverColor),
+          }}
+        >
+          <span
+            aria-hidden
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 14,
+              background: "linear-gradient(90deg, rgba(0,0,0,0.35), rgba(0,0,0,0.05))",
+            }}
+          />
+          {coverImageUrl ? (
+            // biome-ignore lint/performance/noImgElement: cover art is an arbitrary external URL
+            <img
+              src={coverImageUrl}
+              alt=""
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+            />
+          ) : null}
+          <span aria-hidden style={stitching(accentColor, 12)} />
+          <div
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: 0,
+              padding: "28px 22px 26px 30px",
+              background: coverImageUrl
+                ? "linear-gradient(to top, rgba(0,0,0,0.7), transparent)"
+                : "transparent",
+            }}
+          >
+            <p
+              className="sb-label"
+              style={{
+                margin: 0,
+                fontSize: 12,
+                color: accentColor,
+                textShadow: "0 1px 4px rgba(0,0,0,0.35)",
+              }}
+            >
+              Binder
+            </p>
+            {/* Not a heading: the page already has an <h1> with the binder name. */}
+            <p
+              className="sb-display"
+              style={{
+                margin: "4px 0 0",
+                fontSize: 30,
+                fontWeight: 800,
+                lineHeight: 1.1,
+                color: accentColor,
+                overflowWrap: "anywhere",
+                textShadow: "0 1px 4px rgba(0,0,0,0.35)",
+              }}
+            >
+              {name}
+            </p>
+          </div>
+        </div>
+        <div style={{ textAlign: "center", marginTop: 22 }}>
+          <button
+            type="button"
+            className="sb-cover-open"
+            onClick={handleOpen}
+            disabled={phase !== "idle"}
+          >
+            Abrir binder
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const stageStyle: CSSProperties = {
@@ -289,12 +407,7 @@ export function ClosedBinder({
     : { rotateX: swing, transformOrigin: "center top" };
 
   return (
-    <div
-      style={{
-        opacity: phase === "fading" ? 0 : 1,
-        transition: `opacity ${FADE_MS}ms ease-out`,
-      }}
-    >
+    <div style={wrapperStyle}>
       <div
         data-testid="closed-binder"
         role="application"
@@ -309,21 +422,6 @@ export function ClosedBinder({
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
       >
-        {/* Spotlight: a soft pool of warm light behind the binder, like a vitrine lamp. */}
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            left: "50%",
-            top: "46%",
-            transform: "translate(-50%, -50%)",
-            width: "calc(var(--w) * 2.1)",
-            height: "calc(var(--h) * 1.2)",
-            pointerEvents: "none",
-            background:
-              "radial-gradient(closest-side, color-mix(in srgb, var(--foil) 16%, transparent), transparent 100%)",
-          }}
-        />
         {/* Floor shadow: soft contact shadow under the binder. */}
         <div
           aria-hidden
@@ -333,9 +431,9 @@ export function ClosedBinder({
             bottom: 2,
             transform: "translateX(-50%)",
             width: "calc(var(--w) * 1.08)",
-            height: 26,
+            height: 28,
             pointerEvents: "none",
-            background: "radial-gradient(closest-side, rgba(0,0,0,0.7), transparent)",
+            background: "radial-gradient(closest-side, rgba(27,32,51,0.38), transparent)",
           }}
         />
         <motion.div
@@ -352,20 +450,12 @@ export function ClosedBinder({
           <div
             style={{
               ...FACE,
-              ...leatherStyle(coverColor),
+              ...clothStyle(coverColor),
               borderRadius: "2px 6px 6px 2px",
               transform: "rotateY(180deg) translateZ(calc(var(--d) / 2))",
             }}
           >
-            <div
-              aria-hidden
-              style={{
-                position: "absolute",
-                inset: 12,
-                border: `1px solid ${accentColor}`,
-                opacity: 0.45,
-              }}
-            />
+            <span aria-hidden style={stitching(accentColor, 10)} />
             <p
               style={{
                 position: "absolute",
@@ -375,12 +465,11 @@ export function ClosedBinder({
                 transform: "translateY(-50%)",
                 margin: 0,
                 textAlign: "center",
-                fontFamily: SERIF,
-                fontVariant: "small-caps",
-                letterSpacing: "0.2em",
+                fontFamily: "var(--font-ui)",
+                fontWeight: 700,
                 fontSize: 13,
                 color: accentColor,
-                opacity: 0.75,
+                opacity: 0.8,
               }}
             >
               Sleevebook
@@ -427,7 +516,7 @@ export function ClosedBinder({
             data-testid="binder-spine"
             style={{
               ...FACE,
-              ...leatherStyle(coverColor),
+              ...clothStyle(coverColor),
               left: "calc(50% - var(--d) / 2)",
               right: "auto",
               width: "var(--d)",
@@ -446,7 +535,7 @@ export function ClosedBinder({
                 top: 14,
                 height: 1,
                 background: accentColor,
-                opacity: 0.7,
+                opacity: 0.35,
               }}
             />
             <div
@@ -458,17 +547,16 @@ export function ClosedBinder({
                 bottom: 14,
                 height: 1,
                 background: accentColor,
-                opacity: 0.7,
+                opacity: 0.35,
               }}
             />
             <span
               style={{
                 writingMode: "vertical-rl",
                 whiteSpace: "nowrap",
-                fontFamily: SERIF,
-                fontVariant: "small-caps",
-                letterSpacing: "0.16em",
-                fontSize: 12,
+                fontFamily: "var(--font-ui)",
+                fontWeight: 800,
+                fontSize: 13,
                 color: accentColor,
               }}
             >
@@ -490,7 +578,7 @@ export function ClosedBinder({
               data-testid="binder-front"
               style={{
                 ...FACE,
-                ...leatherStyle(coverColor),
+                ...clothStyle(coverColor),
                 borderRadius: "6px 2px 2px 6px",
                 ...frontSwing,
               }}
@@ -509,65 +597,46 @@ export function ClosedBinder({
                   }}
                 />
               ) : null}
-              <div
-                aria-hidden
-                style={{
-                  position: "absolute",
-                  inset: 10,
-                  border: `1px solid ${accentColor}`,
-                  opacity: 0.6,
-                }}
-              />
+              <span aria-hidden style={stitching(accentColor, 12)} />
               <div
                 style={{
                   position: "absolute",
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  padding: "28px 18px 26px",
-                  textAlign: "center",
+                  padding: "28px 20px 30px",
+                  textAlign: "left",
                   background: coverImageUrl
-                    ? "linear-gradient(to top, rgba(0,0,0,0.78), transparent)"
+                    ? "linear-gradient(to top, rgba(0,0,0,0.7), transparent)"
                     : "transparent",
                 }}
               >
                 <p
+                  className="sb-label"
                   style={{
                     margin: 0,
-                    fontSize: 10,
-                    letterSpacing: "0.32em",
-                    textTransform: "uppercase",
+                    fontSize: 12,
                     color: accentColor,
-                    textShadow: "0 1px 6px rgba(0,0,0,0.6)",
+                    textShadow: "0 1px 4px rgba(0,0,0,0.35)",
                   }}
                 >
                   Binder
                 </p>
                 {/* Not a heading: the page already has an <h1> with the binder name. */}
                 <p
+                  className="sb-display"
                   style={{
-                    margin: "6px 0 0",
-                    fontFamily: SERIF,
-                    fontWeight: 400,
-                    fontVariant: "small-caps",
-                    fontSize: "calc(var(--w) * 0.1)",
-                    lineHeight: 1.15,
+                    margin: "4px 0 0",
+                    fontWeight: 800,
+                    fontSize: "calc(var(--w) * 0.085)",
+                    lineHeight: 1.1,
                     color: accentColor,
                     overflowWrap: "anywhere",
-                    textShadow: "0 1px 6px rgba(0,0,0,0.6)",
+                    textShadow: "0 1px 4px rgba(0,0,0,0.35)",
                   }}
                 >
                   {name}
                 </p>
-                <div
-                  aria-hidden
-                  style={{
-                    width: 40,
-                    height: 1,
-                    margin: "10px auto 0",
-                    background: accentColor,
-                  }}
-                />
               </div>
             </motion.div>
           </div>
@@ -579,7 +648,7 @@ export function ClosedBinder({
         style={{
           display: "flex",
           flexWrap: "wrap",
-          gap: 4,
+          gap: 8,
           justifyContent: "center",
           marginTop: 14,
         }}
@@ -597,15 +666,14 @@ export function ClosedBinder({
       <p
         style={{
           textAlign: "center",
-          fontFamily: UI,
-          fontSize: 12,
-          color: "var(--smoke)",
+          fontSize: 13,
+          color: "var(--muted)",
           margin: "10px 0 0",
         }}
       >
         {reduced ? "Usa los botones para girar" : "Arrastra o usa ← → para girar"}
       </p>
-      <div style={{ textAlign: "center", marginTop: 24 }}>
+      <div style={{ textAlign: "center", marginTop: 22 }}>
         <button
           type="button"
           className="sb-cover-open"

@@ -1,13 +1,20 @@
 import { type Currency, formatMoney } from "@sleevebook/binder-core";
 import type { CSSProperties, ReactNode } from "react";
 
-// Shared header language for binder pages: serif title, catalog-style figures
-// (big serif or tabular mono numbers with a small-caps label). Server-safe: no hooks.
+// Shared header language for binder pages: a bold sans title and compact chips
+// for progress and value. Server-safe: no hooks.
 
-const LABEL_STYLE: CSSProperties = {
-  fontSize: 11,
-  color: "var(--smoke)",
-  textTransform: "uppercase",
+const CHIP_STYLE: CSSProperties = {
+  display: "inline-flex",
+  flexWrap: "wrap",
+  alignItems: "center",
+  gap: "2px 6px",
+  minHeight: 32,
+  margin: 0,
+  padding: "6px 12px",
+  borderRadius: 999,
+  fontSize: 13,
+  lineHeight: 1.3,
 };
 
 export function BinderTitle({ children }: { children: ReactNode }) {
@@ -16,10 +23,10 @@ export function BinderTitle({ children }: { children: ReactNode }) {
       className="sb-display"
       style={{
         margin: 0,
-        fontSize: "clamp(32px, 3.6vw, 52px)",
-        lineHeight: 1.02,
-        fontWeight: 400,
-        color: "var(--linen)",
+        fontSize: "clamp(22px, 2.4vw, 24px)",
+        lineHeight: 1.15,
+        fontWeight: 800,
+        color: "var(--ink)",
         overflowWrap: "anywhere",
         textWrap: "balance",
       }}
@@ -38,34 +45,22 @@ export function ProgressFigure({
   total: number;
   percentage: number;
 }) {
+  const complete = total > 0 && owned >= total;
   return (
     <p
       style={{
-        margin: 0,
-        display: "flex",
-        flexWrap: "wrap",
-        alignItems: "baseline",
-        gap: "4px 14px",
+        ...CHIP_STYLE,
+        background: complete ? "var(--success-soft)" : "var(--accent-soft)",
+        color: complete ? "var(--success)" : "var(--accent)",
+        fontWeight: 600,
       }}
     >
-      <span className="sb-label" style={LABEL_STYLE}>
-        Avance del objetivo:{" "}
-      </span>
-      <span
-        className="sb-display"
-        style={{
-          fontSize: "clamp(28px, 3.2vw, 40px)",
-          lineHeight: 1,
-          color: "var(--foil)",
-          fontVariantNumeric: "lining-nums tabular-nums",
-        }}
-      >
+      <span>Avance del objetivo: </span>
+      <span className="sb-data" style={{ fontWeight: 800 }}>
         {owned} / {total}
       </span>
-      <span className="sb-data" style={{ fontSize: 15, color: "var(--smoke)" }}>
-        {" "}
-        ({percentage}%)
-      </span>
+      <span className="sb-data"> ({percentage}%)</span>
+      {complete && <span> · Completo</span>}
     </p>
   );
 }
@@ -98,24 +93,19 @@ export function ValueFigure({
   return (
     <p
       style={{
-        margin: 0,
-        display: "flex",
-        flexWrap: "wrap",
-        alignItems: "baseline",
-        gap: "4px 12px",
+        ...CHIP_STYLE,
+        background: "var(--surface)",
+        border: "1px solid var(--line)",
+        color: "var(--ink)",
+        fontWeight: 600,
       }}
     >
-      <span className="sb-label" style={LABEL_STYLE}>
-        Valor total:{" "}
-      </span>
-      <span
-        className="sb-data"
-        style={{ fontSize: "clamp(20px, 2.2vw, 26px)", color: "var(--linen)" }}
-      >
+      <span>Valor total: </span>
+      <span className="sb-data" style={{ fontWeight: 800 }}>
         {formatDisplayMoney(amount, currency)}
       </span>
       {note && (
-        <span className="sb-data" style={{ fontSize: 13, color: "var(--smoke)" }}>
+        <span className="sb-data" style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)" }}>
           {note}
         </span>
       )}

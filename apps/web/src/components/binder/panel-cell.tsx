@@ -8,6 +8,7 @@ export interface PanelCellProps {
   style?: CSSProperties;
 }
 
+// A panel spans several pockets and sits under one transparent sleeve.
 export function PanelCell({ asset, rows, cols, crop, style }: PanelCellProps) {
   return (
     <div
@@ -16,10 +17,11 @@ export function PanelCell({ asset, rows, cols, crop, style }: PanelCellProps) {
         gridRow: `span ${rows}`,
         position: "relative",
         overflow: "hidden",
-        borderRadius: 3,
+        borderRadius: 6,
         // Hairline drawn over the art (inset shadows would sit under the image).
-        outline: "1px solid rgba(255,255,255,0.1)",
+        outline: "1px solid rgba(27,32,51,0.14)",
         outlineOffset: -1,
+        boxShadow: "0 1px 3px rgba(27,32,51,0.2)",
         ...style,
       }}
     >

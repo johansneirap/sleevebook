@@ -91,10 +91,7 @@ export default async function PublicBinderPage({ params, searchParams }: PagePro
           <>
             <SellerContactButtons heading />
             {sellerData.priceNote && (
-              <p
-                className="sb-data"
-                style={{ margin: 0, fontSize: 11, color: "var(--smoke)", letterSpacing: "0.04em" }}
-              >
+              <p className="sb-data" style={{ margin: 0, fontSize: 12, color: "var(--muted)" }}>
                 {sellerData.priceNote}
               </p>
             )}
@@ -111,23 +108,7 @@ export default async function PublicBinderPage({ params, searchParams }: PagePro
           paddingBlock: 8,
         }}
       >
-        {closed && (
-          <div
-            aria-hidden
-            style={{
-              position: "absolute",
-              left: "50%",
-              top: "45%",
-              transform: "translate(-50%, -50%)",
-              width: "min(980px, 140%)",
-              height: "120%",
-              pointerEvents: "none",
-              background:
-                "radial-gradient(closest-side, color-mix(in srgb, var(--foil) 12%, transparent), transparent 70%)",
-            }}
-          />
-        )}
-        <div style={{ position: "relative" }}>
+        <div style={{ position: "relative", width: "100%" }}>
           <BinderStage
             name={binderData.name}
             theme={binderData.layout.theme}

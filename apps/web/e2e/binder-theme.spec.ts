@@ -136,5 +136,6 @@ test("the saved theme's background renders on the viewer page", async ({ page })
   }).toPass();
 
   await page.goto(`/binders/${binderId}`);
-  await expect(page.locator("main").first()).toHaveCSS("background-color", "rgb(20, 22, 26)");
+  // The page is the app's light background now; the theme paints the binder cover.
+  await expect(page.getByTestId("binder-front")).toHaveCSS("background-color", "rgb(20, 22, 26)");
 });
