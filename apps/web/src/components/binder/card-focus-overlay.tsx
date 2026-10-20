@@ -2,7 +2,7 @@
 
 import { defaultFoilMask } from "@sleevebook/binder-core";
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { type CSSProperties, useEffect, useState } from "react";
 import type { VariantDisplay } from "../../lib/binders";
 import { usePrefersReducedMotion } from "../../lib/use-prefers-reduced-motion";
 import { HoloGl } from "../card-render/holo-gl";
@@ -14,14 +14,14 @@ import { FlipCard } from "./flip-card";
 const CARD_ASPECT_RATIO = 88 / 63;
 const CARD_MAX_WIDTH = 340;
 const CARD_MIN_WIDTH = 160;
-/** From this viewport width up, the catalog panel sits beside the card. */
+/** From this viewport width up, the data card sits beside the card. */
 const SIDE_PANEL_MIN_VIEWPORT = 1000;
-const SIDE_PANEL_WIDTH = 260;
+const SIDE_PANEL_WIDTH = 280;
 const SIDE_PANEL_GAP = 48;
 const DESKTOP_VERTICAL_MARGIN = 72;
 const EDGE = 16;
-/** Height kept free under the card on phones for the catalog panel. */
-const PHONE_PANEL_RESERVE = 200;
+/** Height kept free under the card on phones for the bottom sheet. */
+const PHONE_PANEL_RESERVE = 260;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
@@ -45,7 +45,7 @@ export function focusCardWidth(viewportWidth: number, viewportHeight: number): n
     return clamp(byHeight, CARD_MIN_WIDTH, CARD_MAX_WIDTH);
   }
   const byWidth = viewportWidth - 2 * EDGE;
-  // The card's bottom edge must clear the panel pinned to the bottom.
+  // The card's bottom edge must clear the sheet pinned to the bottom.
   const byHeight = Math.floor(
     (viewportHeight - 2 * (PHONE_PANEL_RESERVE + EDGE)) / CARD_ASPECT_RATIO,
   );
@@ -77,92 +77,109 @@ const SPRING = { type: "spring", duration: 0.6, bounce: 0 } as const;
 const BACKDROP_FADE = { duration: 0.5, ease: "easeOut" } as const;
 const REDUCED_FADE = { duration: 0.15, ease: "easeOut" } as const;
 
-// Velvet ground with a warm spotlight centered on the card.
-const BACKDROP_BACKGROUND = [
-  "radial-gradient(circle at 50% 50%, rgba(212, 183, 124, 0.12) 0%, transparent 34%)",
-  "radial-gradient(ellipse 60% 62% at 50% 50%, rgba(62, 44, 33, 0.7) 0%, rgba(20, 15, 12, 0.94) 42%, rgba(6, 4, 3, 0.99) 100%)",
-].join(", ");
+// Dark scrim so the card pops; the light panel sits on top of it.
+const BACKDROP_BACKGROUND = "rgba(17, 20, 32, 0.72)";
+
+const ACTION_CSS = `
+.cfo-btn { transition: background-color 180ms var(--ease-out-expo), color 180ms var(--ease-out-expo), border-color 180ms var(--ease-out-expo); }
+.cfo-btn:disabled { cursor: default; }
+.cfo-secondary { background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
+.cfo-secondary:hover { background: var(--surface-2); }
+.cfo-secondary[aria-pressed="true"] { background: var(--surface-2); border-color: var(--muted); }
+.cfo-outline { background: var(--surface); color: var(--accent); border: 1px solid var(--accent); }
+.cfo-outline:hover { background: var(--accent-soft); }
+.cfo-outline[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.cfo-outline[aria-pressed="true"]:hover { background: var(--accent-strong); }
+.cfo-primary { background: var(--accent); color: #fff; border: 1px solid var(--accent); }
+.cfo-primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+.cfo-quiet { background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
+.cfo-quiet:hover { background: var(--surface-2); }
+.cfo-disabled:disabled { background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); }
+.cfo-close { transition: background-color 180ms var(--ease-out-expo); }
+.cfo-close:hover { background: var(--surface-2); }
+`;
+
+const ACTION_BASE: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 6,
+  minHeight: 44,
+  padding: "0 16px",
+  borderRadius: 12,
+  fontSize: 14,
+  fontWeight: 700,
+  cursor: "pointer",
+  boxSizing: "border-box",
+  whiteSpace: "nowrap",
+  flex: "1 1 auto",
+};
+
+const CHIP_STYLE: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "baseline",
+  gap: 6,
+  minHeight: 28,
+  padding: "4px 10px",
+  borderRadius: 999,
+  background: "var(--surface-2)",
+  margin: 0,
+};
+
+const CHIP_LABEL: CSSProperties = {
+  margin: 0,
+  color: "var(--muted)",
+  fontSize: 12,
+  fontWeight: 600,
+};
+const CHIP_VALUE: CSSProperties = { margin: 0, color: "var(--ink)", fontSize: 13, fontWeight: 600 };
+
+const STATUS_CHIP_COLORS: Record<string, CSSProperties> = {
+  disponible: { color: "var(--success)", background: "var(--success-soft)" },
+  reservado: { color: "var(--warning)", background: "var(--warning-soft)" },
+  vendido: { color: "var(--danger)", background: "var(--danger-soft)" },
+};
 
 // Seller mode: adds the focused card to the buyer's list. Vendido cannot be added.
 function WantListToggle({
   inList,
   sold,
   onToggle,
-  sidePanel,
 }: {
   inList: boolean;
   sold: boolean;
   onToggle: () => void;
-  sidePanel: boolean;
 }) {
   const label = sold ? "Carta vendida" : inList ? "Quitar de mi lista" : "Agregar a mi lista";
+  const variant = sold ? "cfo-disabled" : inList ? "cfo-quiet" : "cfo-primary";
   return (
     <button
       type="button"
-      className="sb-label cfo-flip"
+      className={`cfo-btn ${variant}`}
       disabled={sold}
       onClick={onToggle}
-      style={{
-        marginTop: sidePanel ? 18 : 12,
-        padding: "4px 0",
-        background: "none",
-        border: "none",
-        borderBottom: "1px solid var(--rule)",
-        color: inList ? "var(--foil)" : "var(--linen)",
-        fontSize: 12,
-        cursor: sold ? "default" : "pointer",
-        opacity: sold ? 0.45 : 1,
-      }}
+      style={ACTION_BASE}
     >
       {label}
     </button>
   );
 }
 
-// Fase 4: the viewer's own wishlist ("mis deseos"). Separate from the buyer
-// list above; quiet, text only.
-function WishlistToggle({
-  inList,
-  onToggle,
-  sidePanel,
-}: {
-  inList: boolean;
-  onToggle: () => void;
-  sidePanel: boolean;
-}) {
+// Fase 4: the viewer's own wishlist ("mis deseos"). Accent outline, filled
+// when the card is already on the list.
+function WishlistToggle({ inList, onToggle }: { inList: boolean; onToggle: () => void }) {
   return (
     <button
       type="button"
-      className="sb-label cfo-flip"
+      className="cfo-btn cfo-outline"
       aria-pressed={inList}
       onClick={onToggle}
-      style={{
-        marginTop: sidePanel ? 18 : 12,
-        padding: "4px 0",
-        background: "none",
-        border: "none",
-        borderBottom: "1px solid var(--rule)",
-        color: inList ? "var(--foil)" : "var(--linen)",
-        fontSize: 12,
-        cursor: "pointer",
-      }}
+      style={ACTION_BASE}
     >
       {inList ? "En mis deseos" : "Agregar a mis deseos"}
     </button>
   );
 }
-
-const LABEL_STYLE = {
-  margin: 0,
-  fontSize: 11,
-  color: "var(--smoke)",
-} as const;
-
-const VALUE_STYLE = {
-  margin: "6px 0 0",
-  fontSize: 14,
-  color: "var(--linen)",
-} as const;
 
 export function CardFocusOverlay({
   display,
@@ -232,43 +249,42 @@ export function CardFocusOverlay({
         transition: SPRING,
       };
 
-  // Desktop: the panel hangs off the right edge of the centered card, so the
-  // card itself never moves off-center. Phone: a strip pinned to the bottom.
-  const panelPlacement = sidePanel
+  // Laptop: a white card hangs off the right edge of the centered card, so the
+  // card itself never moves off-center. Phone: a bottom sheet.
+  const panelPlacement: CSSProperties = sidePanel
     ? {
         left: `calc(50% + ${cardWidth / 2 + SIDE_PANEL_GAP}px)`,
         top: "50%",
         width: SIDE_PANEL_WIDTH,
         transform: "translateY(-50%)",
+        padding: 20,
+        borderRadius: "var(--radius-lg)",
       }
     : {
         left: 0,
         right: 0,
         bottom: 0,
-        padding: "28px 16px calc(20px + env(safe-area-inset-bottom, 0px))",
-        background: "linear-gradient(to top, rgba(6, 4, 3, 0.97) 62%, rgba(6, 4, 3, 0))",
+        maxHeight: "60vh",
+        overflowY: "auto",
+        padding: "10px 20px calc(20px + env(safe-area-inset-bottom, 0px))",
+        borderRadius: "20px 20px 0 0",
       };
 
   const flipButton = (
     <button
       type="button"
-      className="sb-label cfo-flip"
+      className="cfo-btn cfo-secondary"
       aria-pressed={flipped}
       onClick={() => setFlipped((value) => !value)}
-      style={{
-        marginTop: sidePanel ? 18 : 12,
-        padding: "4px 0",
-        background: "none",
-        border: "none",
-        borderBottom: "1px solid var(--rule)",
-        color: flipped ? "var(--foil)" : "var(--linen)",
-        fontSize: 12,
-        cursor: "pointer",
-      }}
+      style={ACTION_BASE}
     >
       Voltear carta
     </button>
   );
+
+  const status = pocketMeta?.status;
+  const statusColors = status ? STATUS_CHIP_COLORS[status] : undefined;
+  const titleSize = sidePanel ? 22 : 20;
 
   return (
     <div
@@ -277,11 +293,7 @@ export function CardFocusOverlay({
       aria-label={caption}
       style={{ position: "fixed", inset: 0, zIndex: 50 }}
     >
-      <style>{`
-        .cfo-flip { transition: color 250ms var(--ease-out-expo), border-color 250ms var(--ease-out-expo); }
-        .cfo-flip:hover { color: var(--foil); border-color: var(--foil); }
-        .cfo-flip:focus-visible { outline: 1px solid var(--foil); outline-offset: 4px; }
-      `}</style>
+      <style>{ACTION_CSS}</style>
       <motion.button
         type="button"
         aria-label="Cerrar vista de carta"
@@ -294,6 +306,8 @@ export function CardFocusOverlay({
           position: "absolute",
           inset: 0,
           background: BACKDROP_BACKGROUND,
+          backdropFilter: "blur(6px)",
+          WebkitBackdropFilter: "blur(6px)",
           border: "none",
           padding: 0,
           cursor: "pointer",
@@ -342,19 +356,35 @@ export function CardFocusOverlay({
         transition={reducedMotion ? REDUCED_FADE : BACKDROP_FADE}
         style={{
           position: "absolute",
+          ...PANEL_BASE_STYLE,
           ...panelPlacement,
-          color: "var(--linen)",
         }}
       >
-        <p className="sb-label" style={{ ...LABEL_STYLE, fontSize: 12 }}>
+        {!sidePanel ? (
+          <span
+            aria-hidden="true"
+            style={{
+              display: "block",
+              width: 40,
+              height: 4,
+              borderRadius: 999,
+              background: "var(--line)",
+              margin: "0 auto 14px",
+            }}
+          />
+        ) : null}
+        <p className="sb-label" style={{ margin: 0, fontSize: 13, color: "var(--muted)" }}>
           {display.setName}
         </p>
         <p
           className="sb-display"
           style={{
-            margin: "8px 0 0",
-            fontSize: sidePanel ? 40 : 28,
-            color: "var(--linen)",
+            margin: "4px 0 0",
+            fontSize: titleSize,
+            fontWeight: 800,
+            lineHeight: 1.2,
+            letterSpacing: "-0.01em",
+            color: "var(--ink)",
             textWrap: "balance",
           }}
         >
@@ -364,88 +394,140 @@ export function CardFocusOverlay({
           style={{
             display: "flex",
             flexWrap: "wrap",
-            gap: "14px 28px",
-            margin: sidePanel ? "24px 0 0" : "16px 0 0",
+            gap: 8,
+            margin: "14px 0 0",
           }}
         >
-          <div>
-            <dt className="sb-label" style={LABEL_STYLE}>
-              N.º
-            </dt>
-            <dd className="sb-data" style={VALUE_STYLE}>
-              {display.number}
-            </dd>
+          <div className="sb-data" style={CHIP_STYLE}>
+            <dt style={CHIP_LABEL}>N.º</dt>
+            <dd style={CHIP_VALUE}>{display.number}</dd>
           </div>
-          <div>
-            <dt className="sb-label" style={LABEL_STYLE}>
-              Variante
-            </dt>
-            <dd className="sb-data" style={VALUE_STYLE}>
-              {display.variant}
-            </dd>
+          <div style={CHIP_STYLE}>
+            <dt style={CHIP_LABEL}>Variante</dt>
+            <dd style={CHIP_VALUE}>{display.variant}</dd>
           </div>
           {display.rarity ? (
-            <div>
-              <dt className="sb-label" style={LABEL_STYLE}>
-                Rareza
-              </dt>
-              <dd className="sb-data" style={VALUE_STYLE}>
-                {display.rarity}
-              </dd>
-            </div>
-          ) : null}
-          {pocketMeta?.price ? (
-            <div>
-              <dt className="sb-label" style={LABEL_STYLE}>
-                Precio
-              </dt>
-              <dd className="sb-data" style={{ ...VALUE_STYLE, color: "var(--foil)" }}>
-                {pocketMeta.price}
-              </dd>
-            </div>
-          ) : null}
-          {pocketMeta?.status ? (
-            <div>
-              <dt className="sb-label" style={LABEL_STYLE}>
-                Estado
-              </dt>
-              <dd className="sb-label" style={VALUE_STYLE}>
-                {STATUS_LABELS[pocketMeta.status]}
-              </dd>
+            <div style={CHIP_STYLE}>
+              <dt style={CHIP_LABEL}>Rareza</dt>
+              <dd style={CHIP_VALUE}>{display.rarity}</dd>
             </div>
           ) : null}
         </dl>
-        <div
-          aria-hidden="true"
+        {pocketMeta?.price || status ? (
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              gap: 10,
+              margin: "14px 0 0",
+              paddingTop: 14,
+              borderTop: "1px solid var(--line)",
+            }}
+          >
+            {pocketMeta?.price ? (
+              <dl style={{ margin: 0 }}>
+                <dt style={{ ...CHIP_LABEL, margin: 0 }}>Precio</dt>
+                <dd
+                  className="sb-data"
+                  style={{ margin: "2px 0 0", fontSize: 22, fontWeight: 800, color: "var(--ink)" }}
+                >
+                  {pocketMeta.price}
+                </dd>
+              </dl>
+            ) : null}
+            {status && statusColors ? (
+              <span
+                className="sb-label"
+                style={{
+                  ...CHIP_STYLE,
+                  ...statusColors,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  marginLeft: "auto",
+                  alignItems: "center",
+                }}
+              >
+                {STATUS_LABELS[status]}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+        <p
+          className="sb-data"
           style={{
-            height: 1,
-            background: "var(--rule)",
-            margin: sidePanel ? "24px 0 14px" : "16px 0 10px",
+            margin: "14px 0 0",
+            fontSize: 12,
+            color: "var(--muted)",
+            overflowWrap: "anywhere",
           }}
-        />
-        <p className="sb-data" style={{ ...LABEL_STYLE, margin: 0 }}>
+        >
           {caption}
         </p>
-        {(want && pocketCode) || wish ? (
-          // The toggles sit beside the flip button on one row.
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 24 }}>
-            {flipButton}
-            {want && pocketCode && (
-              <WantListToggle
-                inList={want.has(pocketCode)}
-                sold={pocketMeta?.status === "vendido"}
-                onToggle={() => want.toggle(pocketCode)}
-                sidePanel={sidePanel}
-              />
-            )}
-            {wish && (
-              <WishlistToggle inList={wish.inList} onToggle={wish.onToggle} sidePanel={sidePanel} />
-            )}
-          </div>
-        ) : (
-          flipButton
-        )}
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 8,
+            marginTop: 16,
+          }}
+        >
+          {flipButton}
+          {wish && <WishlistToggle inList={wish.inList} onToggle={wish.onToggle} />}
+          {want && pocketCode && (
+            <WantListToggle
+              inList={want.has(pocketCode)}
+              sold={pocketMeta?.status === "vendido"}
+              onToggle={() => want.toggle(pocketCode)}
+            />
+          )}
+        </div>
       </motion.section>
+      <button
+        type="button"
+        aria-label="Cerrar"
+        onClick={onClose}
+        className="cfo-close"
+        style={{
+          position: "absolute",
+          top: sidePanel ? 24 : 12,
+          right: sidePanel ? 24 : 12,
+          width: 44,
+          height: 44,
+          borderRadius: 999,
+          border: "1px solid var(--line)",
+          background: "var(--surface)",
+          color: "var(--ink)",
+          boxShadow: "var(--shadow)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          padding: 0,
+        }}
+      >
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
     </div>
   );
 }
+
+const PANEL_BASE_STYLE: CSSProperties = {
+  boxSizing: "border-box",
+  background: "var(--surface)",
+  color: "var(--ink)",
+  boxShadow: "0 24px 60px rgba(17, 20, 32, 0.35), 0 2px 6px rgba(17, 20, 32, 0.12)",
+};

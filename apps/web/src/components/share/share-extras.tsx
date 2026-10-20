@@ -8,43 +8,82 @@ export interface ShareExtrasProps {
   name: string;
 }
 
-const LABEL_STYLE: CSSProperties = {
-  fontSize: 11,
-  color: "var(--smoke)",
-  textTransform: "uppercase",
+const CARD_STYLE: CSSProperties = {
+  display: "grid",
+  gap: 20,
+  minWidth: 0,
+  padding: 20,
+  borderRadius: "var(--radius-lg)",
+  background: "var(--surface)",
+  border: "1px solid var(--line)",
+  boxShadow: "var(--shadow)",
+  color: "var(--ink)",
 };
 
-const LINK_STYLE: CSSProperties = {
-  fontSize: 13,
-  color: "var(--linen)",
-  textDecoration: "none",
-  borderBottom: "1px solid var(--rule)",
-  paddingBottom: 2,
-};
-
-const BUTTON_STYLE: CSSProperties = {
-  justifySelf: "start",
-  fontFamily: "var(--font-ui)",
-  fontSize: 13,
-  color: "var(--linen)",
-  background: "none",
-  border: "1px solid var(--rule)",
-  borderRadius: 4,
-  padding: "6px 14px",
+const SUMMARY_STYLE: CSSProperties = {
   cursor: "pointer",
+  listStyle: "none",
+  fontSize: 15,
+  fontWeight: 700,
+  color: "var(--ink)",
+  minHeight: 44,
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 8,
+};
+
+const SUB_LABEL_STYLE: CSSProperties = {
+  margin: 0,
+  fontSize: 13,
+  fontWeight: 600,
+  color: "var(--muted)",
+};
+
+const LINK_BUTTON_STYLE: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  minHeight: 44,
+  padding: "0 14px",
+  borderRadius: 12,
+  border: "1px solid var(--line)",
+  background: "var(--surface)",
+  color: "var(--accent)",
+  fontSize: 14,
+  fontWeight: 600,
+  textDecoration: "none",
+  boxSizing: "border-box",
+};
+
+const COPY_BUTTON_STYLE: CSSProperties = {
+  justifySelf: "start",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 8,
+  minHeight: 44,
+  padding: "0 18px",
+  borderRadius: 12,
+  border: "1px solid var(--accent)",
+  background: "var(--accent)",
+  color: "#fff",
+  fontFamily: "var(--font-ui)",
+  fontSize: 14,
+  fontWeight: 700,
+  cursor: "pointer",
+  boxSizing: "border-box",
 };
 
 const SNIPPET_STYLE: CSSProperties = {
   width: "100%",
   boxSizing: "border-box",
   fontFamily: "var(--font-data)",
-  fontSize: 12,
+  fontVariantNumeric: "tabular-nums",
+  fontSize: 13,
   lineHeight: 1.5,
-  color: "var(--linen)",
-  background: "var(--velvet)",
-  border: "1px solid var(--rule)",
-  borderRadius: 4,
-  padding: 10,
+  color: "var(--ink)",
+  background: "var(--surface-2)",
+  border: "1px solid var(--line)",
+  borderRadius: 12,
+  padding: 12,
   resize: "vertical",
 };
 
@@ -90,11 +129,8 @@ export function ShareExtras({ slug, siteUrl, name }: ShareExtrasProps) {
   }
 
   return (
-    <details style={{ display: "grid", gap: 20, minWidth: 0 }}>
-      <summary
-        className="sb-label"
-        style={{ ...LABEL_STYLE, cursor: "pointer", listStyle: "none" }}
-      >
+    <details style={CARD_STYLE}>
+      <summary className="sb-label" style={SUMMARY_STYLE}>
         Compartir y embeber
       </summary>
 
@@ -105,25 +141,32 @@ export function ShareExtras({ slug, siteUrl, name }: ShareExtrasProps) {
           alt={`Código QR de ${name}`}
           width={160}
           height={160}
-          style={{ background: "#ffffff", padding: 8, borderRadius: 4, display: "block" }}
+          style={{
+            background: "#ffffff",
+            padding: 8,
+            borderRadius: 16,
+            border: "1px solid var(--line)",
+            display: "block",
+            boxSizing: "border-box",
+          }}
         />
-        <div style={{ display: "grid", gap: 10, alignContent: "start" }}>
-          <span className="sb-label" style={LABEL_STYLE}>
+        <div style={{ display: "grid", gap: 12, alignContent: "start", minWidth: 0 }}>
+          <span className="sb-label" style={SUB_LABEL_STYLE}>
             Código QR del binder
           </span>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
-            <a href={`/s/${slug}/qr?format=png&download=1`} style={LINK_STYLE}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <a href={`/s/${slug}/qr?format=png&download=1`} style={LINK_BUTTON_STYLE}>
               Descargar QR (PNG)
             </a>
-            <a href={`/s/${slug}/qr?download=1`} style={LINK_STYLE}>
+            <a href={`/s/${slug}/qr?download=1`} style={LINK_BUTTON_STYLE}>
               Descargar QR (SVG)
             </a>
           </div>
         </div>
       </div>
 
-      <div style={{ display: "grid", gap: 8, minWidth: 0 }}>
-        <span className="sb-label" style={LABEL_STYLE}>
+      <div style={{ display: "grid", gap: 10, minWidth: 0 }}>
+        <span className="sb-label" style={SUB_LABEL_STYLE}>
           Código para embeber
         </span>
         <textarea
@@ -135,7 +178,7 @@ export function ShareExtras({ slug, siteUrl, name }: ShareExtrasProps) {
           onFocus={(event) => event.currentTarget.select()}
           style={SNIPPET_STYLE}
         />
-        <button type="button" onClick={copySnippet} style={BUTTON_STYLE}>
+        <button type="button" onClick={copySnippet} style={COPY_BUTTON_STYLE}>
           {copied ? "Copiado" : "Copiar código"}
         </button>
       </div>
