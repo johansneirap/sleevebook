@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { NewBinderForm } from "../../../components/library/new-binder-form";
+import { SiteNav } from "../../../components/site/site-nav";
 import "../../../components/library/catalog.css";
 import { requireUser } from "../../../lib/session";
 
@@ -21,50 +22,58 @@ export default async function NewBinderPage({ searchParams }: PageProps) {
   const defaultCols = cols ?? "3";
 
   return (
-    <main className="sb-catalog-page" style={{ maxWidth: 620 }}>
-      <p style={{ margin: 0 }}>
-        <Link href="/binders" className="sb-catalog-eyebrow" style={{ textDecoration: "none" }}>
-          &larr; Mis binders
-        </Link>
-      </p>
-      <h1 className="sb-catalog-title" style={{ marginTop: 28 }}>
-        Crear binder
-      </h1>
-      <p style={{ margin: "12px 0 0" }}>
-        <Link
-          href="/plantillas"
-          style={{
-            fontFamily: "var(--font-ui)",
-            fontSize: 13,
-            color: "var(--smoke)",
-            textDecoration: "none",
-          }}
-        >
-          o empieza desde una plantilla &rarr;
-        </Link>
-      </p>
+    <>
+      <SiteNav current="/binders" />
+      <main className="sb-catalog-page" style={{ maxWidth: 640 }}>
+        <p style={{ margin: 0 }}>
+          <Link
+            href="/binders"
+            className="sb-catalog-eyebrow"
+            style={{ textDecoration: "none", color: "var(--accent)" }}
+          >
+            &larr; Mis binders
+          </Link>
+        </p>
+        <h1 className="sb-catalog-title" style={{ marginTop: 16 }}>
+          Crear binder
+        </h1>
+        <p style={{ margin: "8px 0 0" }}>
+          <Link
+            href="/plantillas"
+            style={{
+              fontFamily: "var(--font-ui)",
+              fontSize: 14,
+              fontWeight: 600,
+              color: "var(--accent)",
+              textDecoration: "none",
+            }}
+          >
+            o empieza desde una plantilla &rarr;
+          </Link>
+        </p>
 
-      <div style={{ marginTop: 36 }}>
-        <p className="sb-catalog-eyebrow">Formatos estándar</p>
-        <ul className="sb-preset-row">
-          {PRESETS.map((preset) => (
-            <li key={preset.label}>
-              <Link
-                className="sb-preset-link"
-                href={`/binders/new?rows=${preset.rows}&cols=${preset.cols}`}
-              >
-                {preset.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
+        <div className="sb-card" style={{ marginTop: 24 }}>
+          <p className="sb-catalog-eyebrow">Formatos estándar</p>
+          <ul className="sb-preset-row" style={{ marginTop: 10 }}>
+            {PRESETS.map((preset) => (
+              <li key={preset.label}>
+                <Link
+                  className="sb-preset-link"
+                  href={`/binders/new?rows=${preset.rows}&cols=${preset.cols}`}
+                >
+                  {preset.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
 
-      <NewBinderForm
-        key={`${defaultRows}x${defaultCols}`}
-        defaultRows={defaultRows}
-        defaultCols={defaultCols}
-      />
-    </main>
+          <NewBinderForm
+            key={`${defaultRows}x${defaultCols}`}
+            defaultRows={defaultRows}
+            defaultCols={defaultCols}
+          />
+        </div>
+      </main>
+    </>
   );
 }

@@ -40,75 +40,84 @@ function spreadAt(index: number): Spread {
   return SPREADS[index % SPREADS.length] ?? fallback;
 }
 
+// Hero: copy on the left, the real binder object on a light desk on the right.
 const HERO: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))",
-  gap: "clamp(28px, 5vw, 64px)",
+  gap: "clamp(32px, 5vw, 64px)",
   alignItems: "center",
-  padding: "clamp(40px, 8vh, 96px) clamp(16px, 5vw, 56px)",
-  background:
-    "radial-gradient(70% 60% at 68% 42%, color-mix(in srgb, var(--foil) 13%, transparent), transparent 70%), radial-gradient(120% 90% at 50% 0%, var(--leather) 0%, var(--velvet) 75%)",
+  padding: "clamp(32px, 6vh, 72px) clamp(20px, 5vw, 56px)",
+  maxWidth: 1320,
+  margin: "0 auto",
+  boxSizing: "border-box",
 };
 
-const WORDMARK: CSSProperties = {
-  margin: "0 0 clamp(40px, 9vh, 88px)",
-  fontSize: 26,
-  color: "var(--linen)",
-};
-
-const EYEBROW: CSSProperties = {
-  margin: "0 0 20px",
-  color: "var(--smoke)",
-  fontSize: 12,
+const DESK: CSSProperties = {
+  position: "relative",
+  padding: "clamp(20px, 4vw, 44px)",
+  borderRadius: 28,
+  background: "radial-gradient(70% 70% at 50% 40%, #ffffff 0%, rgba(255,255,255,0) 72%), var(--bg)",
+  border: "1px solid var(--line)",
 };
 
 const TITLE: CSSProperties = {
   margin: 0,
-  fontSize: "clamp(40px, 6vw, 72px)",
-  lineHeight: 1.02,
-  color: "var(--linen)",
-  maxWidth: "14ch",
-};
-
-const CTA_BASE: CSSProperties = {
-  display: "inline-block",
-  padding: "12px 22px",
-  borderRadius: 2,
-  fontSize: 13,
-  textDecoration: "none",
+  fontSize: "clamp(30px, 4.6vw, 48px)",
+  lineHeight: 1.12,
+  letterSpacing: "-0.02em",
+  color: "var(--ink)",
+  maxWidth: "16ch",
 };
 
 const PRIMARY: CSSProperties = {
-  ...CTA_BASE,
-  background: "var(--foil)",
-  color: "var(--velvet)",
-  border: "1px solid var(--foil)",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minHeight: 48,
+  padding: "0 22px",
+  borderRadius: 14,
+  background: "var(--accent)",
+  border: "1px solid var(--accent)",
+  color: "#ffffff",
+  fontSize: 15,
+  fontWeight: 700,
+  textDecoration: "none",
 };
 
 const SECONDARY: CSSProperties = {
-  ...CTA_BASE,
-  color: "var(--linen)",
-  border: "1px solid var(--rule)",
+  ...PRIMARY,
+  background: "var(--surface)",
+  border: "1px solid var(--line)",
+  color: "var(--ink)",
 };
 
-const QUIET_LINK: CSSProperties = {
-  ...CTA_BASE,
-  alignSelf: "center",
-  padding: "12px 4px",
-  color: "var(--smoke)",
-  textDecoration: "underline",
-  textDecorationColor: "var(--rule)",
-  textUnderlineOffset: 6,
+const GHOST: CSSProperties = {
+  ...PRIMARY,
+  padding: "0 4px",
+  background: "transparent",
+  border: "1px solid transparent",
+  color: "var(--accent)",
 };
 
-const SPREAD_FRAME: CSSProperties = {
-  display: "flex",
+// The binder object: blue cover with a margin around the pages, dashed
+// stitching, paper inside, metal rings at the spine.
+const BINDER: CSSProperties = {
   position: "relative",
-  padding: "clamp(8px, 2.4vw, 16px)",
-  borderRadius: 6,
-  background: "var(--leather)",
+  display: "flex",
+  padding: "clamp(12px, 2.6vw, 20px)",
+  borderRadius: "14px 18px 18px 14px",
+  background:
+    "radial-gradient(120% 80% at 18% 0%, rgba(255,255,255,0.14), transparent 60%), linear-gradient(160deg, rgba(255,255,255,0.05), rgba(0,0,0,0.25)), var(--binder-cover)",
   boxShadow:
-    "0 40px 70px -30px rgba(0,0,0,0.85), inset 0 0 0 1px color-mix(in srgb, var(--foil) 18%, transparent)",
+    "0 36px 56px -26px rgba(27,32,51,0.5), 0 4px 10px rgba(27,32,51,0.12), inset 0 0 0 1px rgba(0,0,0,0.18)",
+};
+
+const STITCH: CSSProperties = {
+  position: "absolute",
+  inset: "clamp(5px, 1vw, 8px)",
+  border: "1.5px dashed rgba(255,255,255,0.3)",
+  borderRadius: 10,
+  pointerEvents: "none",
 };
 
 const FACE: CSSProperties = {
@@ -118,8 +127,11 @@ const FACE: CSSProperties = {
   gridTemplateColumns: `repeat(${COLS}, 1fr)`,
   gap: "clamp(4px, 1.4vw, 9px)",
   alignContent: "center",
-  padding: "clamp(8px, 2.4vw, 18px)",
-  background: "var(--leather-deep)",
+  padding: "clamp(8px, 2.4vw, 16px)",
+  borderRadius: 4,
+  background:
+    "linear-gradient(90deg, #f1f1ea 0%, var(--binder-paper) 14%, var(--binder-paper) 86%, #f1f1ea 100%)",
+  boxShadow: "inset 0 0 0 1px var(--binder-paper-edge)",
 };
 
 const GUTTER: CSSProperties = {
@@ -127,19 +139,40 @@ const GUTTER: CSSProperties = {
   top: 0,
   bottom: 0,
   left: "50%",
-  width: 28,
+  width: 22,
   transform: "translateX(-50%)",
   pointerEvents: "none",
-  background: "linear-gradient(90deg, transparent, rgba(0,0,0,0.6) 50%, transparent)",
+  background: "linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,0.28) 50%, rgba(0,0,0,0))",
+};
+
+const RING_COLUMN: CSSProperties = {
+  position: "absolute",
+  top: 0,
+  bottom: 0,
+  left: "50%",
+  width: 14,
+  transform: "translateX(-50%)",
+  pointerEvents: "none",
+};
+
+const RING: CSSProperties = {
+  position: "absolute",
+  left: "50%",
+  width: 14,
+  height: 14,
+  transform: "translate(-50%, -50%)",
+  borderRadius: "50%",
+  background: "radial-gradient(circle at 35% 35%, #ffffff 0%, #c4c9d4 42%, #6d7485 100%)",
+  boxShadow: "0 1px 2px rgba(0,0,0,0.35)",
 };
 
 const POCKET: CSSProperties = {
   position: "relative",
   aspectRatio: "63 / 88",
   overflow: "hidden",
-  borderRadius: 2,
-  background: "rgba(0,0,0,0.35)",
-  boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06)",
+  borderRadius: 4,
+  background: "rgba(27,32,51,0.05)",
+  boxShadow: "inset 0 0 0 1px rgba(27,32,51,0.08)",
 };
 
 const IMG: CSSProperties = {
@@ -149,12 +182,13 @@ const IMG: CSSProperties = {
   objectFit: "cover",
 };
 
+// Sleeve: a clear plastic layer with a diagonal specular reflection.
 const GLARE: CSSProperties = {
   position: "absolute",
   inset: 0,
   pointerEvents: "none",
   background:
-    "linear-gradient(115deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.14) 45%, rgba(255,255,255,0) 60%)",
+    "linear-gradient(115deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.32) 45%, rgba(255,255,255,0) 60%)",
 };
 
 function Pocket({ url }: { url: string | null }) {
@@ -184,9 +218,15 @@ function FaceGrid({ cells, turnSlot }: { cells: Face; turnSlot?: number }) {
 
 function SpreadView({ spread }: { spread: Spread }) {
   return (
-    <div style={SPREAD_FRAME}>
+    <div style={BINDER}>
+      <span aria-hidden style={STITCH} />
       <FaceGrid cells={spread[0]} turnSlot={0} />
       <span aria-hidden style={GUTTER} />
+      <span aria-hidden style={RING_COLUMN}>
+        {[18, 50, 82].map((top) => (
+          <span key={top} style={{ ...RING, top: `${top}%` }} />
+        ))}
+      </span>
       <FaceGrid cells={spread[1]} turnSlot={1} />
     </div>
   );
@@ -247,58 +287,68 @@ export function LandingHero() {
   return (
     <section data-testid="landing-hero" aria-labelledby="landing-title" style={HERO}>
       <div>
-        <p className="sb-display" style={WORDMARK}>
-          Sleevebook
-        </p>
-        <p className="sb-label" style={EYEBROW}>
-          Colección privada
+        <p
+          className="sb-label"
+          style={{ margin: "0 0 14px", color: "var(--accent)", fontSize: 14, fontWeight: 700 }}
+        >
+          Para jugadores y coleccionistas de cartas
         </p>
         <h1 id="landing-title" className="sb-display" style={TITLE}>
-          Tu colección, presentada como en una vitrina.
+          Tu colección, ordenada como en un binder de verdad.
         </h1>
         <p
           style={{
-            margin: "20px 0 32px",
-            color: "var(--smoke)",
-            maxWidth: "36ch",
+            margin: "18px 0 28px",
+            color: "var(--muted)",
+            maxWidth: "42ch",
+            fontSize: 17,
             lineHeight: 1.6,
           }}
         >
-          Cada carta en su funda, cada binder como una pieza de catálogo.
+          Catalogá tus cartas, mirá qué te falta para completar un set y compartí tu binder con un
+          link.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-          <Link href="/binders" className="sb-label" style={PRIMARY}>
+          <Link href="/binders" style={PRIMARY}>
             Mis binders
           </Link>
-          <Link href="/demo" className="sb-label" style={SECONDARY}>
+          <Link href="/demo" style={SECONDARY}>
             Ver demo
           </Link>
-          <Link href="/galeria" className="sb-label" style={QUIET_LINK}>
+          <Link href="/galeria" style={GHOST}>
             Explorar la galería
           </Link>
         </div>
       </div>
 
       <div style={{ minWidth: 0 }}>
-        <div ref={stageRef} style={{ position: "relative" }}>
-          <SpreadView spread={spread} />
-          {outgoing && geometry ? (
-            <PageTurn
-              src={geometry.src}
-              dest={geometry.dest}
-              front={<FaceGrid cells={outgoing[1]} />}
-              back={<FaceGrid cells={spread[0]} />}
-              under={<FaceGrid cells={outgoing[0]} />}
-            />
-          ) : null}
+        <div style={DESK}>
+          <div ref={stageRef} style={{ position: "relative" }}>
+            <SpreadView spread={spread} />
+            {outgoing && geometry ? (
+              <PageTurn
+                src={geometry.src}
+                dest={geometry.dest}
+                front={<FaceGrid cells={outgoing[1]} />}
+                back={<FaceGrid cells={spread[0]} />}
+                under={<FaceGrid cells={outgoing[0]} />}
+              />
+            ) : null}
+          </div>
+          <p
+            aria-hidden
+            className="sb-data"
+            style={{
+              margin: "16px 0 0",
+              textAlign: "right",
+              color: "var(--muted)",
+              fontSize: 13,
+              fontWeight: 600,
+            }}
+          >
+            Hoja {counter}
+          </p>
         </div>
-        <p
-          aria-hidden
-          className="sb-data"
-          style={{ margin: "14px 0 0", textAlign: "right", color: "var(--smoke)", fontSize: 12 }}
-        >
-          Hoja {counter}
-        </p>
       </div>
     </section>
   );

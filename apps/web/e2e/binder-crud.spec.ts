@@ -48,7 +48,7 @@ test("create, rename, duplicate, archive and delete a binder", async ({ page }) 
   await expect(copyRow).toBeVisible();
 
   await renamedRow.getByRole("button", { name: "Archivar" }).click();
-  await expect(rowFor(RENAMED_NAME)).toContainText("archived");
+  await expect(rowFor(RENAMED_NAME)).toContainText("Archivado");
   await expect(rowFor(RENAMED_NAME).getByRole("button", { name: "Desarchivar" })).toBeVisible();
 
   page.once("dialog", (dialog) => dialog.accept());

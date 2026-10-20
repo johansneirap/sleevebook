@@ -6,7 +6,7 @@ export function SignOutButton() {
   return (
     <button
       type="button"
-      className="sb-site-nav-button"
+      className="sb-app-signout"
       onClick={async () => {
         await authClient.signOut();
         window.location.assign("/");
