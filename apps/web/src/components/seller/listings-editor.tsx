@@ -159,7 +159,7 @@ export function ListingsEditor({ binderId, currency, rows }: ListingsEditorProps
       </h2>
 
       {rows.length === 0 ? (
-        <p className="sb-catalog-empty">Este binder todavía no tiene cartas.</p>
+        <p className="sb-seller-empty">Este binder todavía no tiene cartas.</p>
       ) : (
         <>
           <div className="sb-seller-head" aria-hidden="true">

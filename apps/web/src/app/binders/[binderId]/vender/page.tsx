@@ -91,17 +91,17 @@ export default async function SellerModePage({ params }: PageProps) {
   });
 
   return (
-    <main className="sb-catalog-page sb-seller-page">
+    <main className="sb-seller-page">
       <p style={{ margin: 0 }}>
         <Link href={`/binders/${binderId}`} className="sb-seller-back">
           &larr; Volver al binder
         </Link>
       </p>
 
-      <header style={{ marginTop: 28 }}>
-        <p className="sb-catalog-eyebrow">Modo vendedor</p>
-        <h1 className="sb-catalog-title">Vender</h1>
-        <p className="sb-seller-note" style={{ marginTop: 14 }}>
+      <header style={{ marginTop: 16 }}>
+        <p className="sb-seller-eyebrow">Modo vendedor</p>
+        <h1 className="sb-seller-title">Vender</h1>
+        <p className="sb-seller-note" style={{ marginTop: 8 }}>
           {data.name} · {data.mode === "seller" ? "Modo Venta activo" : "Modo Colección activo"}
         </p>
       </header>

@@ -15,25 +15,52 @@ const TRAY_STYLE: CSSProperties = {
   transform: "translateX(-50%)",
   zIndex: 40,
   boxSizing: "border-box",
-  width: "min(440px, calc(100vw - 24px))",
-  padding: "10px 14px 12px",
-  borderRadius: 6,
-  background: "var(--velvet-raised)",
-  border: "1px solid var(--rule)",
-  boxShadow: "0 18px 40px -18px rgba(0, 0, 0, 0.8)",
-  color: "var(--linen)",
-  fontSize: 13,
+  width: "min(480px, calc(100vw - 24px))",
+  padding: 16,
+  borderRadius: "var(--radius-lg)",
+  background: "var(--surface)",
+  border: "1px solid var(--line)",
+  boxShadow: "0 12px 32px rgba(27, 32, 51, 0.16), 0 2px 6px rgba(27, 32, 51, 0.08)",
+  color: "var(--ink)",
+  fontSize: 14,
 };
 
-const LABEL: CSSProperties = { margin: 0, fontSize: 11, color: "var(--smoke)" };
+const CHIP_STYLE: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  minHeight: 28,
+  padding: "4px 10px",
+  borderRadius: 999,
+  background: "var(--surface-2)",
+  fontSize: 13,
+  fontWeight: 600,
+  color: "var(--ink)",
+};
 
 const TOGGLE_STYLE: CSSProperties = {
   marginLeft: "auto",
+  minHeight: 44,
+  padding: "0 10px",
   background: "none",
   border: 0,
-  padding: "2px 0",
-  color: "var(--smoke)",
-  fontSize: 11,
+  borderRadius: 10,
+  color: "var(--accent)",
+  fontSize: 14,
+  fontWeight: 600,
+  cursor: "pointer",
+};
+
+const COPY_STYLE: CSSProperties = {
+  flex: "1 1 auto",
+  minHeight: 44,
+  padding: "0 18px",
+  borderRadius: 12,
+  border: "1px solid var(--accent)",
+  background: "var(--accent)",
+  color: "#ffffff",
+  fontSize: 14,
+  fontWeight: 700,
   cursor: "pointer",
 };
 
@@ -72,21 +99,17 @@ export function SellerTray() {
   return (
     <aside aria-label="Mi lista" data-testid="seller-tray" style={TRAY_STYLE}>
       <style>{SELLER_CSS}</style>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-        <p className="sb-label" style={LABEL}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <p className="sb-display" style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>
           Mi lista
         </p>
-        <p data-testid="seller-tray-count" className="sb-data" style={{ margin: 0, fontSize: 12 }}>
+        <span data-testid="seller-tray-count" className="sb-data" style={CHIP_STYLE}>
           {count === 0 ? "Vacía" : count === 1 ? "1 carta" : `${count} cartas`}
-        </p>
+        </span>
         {pricedCount > 0 ? (
-          <p
-            data-testid="seller-tray-total"
-            className="sb-data"
-            style={{ margin: 0, fontSize: 13, color: "var(--foil)" }}
-          >
+          <span data-testid="seller-tray-total" className="sb-data" style={CHIP_STYLE}>
             {formatMoney(sumWantPrices(items), currency)}
-          </p>
+          </span>
         ) : null}
         {count > 0 ? (
           <button
@@ -104,11 +127,12 @@ export function SellerTray() {
         <ul
           style={{
             listStyle: "none",
-            margin: "10px 0 0",
+            margin: "12px 0 0",
             padding: 0,
             maxHeight: "34vh",
             overflowY: "auto",
-            borderTop: "1px solid var(--rule)",
+            display: "grid",
+            gap: 6,
           }}
         >
           {items.map((item) => (
@@ -118,24 +142,31 @@ export function SellerTray() {
                 display: "flex",
                 alignItems: "center",
                 gap: 10,
-                padding: "6px 0",
-                borderBottom: "1px solid var(--rule)",
+                minHeight: 44,
+                padding: "6px 10px",
+                borderRadius: 12,
+                background: "var(--surface-2)",
               }}
             >
               <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
                 {item.name}
-                {item.number ? <span className="sb-data"> #{item.number}</span> : null}
+                {item.number ? (
+                  <span className="sb-data" style={{ color: "var(--muted)" }}>
+                    {" "}
+                    #{item.number}
+                  </span>
+                ) : null}
               </span>
               {item.price ? (
-                <span className="sb-data" style={{ color: "var(--foil)", whiteSpace: "nowrap" }}>
+                <span className="sb-data" style={{ fontWeight: 700, whiteSpace: "nowrap" }}>
                   {formatMoney(item.price.amount, item.price.currency)}
                 </span>
               ) : null}
               <button
                 type="button"
-                className="sp-link"
                 aria-label={`Quitar ${item.name} de mi lista`}
                 onClick={() => remove(item.pocketCode)}
+                className="sp-link sp-link-ghost"
               >
                 Quitar
               </button>
@@ -149,16 +180,16 @@ export function SellerTray() {
           display: "flex",
           flexWrap: "wrap",
           alignItems: "center",
-          gap: "10px 18px",
-          marginTop: 10,
+          gap: 8,
+          marginTop: 12,
         }}
       >
         <button
           type="button"
-          className="sp-link"
           disabled={count === 0}
           onClick={copyList}
-          style={{ color: "var(--foil)", borderColor: "var(--foil)" }}
+          className="sp-link sp-link-primary"
+          style={COPY_STYLE}
         >
           Copiar lista
         </button>
@@ -166,7 +197,7 @@ export function SellerTray() {
         <span
           aria-live="polite"
           className="sb-data"
-          style={{ fontSize: 11, color: "var(--smoke)" }}
+          style={{ width: "100%", fontSize: 12, color: "var(--muted)", minHeight: 0 }}
         >
           {feedback}
         </span>

@@ -54,7 +54,7 @@ export function printSheetCss(paper: PaperId): string {
     padding: 6%;
     box-sizing: border-box;
     border-radius: 2px;
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 1px 2px rgba(27, 32, 51, 0.06), 0 8px 24px rgba(27, 32, 51, 0.1);
     margin: 0 auto 40px;
   }
   .sb-print-piece {

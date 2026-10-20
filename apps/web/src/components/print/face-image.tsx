@@ -15,13 +15,15 @@ const GAP = 12;
 const FOOTER_SPACE = 86;
 const CARD_RATIO = 88 / 63;
 
+// v2 "Estante" light palette: paper page, clear sleeves, small footer.
 const COLORS = {
-  velvet: "#14110f",
-  leather: "#2a201a",
-  leatherDeep: "#1a1411",
-  linen: "#ede6da",
-  smoke: "#a39a8e",
-  foil: "#d4b77c",
+  paper: "#fbfbf7",
+  paperEdge: "#ecece4",
+  sleeve: "#f1f3f8",
+  sleeveLine: "#e3e6ef",
+  ink: "#1b2033",
+  muted: "#5b6278",
+  accent: "#3451d1",
 };
 
 interface Geometry {
@@ -83,15 +85,14 @@ function Placeholder({
         alignItems: "center",
         justifyContent: "center",
         borderRadius: 8,
-        border: `2px dashed ${COLORS.smoke}`,
+        border: `2px dashed ${COLORS.muted}`,
+        background: "#ffffff",
         padding: 8,
-        color: COLORS.smoke,
+        color: COLORS.muted,
         textAlign: "center",
       }}
     >
-      <div style={{ display: "flex", fontSize: 13, letterSpacing: 2, textTransform: "uppercase" }}>
-        Falta
-      </div>
+      <div style={{ display: "flex", fontSize: 13, fontWeight: 600 }}>Falta</div>
       <div style={{ display: "flex", fontSize: nameSize, marginTop: 6 }}>{name}</div>
       <div style={{ display: "flex", fontSize: 14, marginTop: 4 }}>{number}</div>
       <div style={{ display: "flex", fontSize: 13, marginTop: 8 }}>{code}</div>
@@ -183,8 +184,8 @@ export function FaceImage({ face, format, pockets, panels, displays, binderName 
               height: box.height,
               overflow: "hidden",
               borderRadius: 8,
-              background: COLORS.leatherDeep,
-              border: "1px solid rgba(255, 246, 225, 0.22)",
+              background: COLORS.sleeve,
+              border: `1px solid ${COLORS.sleeveLine}`,
             }}
           >
             {display?.imageUrl ? (
@@ -214,7 +215,7 @@ export function FaceImage({ face, format, pockets, panels, displays, binderName 
                   alignItems: "center",
                   justifyContent: "center",
                   padding: 8,
-                  color: COLORS.linen,
+                  color: COLORS.ink,
                   fontSize: nameSize,
                   textAlign: "center",
                 }}
@@ -254,8 +255,8 @@ export function FaceImage({ face, format, pockets, panels, displays, binderName 
             width: box.width,
             height: box.height,
             borderRadius: 8,
-            background: "rgba(255, 255, 255, 0.03)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            background: "#ffffff",
+            border: `1px solid ${COLORS.sleeveLine}`,
           }}
         />,
       );
@@ -269,8 +270,8 @@ export function FaceImage({ face, format, pockets, panels, displays, binderName 
         position: "relative",
         width: FACE_IMAGE_WIDTH,
         height,
-        background: `linear-gradient(180deg, ${COLORS.leather}, ${COLORS.leatherDeep})`,
-        color: COLORS.linen,
+        background: `linear-gradient(180deg, ${COLORS.paper}, ${COLORS.paperEdge})`,
+        color: COLORS.ink,
       }}
     >
       <div
@@ -280,9 +281,8 @@ export function FaceImage({ face, format, pockets, panels, displays, binderName 
           top: 14,
           right: 14,
           bottom: 14,
-          border: `1px solid ${COLORS.foil}`,
-          opacity: 0.3,
-          borderRadius: 2,
+          border: `1px solid ${COLORS.sleeveLine}`,
+          borderRadius: 8,
         }}
       />
       {cells}
@@ -295,9 +295,8 @@ export function FaceImage({ face, format, pockets, panels, displays, binderName 
           alignItems: "center",
           justifyContent: "center",
           fontSize: 22,
-          letterSpacing: 4,
-          textTransform: "uppercase",
-          color: COLORS.smoke,
+          fontWeight: 600,
+          color: COLORS.muted,
         }}
       >
         {`${binderName} · Hoja ${face.sheet} · ${sideLabel(face.side)}`}

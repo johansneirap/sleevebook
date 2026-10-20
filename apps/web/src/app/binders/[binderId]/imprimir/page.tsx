@@ -26,77 +26,152 @@ interface PageProps {
   searchParams: Promise<{ papel?: string; paneles?: string; faltantes?: string }>;
 }
 
+// Screen chrome is v2 "Estante" (light app UI). The @media print block and the
+// 63 x 88 mm geometry (print-sheets.tsx) are untouched.
 const PAGE_CSS = `
 .sb-print-page {
+  box-sizing: border-box;
   max-width: 980px;
   margin: 0 auto;
-  padding: 56px 16px 112px;
-  box-sizing: border-box;
+  padding: 20px 16px 112px;
   font-family: var(--font-ui);
-  color: var(--linen);
+  color: var(--ink);
+}
+@media (min-width: 720px) {
+  .sb-print-page { padding: 32px 40px 112px; }
+}
+.sb-print-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 10px;
+  margin-left: -10px;
+  border-radius: 10px;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.sb-print-back:hover { background: var(--accent-soft); }
+.sb-print-eyebrow {
+  margin: 16px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.sb-print-title {
+  margin: 4px 0 0;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: var(--ink);
+}
+.sb-print-lead {
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.sb-print-card {
+  margin-top: 20px;
+  padding: 16px 20px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
 }
 .sb-print-controls {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 14px 22px;
-  margin: 32px 0 0;
-  font-size: 13px;
-  color: var(--smoke);
+  gap: 12px 16px;
+  font-size: 14px;
+  color: var(--ink);
 }
 .sb-print-controls label {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  min-height: 44px;
+  font-weight: 600;
+}
+.sb-print-controls input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
 }
 .sb-print-controls select {
   font: inherit;
-  color: var(--linen);
-  background: var(--velvet-raised);
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  padding: 4px 8px;
+  font-size: 14px;
+  min-height: 44px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0 12px;
 }
-.sb-print-controls button {
+.sb-print-controls .sb-print-apply {
   font: inherit;
-  font-size: 12px;
-  color: var(--linen);
-  background: none;
-  border: 1px solid var(--linen);
-  border-radius: 2px;
-  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  min-height: 44px;
+  color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 0 16px;
   cursor: pointer;
 }
+.sb-print-controls .sb-print-apply:hover { background: var(--accent-soft); }
+.sb-print-summary {
+  font-size: 14px;
+  color: var(--muted);
+}
 .sb-print-faces {
-  margin-top: 56px;
-  border-top: 1px solid var(--rule);
-  padding-top: 20px;
+  margin-top: 24px;
+  padding: 16px 20px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+.sb-print-faces-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
 }
 .sb-print-faces ul {
   list-style: none;
   padding: 0;
-  margin: 16px 0 0;
+  margin: 8px 0 0;
   display: grid;
-  gap: 4px;
 }
 .sb-print-faces li {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
-  padding: 8px 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--linen) 8%, transparent);
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  min-height: 44px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--line);
   font-size: 14px;
+  color: var(--ink);
 }
+.sb-print-faces li:last-child { border-bottom: 0; }
 .sb-print-faces a {
-  color: var(--smoke);
-  font-size: 12px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
 }
-.sb-print-faces a:hover,
-.sb-print-faces a:focus-visible {
-  color: var(--foil);
-}
+.sb-print-faces a:hover { text-decoration: underline; }
 @media print {
   html, body { background: #fff !important; }
   .sb-print-page { padding: 0 !important; margin: 0 !important; max-width: none !important; color: #000; }
@@ -152,71 +227,53 @@ export default async function PrintBinderPage({ params, searchParams }: PageProp
 
       <div className="sb-no-print">
         <p style={{ margin: 0 }}>
-          <Link
-            href={`/binders/${binderId}`}
-            style={{
-              color: "var(--smoke)",
-              fontSize: 12,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              textDecoration: "none",
-            }}
-          >
+          <Link href={`/binders/${binderId}`} className="sb-print-back">
             &larr; Volver al binder
           </Link>
         </p>
-        <p className="sb-label" style={{ margin: "28px 0 0", fontSize: 12, color: "var(--smoke)" }}>
-          Impresión
-        </p>
-        <h1
-          style={{
-            margin: "10px 0 0",
-            fontFamily: "var(--font-display)",
-            fontWeight: 400,
-            fontSize: "clamp(36px, 6vw, 56px)",
-            lineHeight: 1.05,
-            color: "var(--linen)",
-          }}
-        >
-          {binderData.name}
-        </h1>
-        <p style={{ margin: "14px 0 0", fontSize: 14, lineHeight: 1.5, color: "var(--smoke)" }}>
+        <p className="sb-print-eyebrow">Impresión</p>
+        <h1 className="sb-print-title">{binderData.name}</h1>
+        <p className="sb-print-lead">
           Cada ficha mide 63 × 88 mm y lleva su código de bolsillo para saber dónde va. Imprime al
           100 % (sin ajustar a la página) o usa &ldquo;Guardar como PDF&rdquo;.
         </p>
 
-        <form method="get" className="sb-print-controls">
-          <label>
-            Papel
-            <select name="papel" defaultValue={paper}>
-              <option value="a4">A4</option>
-              <option value="carta">Carta</option>
-            </select>
-          </label>
-          <label>
-            <input type="checkbox" name="paneles" value="1" defaultChecked={includePanels} />
-            Incluir paneles
-          </label>
-          <label>
-            <input type="checkbox" name="faltantes" value="1" defaultChecked={onlyMissing} />
-            Solo faltantes
-          </label>
-          <button type="submit">Aplicar</button>
-        </form>
+        <div className="sb-print-card">
+          <form method="get" className="sb-print-controls">
+            <label>
+              Papel
+              <select name="papel" defaultValue={paper}>
+                <option value="a4">A4</option>
+                <option value="carta">Carta</option>
+              </select>
+            </label>
+            <label>
+              <input type="checkbox" name="paneles" value="1" defaultChecked={includePanels} />
+              Incluir paneles
+            </label>
+            <label>
+              <input type="checkbox" name="faltantes" value="1" defaultChecked={onlyMissing} />
+              Solo faltantes
+            </label>
+            <button type="submit" className="sb-print-apply">
+              Aplicar
+            </button>
+          </form>
 
-        <div className="sb-print-controls" style={{ marginTop: 18 }}>
-          <PrintButton />
-          <span>
-            {fichaCount} {fichaCount === 1 ? "ficha" : "fichas"}
-            {includePanels ? ` · ${pieces.length - fichaCount} piezas de panel` : ""} ·{" "}
-            {sheets.length} {sheets.length === 1 ? "hoja" : "hojas"} {paperInfo.label}
-          </span>
+          <div className="sb-print-controls" style={{ marginTop: 16 }}>
+            <PrintButton />
+            <span className="sb-print-summary">
+              {fichaCount} {fichaCount === 1 ? "ficha" : "fichas"}
+              {includePanels ? ` · ${pieces.length - fichaCount} piezas de panel` : ""} ·{" "}
+              {sheets.length} {sheets.length === 1 ? "hoja" : "hojas"} {paperInfo.label}
+            </span>
+          </div>
         </div>
       </div>
 
-      <div className="sb-print-area" style={{ marginTop: 36 }}>
+      <div className="sb-print-area" style={{ marginTop: 28 }}>
         {sheets.length === 0 ? (
-          <p className="sb-no-print" style={{ color: "var(--smoke)", fontSize: 14 }}>
+          <p className="sb-no-print" style={{ color: "var(--muted)", fontSize: 14 }}>
             No hay fichas para imprimir con estas opciones.
           </p>
         ) : (
@@ -225,7 +282,7 @@ export default async function PrintBinderPage({ params, searchParams }: PageProp
       </div>
 
       <section className="sb-print-faces sb-no-print" aria-labelledby="sb-print-faces-title">
-        <p className="sb-label" style={{ margin: 0, fontSize: 12, color: "var(--smoke)" }}>
+        <p className="sb-print-faces-title">
           <span id="sb-print-faces-title">Imágenes por cara</span>
         </p>
         <ul>
