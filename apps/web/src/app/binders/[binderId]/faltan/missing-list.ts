@@ -26,6 +26,8 @@ export interface MissingRow {
   number: string;
   setName: string;
   variant: string;
+  /** Card image for the thumbnail, null when the catalog has none. */
+  imageUrl: string | null;
   /** Market price in USD, null when we have no price point yet. */
   priceUsd: number | null;
   /** Same price in `MissingList.currency`, null when there is no price. */
@@ -118,6 +120,7 @@ export async function loadMissingList(
       number: display.number,
       setName: display.setName,
       variant: display.variant,
+      imageUrl: display.imageUrl ?? null,
       priceUsd,
       price: priceUsd === null ? null : toDisplay(priceUsd),
     });

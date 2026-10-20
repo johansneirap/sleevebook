@@ -12,7 +12,7 @@ import {
 import type { Format, Layout, SheetFace } from "@sleevebook/binder-core";
 import { computeBinderValueUsd, formatPocketCode, panelCoverageMap } from "@sleevebook/binder-core";
 import { motion } from "motion/react";
-import { useRef, useState, useTransition } from "react";
+import { type ReactNode, useRef, useState, useTransition } from "react";
 import { flushSync } from "react-dom";
 import type { VariantDisplay } from "../../lib/binders";
 import {
@@ -53,91 +53,190 @@ const IMPORT_PLACEHOLDER: Record<ImportFormat, string> = {
   csv: "name,set,number,variant,qty\nRiolu,MEG,76,normal,4",
 };
 
-// Layout-only CSS for the editor workbench: faces in the center, tool panels in
-// a side column from 1100px, stacked below on narrower screens. Inline styles
-// cannot express media queries, so these few rules live in a scoped <style>.
+// Editor styles (design brief v2 "Estante"). The faces are paper pages with
+// sleeves, the same look as the binder viewer but drawn here on purpose: the
+// editor must not depend on the viewer's components. The side column is a stack
+// of cards; from 1100px it sits beside the pages. Every selector is prefixed
+// with .sb-ed so these rules beat the global button and input defaults.
 const EDITOR_CSS = `
-.sb-ed { display: grid; gap: 32px; align-items: start; }
-.sb-ed-faces { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; }
-.sb-ed-side { min-width: 0; }
+.sb-ed { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; color: var(--ink); min-width: 0; }
+.sb-ed-main { min-width: 0; }
+.sb-ed-side { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; align-content: start; }
+.sb-ed .sb-ed-toolbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 10px; margin-bottom: 16px; box-sizing: border-box;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow);
+}
+.sb-ed .sb-ed-sep { width: 1px; height: 28px; background: var(--line); margin: 0 4px; }
+.sb-ed .sb-ed-value {
+  margin-left: auto; display: inline-flex; align-items: center; min-height: 32px;
+  padding: 0 12px; border-radius: 999px; background: var(--surface-2);
+  font-family: var(--font-data); font-size: 13px; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--ink);
+}
+.sb-ed .sb-ed-tool,
+.sb-ed .sb-ed-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 0 14px; box-sizing: border-box;
+  border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
+  color: var(--ink); font-family: var(--font-ui); font-size: 14px; font-weight: 600;
+  line-height: 1.2; cursor: pointer;
+  transition: background-color 180ms var(--ease-out-expo), border-color 180ms var(--ease-out-expo);
+}
+.sb-ed .sb-ed-tool svg { width: 18px; height: 18px; flex: none; }
+.sb-ed .sb-ed-tool:hover:not(:disabled),
+.sb-ed .sb-ed-btn:hover:not(:disabled) { background: var(--surface-2); }
+.sb-ed .sb-ed-btn-block { width: 100%; }
+.sb-ed .sb-ed-btn-primary,
+.sb-ed .sb-ed-btn-primary:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); color: #ffffff; }
+.sb-ed .sb-ed-btn-primary:hover:not(:disabled) { background: var(--accent-strong); border-color: var(--accent-strong); }
+.sb-ed .sb-ed-btn-ghost,
+.sb-ed .sb-ed-btn-ghost:hover:not(:disabled) { background: transparent; border-color: transparent; color: var(--accent); }
+.sb-ed .sb-ed-btn-ghost:hover:not(:disabled) { background: var(--accent-soft); }
+.sb-ed .sb-ed-btn-danger,
+.sb-ed .sb-ed-btn-danger:hover:not(:disabled) { background: transparent; border-color: transparent; color: var(--danger); }
+.sb-ed .sb-ed-btn-danger:hover:not(:disabled) { background: var(--danger-soft); }
+.sb-ed .sb-ed-tray {
+  display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;
+  padding: 20px; box-sizing: border-box;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-lg);
+}
+.sb-ed .sb-ed-page {
+  position: relative; box-sizing: border-box; flex: 1 1 300px; max-width: 420px; min-width: 0;
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 16px 18px 20px;
+  background: linear-gradient(90deg, var(--binder-paper) 85%, var(--binder-paper-edge));
+  border: 1px solid var(--binder-paper-edge);
+  border-radius: 8px 4px 4px 8px;
+  box-shadow: inset -10px 0 18px -12px rgba(27, 32, 51, 0.22), 0 1px 2px rgba(27, 32, 51, 0.08), 0 12px 24px -16px rgba(27, 32, 51, 0.35);
+}
+.sb-ed .sb-ed-page:nth-child(even) {
+  background: linear-gradient(270deg, var(--binder-paper) 85%, var(--binder-paper-edge));
+  border-radius: 4px 8px 8px 4px;
+  box-shadow: inset 10px 0 18px -12px rgba(27, 32, 51, 0.22), 0 1px 2px rgba(27, 32, 51, 0.08), 0 12px 24px -16px rgba(27, 32, 51, 0.35);
+}
+.sb-ed .sb-ed-page-head {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 700; color: var(--muted);
+}
+.sb-ed .sb-ed-grid { display: grid; gap: 8px; width: 100%; }
+.sb-ed .sb-ed-pocket {
+  --sleeve-bg: linear-gradient(115deg, rgba(255, 255, 255, 0) 35%, rgba(255, 255, 255, 0.6) 48%, rgba(255, 255, 255, 0) 60%), rgba(220, 224, 236, 0.35);
+  position: relative; display: block; width: 100%; aspect-ratio: 63 / 88;
+  box-sizing: border-box; padding: 0; margin: 0; border: 0; border-radius: 6px;
+  background: var(--sleeve-bg); color: var(--ink); font: inherit; overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(27, 32, 51, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: box-shadow 200ms var(--ease-out-expo), background-color 200ms var(--ease-out-expo);
+}
+.sb-ed .sb-ed-pocket:hover { background: var(--sleeve-bg); box-shadow: inset 0 0 0 1px rgba(27, 32, 51, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.9); }
+.sb-ed .sb-ed-pocket[data-selected="true"] { --sleeve-bg: var(--accent-soft); box-shadow: 0 0 0 2px var(--accent); }
+.sb-ed .sb-ed-pocket[data-over="true"] { --sleeve-bg: var(--accent-soft); box-shadow: 0 0 0 2px var(--accent), 0 0 0 6px color-mix(in srgb, var(--accent) 22%, transparent); }
+.sb-ed .sb-ed-pocket:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sb-ed .sb-ed-pocket-layout { position: relative; width: 100%; height: 100%; }
+.sb-ed .sb-ed-pocket-inner {
+  position: absolute; inset: 4px; display: flex; align-items: center; justify-content: center;
+  border-radius: 4px; overflow: hidden; box-sizing: border-box;
+}
+.sb-ed .sb-ed-pocket-inner[data-dashed="true"] { border: 1.5px dashed #cdd2e0; }
+.sb-ed .sb-ed-slot-code {
+  font-family: var(--font-data); font-size: 10px; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--muted);
+}
+.sb-ed .sb-ed-label {
+  margin: 4px; padding: 4px 6px; border-radius: 6px; background: var(--surface);
+  box-shadow: 0 1px 3px rgba(27, 32, 51, 0.15); font-size: 10px; font-weight: 700;
+  line-height: 1.3; text-align: center; color: var(--ink); overflow-wrap: anywhere;
+}
+.sb-ed .sb-ed-card-img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 3px; }
+.sb-ed .sb-ed-count {
+  position: absolute; top: 6px; right: 6px; z-index: 1; min-width: 20px; padding: 0 6px;
+  border-radius: 999px; background: var(--accent); color: #ffffff; text-align: center;
+  font-family: var(--font-data); font-size: 10px; font-weight: 700; line-height: 18px;
+  font-variant-numeric: tabular-nums;
+}
+.sb-ed .sb-ed-overlay { position: absolute; inset: 0; border-radius: 3px; pointer-events: none; }
+.sb-ed .sb-ed-card {
+  box-sizing: border-box; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 16px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow);
+}
+.sb-ed .sb-ed-card-title { margin: 0; font-size: 16px; font-weight: 700; line-height: 1.3; color: var(--ink); }
+.sb-ed .sb-ed-section { display: block; padding: 0 16px; }
+.sb-ed .sb-ed-section > summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; min-height: 52px; font-size: 15px; font-weight: 700; color: var(--ink);
+}
+.sb-ed .sb-ed-section > summary::-webkit-details-marker { display: none; }
+.sb-ed .sb-ed-section > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+.sb-ed .sb-ed-chev { width: 18px; height: 18px; flex: none; color: var(--muted); transition: transform 200ms var(--ease-out-expo); }
+.sb-ed .sb-ed-section[open] > summary .sb-ed-chev { transform: rotate(180deg); }
+.sb-ed .sb-ed-section-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; padding: 4px 0 16px; }
+.sb-ed .sb-ed-field { display: grid; gap: 6px; min-width: 0; font-size: 13px; font-weight: 600; color: var(--muted); }
+.sb-ed .sb-ed-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
+.sb-ed .sb-ed-row > .sb-ed-field { flex: 1 1 120px; }
+.sb-ed .sb-ed-check { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14px; color: var(--ink); cursor: pointer; }
+.sb-ed .sb-ed-check input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+.sb-ed input[type="text"],
+.sb-ed input[type="number"],
+.sb-ed select,
+.sb-ed textarea {
+  box-sizing: border-box; width: 100%; min-height: 44px; padding: 8px 12px;
+  border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
+  color: var(--ink); font-family: var(--font-ui); font-size: 14px; font-weight: 500;
+}
+.sb-ed textarea { min-height: 120px; font-family: var(--font-data); font-size: 13px; resize: vertical; }
+.sb-ed input[type="range"] { width: 100%; accent-color: var(--accent); }
+.sb-ed .sb-ed-note { margin: 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
+.sb-ed .sb-ed-error {
+  margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--danger-soft);
+  color: var(--danger); font-size: 13px; font-weight: 600; line-height: 1.4;
+}
+.sb-ed .sb-ed-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.sb-ed .sb-ed-line {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 44px;
+  padding: 6px 10px; box-sizing: border-box; border-radius: 12px;
+  background: var(--surface-2); font-size: 13px; color: var(--ink);
+}
+.sb-ed .sb-ed-chip {
+  display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent-strong);
+  font-family: var(--font-data); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.sb-ed .sb-ed-num { font-family: var(--font-data); font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 600; }
+.sb-ed .sb-ed-code { font-family: var(--font-data); font-weight: 800; font-variant-numeric: tabular-nums; color: var(--accent); }
+.sb-ed .sb-ed-price { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.sb-ed .sb-ed-price-box { display: grid; gap: 10px; padding: 12px; border-radius: 14px; background: var(--surface-2); }
+.sb-ed .sb-ed-search { position: relative; }
+.sb-ed .sb-ed-search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--muted); pointer-events: none; }
+.sb-ed .sb-ed-search input { padding-left: 36px; }
+.sb-ed .sb-ed-results {
+  list-style: none; margin: 0; padding: 0; display: grid; gap: 8px;
+  max-height: 380px; overflow-y: auto;
+}
+.sb-ed .sb-ed-result {
+  display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: start;
+  padding: 10px; box-sizing: border-box; border: 1px solid var(--line); border-radius: 14px; background: var(--surface);
+}
+.sb-ed .sb-ed-result-thumb { width: 40px; height: 56px; border-radius: 6px; object-fit: cover; background: var(--surface-2); display: block; }
+.sb-ed .sb-ed-result-meta { min-width: 0; font-size: 13px; line-height: 1.4; color: var(--ink); overflow-wrap: anywhere; }
+.sb-ed .sb-ed-result-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.sb-ed .sb-ed-result-actions .sb-ed-btn { min-height: 44px; padding: 0 10px; font-size: 13px; }
+.sb-ed .sb-ed-inspector-hint { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); }
+.sb-ed .sb-ed-selected-title { margin: 0; font-size: 14px; color: var(--ink); }
+.sb-ed .sb-ed-caption { margin: 0; font-size: 13px; color: var(--muted); }
 @media (min-width: 1100px) {
-  .sb-ed { grid-template-columns: minmax(0, 1fr) 340px; gap: 56px; }
-  .sb-ed-faces { justify-content: flex-start; }
+  .sb-ed { grid-template-columns: minmax(0, 1fr) 360px; gap: 28px; }
   .sb-ed-side {
-    position: sticky;
-    top: 16px;
-    max-height: calc(100vh - 32px);
-    overflow-y: auto;
-    padding-right: 4px;
-    scrollbar-width: thin;
+    position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto;
+    padding: 0 4px 4px 0; scrollbar-width: thin;
   }
 }
-.sb-ed-section { border-bottom: 1px solid var(--rule); }
-.sb-ed-section > summary {
-  list-style: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 0;
-  font-family: var(--font-ui);
-  font-size: 12px;
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.14em;
-  color: var(--smoke);
-  transition: color 240ms var(--ease-out-expo);
+@media (prefers-reduced-motion: reduce) {
+  .sb-ed .sb-ed-pocket,
+  .sb-ed .sb-ed-tool,
+  .sb-ed .sb-ed-btn,
+  .sb-ed .sb-ed-chev { transition: none; }
 }
-.sb-ed-section > summary::-webkit-details-marker { display: none; }
-.sb-ed-section > summary::after {
-  content: "+";
-  font-family: var(--font-data);
-  font-size: 14px;
-  color: var(--foil-dim);
-}
-.sb-ed-section[open] > summary::after { content: "\\2212"; }
-.sb-ed-section > summary:hover { color: var(--linen); }
-.sb-ed-section > div { padding: 2px 0 16px; }
-.sb-ed-quiet,
-.sb-ed-quiet:hover:not(:disabled) {
-  background: transparent;
-  border-color: transparent;
-  padding: 4px 10px;
-  font-size: 12px;
-  color: color-mix(in srgb, var(--linen) 72%, transparent);
-}
-.sb-ed-quiet:hover:not(:disabled) { color: var(--linen); }
-.sb-ed-results {
-  list-style: none;
-  padding: 0;
-  margin: 8px 0 0;
-  max-height: 380px;
-  overflow-y: auto;
-  border-top: 1px solid var(--rule);
-}
-.sb-ed-result {
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
-  gap: 10px;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--linen) 8%, transparent);
-  font-size: 12px;
-}
-.sb-ed-result-meta { min-width: 0; overflow-wrap: anywhere; }
-.sb-ed-num {
-  font-family: var(--font-data);
-  font-variant-numeric: tabular-nums;
-  color: var(--smoke);
-}
-.sb-ed-result-actions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-.sb-ed-result-actions button { font-size: 11px; padding: 2px 8px; }
-.sb-ed-selection strong {
-  font-family: var(--font-data);
-  font-weight: 400;
-  color: var(--foil);
-}
-.sb-ed-price { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
 `;
 
 interface BinderEditorProps {
@@ -161,12 +260,35 @@ interface HistoryEntry {
   changes: HistoryChange[];
 }
 
+type SectionKey = "sort" | "import" | "theme" | "panels";
+
 const SEARCH_DEBOUNCE_MS = 300;
 const EMPTY_POCKET: PocketValue = { kind: "empty" };
 // Critically-damped-ish spring (damping ratio ~1.0): settles without visible bounce.
 const INSERT_SPRING = { type: "spring", stiffness: 150, damping: 25, mass: 1 } as const;
 const INSERT_OFFSCREEN = { x: "80%", opacity: 0.6, scale: 1.02 } as const;
 const INSERT_REST = { x: 0, opacity: 1, scale: 1 } as const;
+
+/** Small 24px stroke icon used by the toolbar and the section headers. */
+function Svg({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+      className={className}
+    >
+      {children}
+    </svg>
+  );
+}
 
 function Pocket({
   code,
@@ -207,22 +329,12 @@ function Pocket({
   const { attributes, listeners, setNodeRef: setDragRef, isDragging } = useDraggable({ id: code });
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id: code });
 
-  // A sleeve: translucent hairline on the leather face, the card fills it.
-  // Empty pockets stay a faint outline; the selected one gets a fine foil ring,
-  // and a drop target a soft foil glow.
-  const borderColor =
-    isOver || isSelected
-      ? "var(--foil)"
-      : content?.kind === "placeholder"
-        ? "var(--foil-dim)"
-        : hasContent
-          ? "color-mix(in srgb, var(--linen) 16%, transparent)"
-          : "color-mix(in srgb, var(--linen) 9%, transparent)";
-  const boxShadow = isOver
-    ? "0 0 0 1px var(--foil), 0 0 26px 4px color-mix(in srgb, var(--foil) 26%, transparent)"
-    : isSelected
-      ? "0 0 0 1px var(--foil)"
-      : "none";
+  // A sleeve: the paper shows through a translucent film with a hairline and a
+  // diagonal sheen. An empty pocket keeps a dashed frame inside the sleeve; the
+  // selected one gets a 2px accent ring and an accent-soft fill, a drop target
+  // the same ring with a soft halo.
+  const dashed = content?.kind !== "card";
+  const kind = content?.kind === "card" || content?.kind === "placeholder" ? content.kind : "empty";
 
   return (
     <button
@@ -234,128 +346,42 @@ function Pocket({
       {...listeners}
       {...attributes}
       onClick={(event) => onSelect(code, event.shiftKey || event.metaKey || event.ctrlKey)}
+      className="sb-ed-pocket"
       style={{
-        position: "relative",
-        aspectRatio: "63 / 88",
         ...gridPosition,
-        borderWidth: 1,
-        borderColor,
-        borderStyle: content?.kind === "placeholder" ? "dashed" : "solid",
-        borderRadius: 3,
-        boxShadow,
-        transition:
-          "box-shadow 280ms var(--ease-out-expo), border-color 280ms var(--ease-out-expo)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: 11,
-        fontVariantCaps: "normal",
-        letterSpacing: "normal",
-        padding: 0,
-        background: hasContent ? "color-mix(in srgb, var(--linen) 4%, transparent)" : "transparent",
         cursor: hasContent ? "grab" : "pointer",
         opacity: isDragging ? 0.3 : 1,
-        overflow: "hidden",
       }}
+      data-kind={kind}
+      data-selected={isSelected ? "true" : "false"}
+      data-over={isOver ? "true" : undefined}
       data-inserting={inserting ? "true" : undefined}
     >
-      <motion.div
-        key={layoutId ?? code}
-        layoutId={layoutId}
-        style={{
-          position: "relative",
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
+      <motion.div key={layoutId ?? code} layoutId={layoutId} className="sb-ed-pocket-layout">
         <motion.div
           key={insertKey}
+          className="sb-ed-pocket-inner"
+          data-dashed={dashed ? "true" : undefined}
           initial={insertActive ? (reduceMotion ? { opacity: 0 } : INSERT_OFFSCREEN) : false}
           animate={reduceMotion ? { opacity: 1 } : INSERT_REST}
           transition={reduceMotion ? { duration: 0.15, ease: "easeOut" } : INSERT_SPRING}
           onAnimationComplete={() => setDoneKey(insertKey)}
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
         >
           {content?.kind === "card" && content.count && content.count > 1 && (
-            <span
-              style={{
-                position: "absolute",
-                top: 4,
-                right: 4,
-                zIndex: 1,
-                background: "var(--velvet)",
-                color: "var(--foil)",
-                border: "1px solid var(--rule)",
-                borderRadius: 2,
-                padding: "0 4px",
-                fontSize: 10,
-                fontFamily: "var(--font-data)",
-                fontVariantNumeric: "tabular-nums",
-              }}
-            >
-              ×{content.count}
-            </span>
+            <span className="sb-ed-count">×{content.count}</span>
           )}
           {content?.kind === "card" && overlayStyle && (
-            <span
-              style={{
-                position: "absolute",
-                inset: 0,
-                borderRadius: 3,
-                boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--linen) 14%, transparent)",
-                pointerEvents: "none",
-                ...overlayStyle,
-              }}
-            />
+            <span className="sb-ed-overlay" style={overlayStyle} />
           )}
           {content?.kind === "card" && display?.imageUrl ? (
             // biome-ignore lint/performance/noImgElement: editor MVP, no next/image config yet
-            <img
-              src={display.imageUrl}
-              alt={display.name}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "contain",
-                display: "block",
-                borderRadius: 2,
-              }}
-            />
+            <img src={display.imageUrl} alt={display.name} className="sb-ed-card-img" />
           ) : display ? (
-            <span
-              style={{
-                fontFamily: "var(--font-ui)",
-                fontSize: 10,
-                lineHeight: 1.3,
-                textAlign: "center",
-                color: "var(--linen)",
-                padding: 4,
-              }}
-            >
+            <span className="sb-ed-label">
               {display.name} {display.number}
             </span>
           ) : (
-            <span
-              style={{
-                fontFamily: "var(--font-data)",
-                fontVariantNumeric: "tabular-nums",
-                fontSize: 10,
-                letterSpacing: "0.04em",
-                color: "var(--smoke)",
-              }}
-            >
-              {code}
-            </span>
+            <span className="sb-ed-slot-code">{code}</span>
           )}
         </motion.div>
       </motion.div>
@@ -382,6 +408,7 @@ export function BinderEditor({
   const [redoStack, setRedoStack] = useState<HistoryEntry[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const priceInputRef = useRef<HTMLInputElement>(null);
+  const sectionRefs = useRef<Partial<Record<SectionKey, HTMLDetailsElement | null>>>({});
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const [criteriaSlots, setCriteriaSlots] = useState<(SortCriterion | null)[]>([
     { field: "setName", dir: "asc" },
@@ -452,6 +479,19 @@ export function BinderEditor({
     });
     setQuery("");
     setResults([]);
+  }
+
+  /** Toolbar buttons open the matching side card and bring it into view. */
+  function openSection(key: SectionKey) {
+    const section = sectionRefs.current[key];
+    if (!section) {
+      return;
+    }
+    section.open = true;
+    section.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+      block: "nearest",
+    });
   }
 
   function assignSingle(content: PocketValue) {
@@ -752,82 +792,84 @@ export function BinderEditor({
   return (
     <div className="sb-ed">
       <style>{EDITOR_CSS}</style>
-      <div style={{ minWidth: 0 }}>
-        <div
-          style={{
-            display: "flex",
-            gap: 4,
-            alignItems: "center",
-            paddingBottom: 10,
-            marginBottom: 24,
-            borderBottom: "1px solid var(--rule)",
-          }}
-        >
+      <div className="sb-ed-main">
+        <div className="sb-ed-toolbar" role="toolbar" aria-label="Herramientas del binder">
           <button
             type="button"
-            className="sb-ed-quiet"
+            className="sb-ed-tool"
             onClick={handleUndo}
             disabled={undoStack.length === 0 || isPending}
           >
+            <Svg>
+              <path d="M9 14 4 9l5-5" />
+              <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+            </Svg>
             Deshacer
           </button>
           <button
             type="button"
-            className="sb-ed-quiet"
+            className="sb-ed-tool"
             onClick={handleRedo}
             disabled={redoStack.length === 0 || isPending}
           >
+            <Svg>
+              <path d="m15 14 5-5-5-5" />
+              <path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />
+            </Svg>
             Rehacer
           </button>
+          <span className="sb-ed-sep" aria-hidden="true" />
+          <button type="button" className="sb-ed-tool" onClick={() => openSection("sort")}>
+            <Svg>
+              <path d="M3 6h18" />
+              <path d="M6 12h12" />
+              <path d="M10 18h4" />
+            </Svg>
+            Ordenar
+          </button>
+          <button type="button" className="sb-ed-tool" onClick={() => openSection("import")}>
+            <Svg>
+              <path d="M12 3v12" />
+              <path d="m7 10 5 5 5-5" />
+              <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+            </Svg>
+            Importar
+          </button>
+          <button type="button" className="sb-ed-tool" onClick={() => openSection("theme")}>
+            <Svg>
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 3v18" />
+              <path d="M12 3a9 9 0 0 1 0 18" fill="currentColor" />
+            </Svg>
+            Estilo
+          </button>
+          <button type="button" className="sb-ed-tool" onClick={() => openSection("panels")}>
+            <Svg>
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <circle cx="9" cy="9" r="2" />
+              <path d="m21 15-5-5L5 21" />
+            </Svg>
+            Paneles
+          </button>
           {totalValueUsd > 0 && (
-            <span
-              className="sb-ed-price"
-              style={{ marginLeft: "auto", fontSize: 12, color: "var(--smoke)" }}
-            >
+            <span className="sb-ed-value sb-ed-price">
               Valor total del binder: ${totalValueUsd.toFixed(2)} USD
             </span>
           )}
         </div>
 
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-          <div className="sb-ed-faces">
+          <div className="sb-ed-tray">
             {faces.map((face) => (
-              <section
-                key={`${face.sheet}-${face.side}`}
-                style={{
-                  background: "color-mix(in srgb, var(--leather) 88%, transparent)",
-                  border: "1px solid color-mix(in srgb, var(--linen) 9%, transparent)",
-                  borderRadius: 6,
-                  // Two faces side by side whenever the column fits them, like the open binder.
-                  boxSizing: "border-box",
-                  flex: "1 1 300px",
-                  maxWidth: 400,
-                  padding: "14px 18px 20px",
-                  boxShadow: "inset 0 0 56px rgba(0, 0, 0, 0.38)",
-                }}
-              >
-                <h2
-                  style={{
-                    fontFamily: "var(--font-ui)",
-                    fontSize: 11,
-                    fontWeight: 400,
-                    fontVariantCaps: "all-small-caps",
-                    letterSpacing: "0.14em",
-                    color: "var(--smoke)",
-                    margin: "0 0 14px",
-                    paddingBottom: 8,
-                    borderBottom: "1px solid var(--rule)",
-                  }}
-                >
-                  Hoja {face.sheet} · {face.side === "F" ? "Frente" : "Reverso"}
-                </h2>
+              <section key={`${face.sheet}-${face.side}`} className="sb-ed-page">
+                <div className="sb-ed-page-head">
+                  <h2 style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>
+                    Hoja {face.sheet} · {face.side === "F" ? "Frente" : "Reverso"}
+                  </h2>
+                </div>
                 <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: `repeat(${format.cols}, 1fr)`,
-                    gap: 8,
-                    width: "100%",
-                  }}
+                  className="sb-ed-grid"
+                  style={{ gridTemplateColumns: `repeat(${format.cols}, minmax(0, 1fr))` }}
                 >
                   {Array.from({ length: format.rows * format.cols }, (_, i) => {
                     const code = formatPocketCode({
@@ -886,52 +928,230 @@ export function BinderEditor({
       </div>
 
       <aside className="sb-ed-side">
-        <details className="sb-ed-section">
-          <summary>Reordenar binder</summary>
-          <div>
+        <section className="sb-ed-card" aria-labelledby="sb-ed-inspector-title">
+          <h2 id="sb-ed-inspector-title" className="sb-ed-card-title">
+            Bolsillos
+          </h2>
+
+          {selectedCodes.length === 0 && (
+            <p className="sb-ed-inspector-hint">
+              Hacé click en un bolsillo para editarlo, o arrastrá una carta a otro bolsillo.
+              Shift/Cmd-click para seleccionar varios.
+            </p>
+          )}
+
+          {selectedCodes.length > 1 && (
+            <div className="sb-ed-row">
+              <p className="sb-ed-selected-title" style={{ flex: "1 1 100%" }}>
+                {selectedCodes.length} bolsillos seleccionados
+              </p>
+              <button
+                type="button"
+                className="sb-ed-btn sb-ed-btn-danger"
+                disabled={isPending}
+                onClick={bulkClear}
+              >
+                Vaciar seleccionados
+              </button>
+              <button type="button" className="sb-ed-btn" onClick={() => setSelectedCodes([])}>
+                Cancelar selección
+              </button>
+            </div>
+          )}
+
+          {singleSelectedCode && (
+            <>
+              <p className="sb-ed-selected-title">
+                Editando <strong className="sb-ed-code">{singleSelectedCode}</strong>
+              </p>
+
+              {selectedContent?.kind === "card" && displays[selectedContent.variant] && (
+                <div>
+                  <HoloCard
+                    imageUrl={displays[selectedContent.variant]?.imageUrl ?? null}
+                    name={displays[selectedContent.variant]?.name ?? ""}
+                    variant={displays[selectedContent.variant]?.variant ?? "normal"}
+                    sleeve={theme.sleeve}
+                    width={180}
+                  />
+                </div>
+              )}
+
+              <div className="sb-ed-row">
+                <button
+                  type="button"
+                  className="sb-ed-btn sb-ed-btn-danger"
+                  disabled={isPending}
+                  onClick={() => assignSingle(EMPTY_POCKET)}
+                >
+                  Vaciar
+                </button>
+              </div>
+
+              {selectedContent?.kind === "card" && (
+                <div className="sb-ed-price-box">
+                  <p className="sb-ed-caption">
+                    Precio de mercado:{" "}
+                    {prices[selectedContent.variant] !== undefined
+                      ? `$${(prices[selectedContent.variant] as number).toFixed(2)} USD`
+                      : "sin dato"}
+                    {selectedContent.priceOverrideUsd !== undefined &&
+                      ` — Precio propio: $${selectedContent.priceOverrideUsd.toFixed(2)} USD`}
+                  </p>
+                  <label className="sb-ed-field">
+                    <span>Precio propio (USD)</span>
+                    <input
+                      key={singleSelectedCode}
+                      ref={priceInputRef}
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      aria-label="Precio propio en dólares"
+                      defaultValue={selectedContent.priceOverrideUsd ?? ""}
+                    />
+                  </label>
+                  <div className="sb-ed-row">
+                    <button
+                      type="button"
+                      className="sb-ed-btn sb-ed-btn-primary"
+                      disabled={isPending}
+                      onClick={handleSetPriceOverride}
+                    >
+                      Guardar precio propio
+                    </button>
+                    {selectedContent.priceOverrideUsd !== undefined && (
+                      <button
+                        type="button"
+                        className="sb-ed-btn sb-ed-btn-danger"
+                        disabled={isPending}
+                        onClick={handleClearPriceOverride}
+                      >
+                        Quitar precio propio
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="sb-ed-search">
+                <Svg>
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-3.5-3.5" />
+                </Svg>
+                <input
+                  type="text"
+                  placeholder="Buscar carta por nombre..."
+                  value={query}
+                  onChange={(event) => onSearchChange(event.target.value)}
+                />
+              </div>
+              {isSearching && <p className="sb-ed-caption">Buscando...</p>}
+              <ul className="sb-ed-results">
+                {results.map((result) => (
+                  <li key={result.id} className="sb-ed-result">
+                    {result.imageUrl ? (
+                      // biome-ignore lint/performance/noImgElement: editor MVP, no next/image config yet
+                      <img src={result.imageUrl} alt="" className="sb-ed-result-thumb" />
+                    ) : (
+                      <span aria-hidden="true" className="sb-ed-result-thumb" />
+                    )}
+                    <div className="sb-ed-result-meta">
+                      <span>
+                        {result.setName} — {result.name}{" "}
+                        <span className="sb-ed-num">{result.number}</span> ({result.variant}){" "}
+                      </span>
+                      <div className="sb-ed-result-actions">
+                        <button
+                          type="button"
+                          className="sb-ed-btn sb-ed-btn-primary"
+                          disabled={isPending}
+                          onClick={() => handleAddCard(result.id)}
+                        >
+                          Usar como carta
+                        </button>
+                        <button
+                          type="button"
+                          className="sb-ed-btn"
+                          disabled={isPending}
+                          onClick={() =>
+                            assignSingle({
+                              kind: "placeholder",
+                              variant: result.id,
+                              style: "ficha",
+                            })
+                          }
+                        >
+                          Usar como placeholder
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </section>
+
+        <details
+          ref={(node) => {
+            sectionRefs.current.sort = node;
+          }}
+          className="sb-ed-card sb-ed-section"
+        >
+          <summary>
+            Reordenar binder
+            <Svg className="sb-ed-chev">
+              <path d="m6 9 6 6 6-6" />
+            </Svg>
+          </summary>
+          <div className="sb-ed-section-body">
             {criteriaSlots.map((slot, index) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: fixed 3 slots (Criterio 1/2/3), never reordered/inserted/removed
-              <div key={index} style={{ display: "flex", gap: 4, marginTop: 4 }}>
-                <select
-                  aria-label={`Criterio ${index + 1}: campo`}
-                  value={slot?.field ?? ""}
-                  onChange={(event) => {
-                    const field = event.target.value as SortableField | "";
-                    setCriteriaSlots((current) => {
-                      const next = [...current];
-                      next[index] = field ? { field, dir: slot?.dir ?? "asc" } : null;
-                      return next;
-                    });
-                  }}
-                >
-                  {index > 0 && <option value="">— sin usar —</option>}
-                  {SORT_FIELD_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                {slot && (
+              <div key={index} className="sb-ed-row">
+                <div className="sb-ed-field">
                   <select
-                    aria-label={`Criterio ${index + 1}: dirección`}
-                    value={slot.dir}
+                    aria-label={`Criterio ${index + 1}: campo`}
+                    value={slot?.field ?? ""}
                     onChange={(event) => {
-                      const dir = event.target.value as "asc" | "desc";
+                      const field = event.target.value as SortableField | "";
                       setCriteriaSlots((current) => {
                         const next = [...current];
-                        next[index] = { field: slot.field, dir };
+                        next[index] = field ? { field, dir: slot?.dir ?? "asc" } : null;
                         return next;
                       });
                     }}
                   >
-                    <option value="asc">Ascendente</option>
-                    <option value="desc">Descendente</option>
+                    {index > 0 && <option value="">— sin usar —</option>}
+                    {SORT_FIELD_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
+                </div>
+                {slot && (
+                  <div className="sb-ed-field" style={{ flex: "0 1 150px" }}>
+                    <select
+                      aria-label={`Criterio ${index + 1}: dirección`}
+                      value={slot.dir}
+                      onChange={(event) => {
+                        const dir = event.target.value as "asc" | "desc";
+                        setCriteriaSlots((current) => {
+                          const next = [...current];
+                          next[index] = { field: slot.field, dir };
+                          return next;
+                        });
+                      }}
+                    >
+                      <option value="asc">Ascendente</option>
+                      <option value="desc">Descendente</option>
+                    </select>
+                  </div>
                 )}
               </div>
             ))}
 
-            <div style={{ marginTop: 8 }}>
+            <div className="sb-ed-field">
               <select
                 aria-label="Agrupar por"
                 value={groupBy ?? ""}
@@ -945,45 +1165,62 @@ export function BinderEditor({
               </select>
             </div>
 
-            <label style={{ display: "block", marginTop: 4 }}>
+            <label className="sb-ed-check">
               <input
                 type="checkbox"
                 checked={startOnNewSide}
                 disabled={!groupBy}
                 onChange={(event) => setStartOnNewSide(event.target.checked)}
-              />{" "}
+              />
               Empezar cada sección en cara nueva
             </label>
 
-            {sortError && <p style={{ color: "#e8957f" }}>{sortError}</p>}
+            {sortError && <p className="sb-ed-error">{sortError}</p>}
 
-            <button type="button" onClick={handleApplySort} disabled={isSorting || isPending}>
+            <button
+              type="button"
+              className="sb-ed-btn sb-ed-btn-primary sb-ed-btn-block"
+              onClick={handleApplySort}
+              disabled={isSorting || isPending}
+            >
               Aplicar orden
             </button>
           </div>
         </details>
 
-        <details className="sb-ed-section">
-          <summary>Importar cartas</summary>
-          <div style={{ marginTop: 8 }}>
-            <select
-              aria-label="Formato de importación"
-              value={importFormat}
-              onChange={(event) => setImportFormat(event.target.value as ImportFormat)}
-            >
-              <option value="decklist">Lista PTCGL / Limitless</option>
-              <option value="csv">CSV (name,set,number,variant,qty)</option>
-            </select>
+        <details
+          ref={(node) => {
+            sectionRefs.current.import = node;
+          }}
+          className="sb-ed-card sb-ed-section"
+        >
+          <summary>
+            Importar cartas
+            <Svg className="sb-ed-chev">
+              <path d="m6 9 6 6 6-6" />
+            </Svg>
+          </summary>
+          <div className="sb-ed-section-body">
+            <div className="sb-ed-field">
+              <select
+                aria-label="Formato de importación"
+                value={importFormat}
+                onChange={(event) => setImportFormat(event.target.value as ImportFormat)}
+              >
+                <option value="decklist">Lista PTCGL / Limitless</option>
+                <option value="csv">CSV (name,set,number,variant,qty)</option>
+              </select>
+            </div>
             <textarea
               aria-label="Texto a importar"
               value={importText}
               onChange={(event) => setImportText(event.target.value)}
               rows={6}
-              style={{ width: "100%", marginTop: 4, fontFamily: "var(--font-data)", fontSize: 12 }}
               placeholder={IMPORT_PLACEHOLDER[importFormat]}
             />
             <button
               type="button"
+              className="sb-ed-btn sb-ed-btn-block"
               onClick={handlePreviewImport}
               disabled={isPreviewingImport || importText.trim().length === 0}
             >
@@ -992,7 +1229,7 @@ export function BinderEditor({
 
             {importPreview && (
               <>
-                <p>
+                <p className="sb-ed-caption">
                   {importPreview.lines.filter((line) => line.status === "resolved").length}{" "}
                   resueltas,{" "}
                   {importPreview.lines.filter((line) => line.status === "ambiguous").length}{" "}
@@ -1003,24 +1240,16 @@ export function BinderEditor({
                     ` (${importPreview.unparsed.length} líneas no reconocidas)`}
                 </p>
 
-                <ul
-                  style={{
-                    listStyle: "none",
-                    padding: 0,
-                    maxHeight: 240,
-                    overflowY: "auto",
-                    fontSize: 12,
-                  }}
-                >
+                <ul className="sb-ed-list" style={{ maxHeight: 240, overflowY: "auto" }}>
                   {importPreview.lines.map((line, index) => (
                     <li
                       // biome-ignore lint/suspicious/noArrayIndexKey: lines can repeat (same raw text, different row); index matches the preview array position used by handleSelectCandidate
                       key={index}
-                      style={{ marginTop: 4, display: "flex", gap: 6, alignItems: "center" }}
+                      className="sb-ed-line"
                     >
-                      <span className="sb-ed-num">×{line.quantity}</span>
+                      <span className="sb-ed-chip">×{line.quantity}</span>
                       {line.status === "not-found" ? (
-                        <span style={{ color: "#e8957f" }}>
+                        <span style={{ color: "var(--danger)" }}>
                           {line.raw} — {line.error}
                         </span>
                       ) : line.status === "ambiguous" ? (
@@ -1030,6 +1259,7 @@ export function BinderEditor({
                             aria-label={`Elegir impresión para ${line.raw}`}
                             value={line.variantId ?? ""}
                             onChange={(event) => handleSelectCandidate(index, event.target.value)}
+                            style={{ flex: "1 1 180px" }}
                           >
                             {line.candidates.map((candidate) => (
                               <option key={candidate.id} value={candidate.id}>
@@ -1047,7 +1277,8 @@ export function BinderEditor({
                   ))}
                 </ul>
 
-                <div style={{ marginTop: 8 }}>
+                <div className="sb-ed-field">
+                  <span>Destino</span>
                   <select
                     aria-label="Destino de importación"
                     value={importDestination}
@@ -1059,18 +1290,19 @@ export function BinderEditor({
                     <option value="pocket">Desde un bolsillo específico</option>
                     <option value="newSide">Empezar en cara nueva</option>
                   </select>
-                  {importDestination === "pocket" && (
-                    <input
-                      aria-label="Bolsillo de destino"
-                      type="text"
-                      placeholder="S1·F·1"
-                      value={importDestinationPocket}
-                      onChange={(event) => setImportDestinationPocket(event.target.value)}
-                    />
-                  )}
                 </div>
+                {importDestination === "pocket" && (
+                  <input
+                    aria-label="Bolsillo de destino"
+                    type="text"
+                    placeholder="S1·F·1"
+                    value={importDestinationPocket}
+                    onChange={(event) => setImportDestinationPocket(event.target.value)}
+                  />
+                )}
 
-                <div style={{ marginTop: 4 }}>
+                <div className="sb-ed-field">
+                  <span>Cantidad</span>
                   <select
                     aria-label="Modo de cantidad"
                     value={importMode}
@@ -1081,10 +1313,11 @@ export function BinderEditor({
                   </select>
                 </div>
 
-                {importError && <p style={{ color: "#e8957f" }}>{importError}</p>}
+                {importError && <p className="sb-ed-error">{importError}</p>}
 
                 <button
                   type="button"
+                  className="sb-ed-btn sb-ed-btn-primary sb-ed-btn-block"
                   onClick={handleApplyImport}
                   disabled={isApplyingImport || isPending}
                 >
@@ -1095,11 +1328,21 @@ export function BinderEditor({
           </div>
         </details>
 
-        <details className="sb-ed-section">
-          <summary>Tema</summary>
-          <div style={{ marginTop: 8 }}>
-            <label>
-              Preset:{" "}
+        <details
+          ref={(node) => {
+            sectionRefs.current.theme = node;
+          }}
+          className="sb-ed-card sb-ed-section"
+        >
+          <summary>
+            Tema
+            <Svg className="sb-ed-chev">
+              <path d="m6 9 6 6 6-6" />
+            </Svg>
+          </summary>
+          <div className="sb-ed-section-body">
+            <label className="sb-ed-field">
+              <span>Preset</span>
               <select
                 aria-label="Preset de tema"
                 value={themePreset}
@@ -1113,65 +1356,70 @@ export function BinderEditor({
               </select>
             </label>
 
-            <div style={{ marginTop: 4 }}>
-              <label>
-                Funda:{" "}
-                <select
-                  aria-label="Textura de funda"
-                  value={themeSleeve}
-                  onChange={(event) => setThemeSleeve(event.target.value)}
-                >
-                  {Object.entries(SLEEVE_LABELS).map(([key, label]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+            <label className="sb-ed-field">
+              <span>Funda</span>
+              <select
+                aria-label="Textura de funda"
+                value={themeSleeve}
+                onChange={(event) => setThemeSleeve(event.target.value)}
+              >
+                {Object.entries(SLEEVE_LABELS).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-            <div style={{ marginTop: 4 }}>
-              <label>
-                Fondo personalizado (opcional):{" "}
-                <input
-                  type="text"
-                  aria-label="Color de fondo personalizado"
-                  placeholder="#223344"
-                  value={themeBg}
-                  onChange={(event) => setThemeBg(event.target.value)}
-                />
-              </label>
-            </div>
+            <label className="sb-ed-field">
+              <span>Fondo personalizado (opcional)</span>
+              <input
+                type="text"
+                aria-label="Color de fondo personalizado"
+                placeholder="#223344"
+                value={themeBg}
+                onChange={(event) => setThemeBg(event.target.value)}
+              />
+            </label>
 
             <button
               type="button"
+              className="sb-ed-btn sb-ed-btn-primary sb-ed-btn-block"
               onClick={handleSaveTheme}
               disabled={isSavingTheme || isPending}
-              style={{ marginTop: 8 }}
             >
               Guardar tema
             </button>
           </div>
         </details>
 
-        <details className="sb-ed-section">
-          <summary>Paneles de arte</summary>
-          <div style={{ marginTop: 8 }}>
-            <label>
-              URL de la imagen:{" "}
+        <details
+          ref={(node) => {
+            sectionRefs.current.panels = node;
+          }}
+          className="sb-ed-card sb-ed-section"
+        >
+          <summary>
+            Paneles de arte
+            <Svg className="sb-ed-chev">
+              <path d="m6 9 6 6 6-6" />
+            </Svg>
+          </summary>
+          <div className="sb-ed-section-body">
+            <label className="sb-ed-field">
+              <span>URL de la imagen</span>
               <input
                 type="text"
                 aria-label="URL de la imagen del panel"
                 placeholder="https://..."
                 value={panelAssetUrl}
                 onChange={(event) => setPanelAssetUrl(event.target.value)}
-                style={{ width: "100%" }}
               />
             </label>
 
-            <div style={{ marginTop: 4, display: "flex", gap: 4, alignItems: "center" }}>
-              <label>
-                Bolsillo de anclaje:{" "}
+            <div className="sb-ed-row">
+              <label className="sb-ed-field">
+                <span>Bolsillo de anclaje</span>
                 <input
                   type="text"
                   aria-label="Bolsillo de anclaje del panel"
@@ -1182,6 +1430,7 @@ export function BinderEditor({
               </label>
               <button
                 type="button"
+                className="sb-ed-btn sb-ed-btn-ghost"
                 onClick={handleUseSelectedPocketAsAnchor}
                 disabled={!singleSelectedCode}
               >
@@ -1189,9 +1438,9 @@ export function BinderEditor({
               </button>
             </div>
 
-            <div style={{ marginTop: 4, display: "flex", gap: 12 }}>
-              <label>
-                Filas:{" "}
+            <div className="sb-ed-row">
+              <label className="sb-ed-field" style={{ flex: "0 1 96px" }}>
+                <span>Filas</span>
                 <input
                   type="number"
                   aria-label="Filas del panel"
@@ -1199,11 +1448,10 @@ export function BinderEditor({
                   max={format.rows}
                   value={panelRows}
                   onChange={(event) => setPanelRows(Number.parseInt(event.target.value, 10) || 1)}
-                  style={{ width: 56 }}
                 />
               </label>
-              <label>
-                Columnas:{" "}
+              <label className="sb-ed-field" style={{ flex: "0 1 96px" }}>
+                <span>Columnas</span>
                 <input
                   type="number"
                   aria-label="Columnas del panel"
@@ -1211,11 +1459,11 @@ export function BinderEditor({
                   max={format.cols}
                   value={panelCols}
                   onChange={(event) => setPanelCols(Number.parseInt(event.target.value, 10) || 1)}
-                  style={{ width: 56 }}
                 />
               </label>
               <button
                 type="button"
+                className="sb-ed-btn sb-ed-btn-ghost"
                 onClick={() => {
                   setPanelRows(format.rows);
                   setPanelCols(format.cols);
@@ -1225,51 +1473,43 @@ export function BinderEditor({
               </button>
             </div>
 
-            <div style={{ marginTop: 8 }}>
-              <label>
-                Zoom: {panelZoom}%{" "}
-                <input
-                  type="range"
-                  aria-label="Zoom del panel"
-                  min={100}
-                  max={300}
-                  value={panelZoom}
-                  onChange={(event) => setPanelZoom(Number.parseInt(event.target.value, 10))}
-                />
-              </label>
-            </div>
-            <div>
-              <label>
-                Posición horizontal: {panelX}%{" "}
-                <input
-                  type="range"
-                  aria-label="Posición horizontal del panel"
-                  min={0}
-                  max={100}
-                  value={panelX}
-                  onChange={(event) => setPanelX(Number.parseInt(event.target.value, 10))}
-                />
-              </label>
-            </div>
-            <div>
-              <label>
-                Posición vertical: {panelY}%{" "}
-                <input
-                  type="range"
-                  aria-label="Posición vertical del panel"
-                  min={0}
-                  max={100}
-                  value={panelY}
-                  onChange={(event) => setPanelY(Number.parseInt(event.target.value, 10))}
-                />
-              </label>
-            </div>
+            <label className="sb-ed-field">
+              <span>Zoom: {panelZoom}%</span>
+              <input
+                type="range"
+                aria-label="Zoom del panel"
+                min={100}
+                max={300}
+                value={panelZoom}
+                onChange={(event) => setPanelZoom(Number.parseInt(event.target.value, 10))}
+              />
+            </label>
+            <label className="sb-ed-field">
+              <span>Posición horizontal: {panelX}%</span>
+              <input
+                type="range"
+                aria-label="Posición horizontal del panel"
+                min={0}
+                max={100}
+                value={panelX}
+                onChange={(event) => setPanelX(Number.parseInt(event.target.value, 10))}
+              />
+            </label>
+            <label className="sb-ed-field">
+              <span>Posición vertical: {panelY}%</span>
+              <input
+                type="range"
+                aria-label="Posición vertical del panel"
+                min={0}
+                max={100}
+                value={panelY}
+                onChange={(event) => setPanelY(Number.parseInt(event.target.value, 10))}
+              />
+            </label>
 
             {panelAssetUrl.trim() && (
-              <div style={{ marginTop: 8 }}>
-                <p style={{ fontSize: 12, color: "var(--smoke)" }}>
-                  Previsualización (sin cortar por bolsillo):
-                </p>
+              <div style={{ display: "grid", gap: 6 }}>
+                <p className="sb-ed-caption">Previsualización (sin cortar por bolsillo):</p>
                 <PanelCell
                   asset={panelAssetUrl.trim()}
                   rows={1}
@@ -1284,24 +1524,27 @@ export function BinderEditor({
               </div>
             )}
 
-            {panelError && <p style={{ color: "#e8957f" }}>{panelError}</p>}
+            {panelError && <p className="sb-ed-error">{panelError}</p>}
 
             <button
               type="button"
+              className="sb-ed-btn sb-ed-btn-primary sb-ed-btn-block"
               onClick={handleAddPanel}
               disabled={isAddingPanel || isPending}
-              style={{ marginTop: 8 }}
             >
               Agregar panel
             </button>
 
             {panels.length > 0 && (
-              <ul style={{ listStyle: "none", padding: 0, marginTop: 8 }}>
+              <ul className="sb-ed-list">
                 {panels.map((panel) => (
-                  <li key={panel.id} style={{ marginTop: 4, fontSize: 12 }}>
-                    {panel.anchor} ({panel.span.rows}×{panel.span.cols}){" "}
+                  <li key={panel.id} className="sb-ed-line">
+                    <span style={{ flex: "1 1 auto" }}>
+                      {panel.anchor} ({panel.span.rows}×{panel.span.cols})
+                    </span>
                     <button
                       type="button"
+                      className="sb-ed-btn sb-ed-btn-danger"
                       disabled={isPending}
                       onClick={() => handleRemovePanel(panel.id)}
                     >
@@ -1313,153 +1556,6 @@ export function BinderEditor({
             )}
           </div>
         </details>
-
-        <div className="sb-ed-selection" style={{ padding: "18px 0 8px" }}>
-          {selectedCodes.length === 0 && (
-            <p>
-              Hacé click en un bolsillo para editarlo, o arrastrá una carta a otro bolsillo.
-              Shift/Cmd-click para seleccionar varios.
-            </p>
-          )}
-
-          {selectedCodes.length > 1 && (
-            <>
-              <p>{selectedCodes.length} bolsillos seleccionados</p>
-              <button type="button" disabled={isPending} onClick={bulkClear}>
-                Vaciar seleccionados
-              </button>{" "}
-              <button type="button" onClick={() => setSelectedCodes([])}>
-                Cancelar selección
-              </button>
-            </>
-          )}
-
-          {singleSelectedCode && (
-            <>
-              <p>
-                Editando <strong>{singleSelectedCode}</strong>
-              </p>
-
-              {selectedContent?.kind === "card" && displays[selectedContent.variant] && (
-                <div style={{ marginBottom: 8 }}>
-                  <HoloCard
-                    imageUrl={displays[selectedContent.variant]?.imageUrl ?? null}
-                    name={displays[selectedContent.variant]?.name ?? ""}
-                    variant={displays[selectedContent.variant]?.variant ?? "normal"}
-                    sleeve={theme.sleeve}
-                    width={180}
-                  />
-                </div>
-              )}
-
-              <button type="button" disabled={isPending} onClick={() => assignSingle(EMPTY_POCKET)}>
-                Vaciar
-              </button>
-
-              {selectedContent?.kind === "card" && (
-                <div style={{ marginTop: 8 }}>
-                  <p>
-                    Precio de mercado:{" "}
-                    {prices[selectedContent.variant] !== undefined
-                      ? `$${(prices[selectedContent.variant] as number).toFixed(2)} USD`
-                      : "sin dato"}
-                    {selectedContent.priceOverrideUsd !== undefined &&
-                      ` — Precio propio: $${selectedContent.priceOverrideUsd.toFixed(2)} USD`}
-                  </p>
-                  <label>
-                    Precio propio (USD):{" "}
-                    <input
-                      key={singleSelectedCode}
-                      ref={priceInputRef}
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      aria-label="Precio propio en dólares"
-                      defaultValue={selectedContent.priceOverrideUsd ?? ""}
-                    />
-                  </label>{" "}
-                  <button type="button" disabled={isPending} onClick={handleSetPriceOverride}>
-                    Guardar precio propio
-                  </button>{" "}
-                  {selectedContent.priceOverrideUsd !== undefined && (
-                    <button type="button" disabled={isPending} onClick={handleClearPriceOverride}>
-                      Quitar precio propio
-                    </button>
-                  )}
-                </div>
-              )}
-
-              <div style={{ marginTop: 8 }}>
-                <input
-                  type="text"
-                  placeholder="Buscar carta por nombre..."
-                  value={query}
-                  onChange={(event) => onSearchChange(event.target.value)}
-                  style={{ width: "100%" }}
-                />
-                {isSearching && <p style={{ color: "var(--smoke)", fontSize: 12 }}>Buscando...</p>}
-                <ul className="sb-ed-results">
-                  {results.map((result) => (
-                    <li key={result.id} className="sb-ed-result">
-                      {result.imageUrl ? (
-                        // biome-ignore lint/performance/noImgElement: editor MVP, no next/image config yet
-                        <img
-                          src={result.imageUrl}
-                          alt=""
-                          style={{
-                            width: 34,
-                            height: 48,
-                            objectFit: "cover",
-                            borderRadius: 2,
-                            background: "color-mix(in srgb, var(--linen) 6%, transparent)",
-                          }}
-                        />
-                      ) : (
-                        <span
-                          aria-hidden="true"
-                          style={{
-                            width: 34,
-                            height: 48,
-                            borderRadius: 2,
-                            border: "1px solid color-mix(in srgb, var(--linen) 12%, transparent)",
-                          }}
-                        />
-                      )}
-                      <div className="sb-ed-result-meta">
-                        <span>
-                          {result.setName} — {result.name}{" "}
-                          <span className="sb-ed-num">{result.number}</span> ({result.variant}){" "}
-                        </span>
-                        <div className="sb-ed-result-actions">
-                          <button
-                            type="button"
-                            disabled={isPending}
-                            onClick={() => handleAddCard(result.id)}
-                          >
-                            Usar como carta
-                          </button>
-                          <button
-                            type="button"
-                            disabled={isPending}
-                            onClick={() =>
-                              assignSingle({
-                                kind: "placeholder",
-                                variant: result.id,
-                                style: "ficha",
-                              })
-                            }
-                          >
-                            Usar como placeholder
-                          </button>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </>
-          )}
-        </div>
       </aside>
     </div>
   );

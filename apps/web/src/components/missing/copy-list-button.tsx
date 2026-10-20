@@ -25,11 +25,11 @@ export function CopyListButton({ text }: { text: string }) {
   }
 
   return (
-    <span style={{ display: "inline-flex", alignItems: "baseline", gap: 10 }}>
-      <button type="button" className="sb-quiet-button" onClick={handleCopy}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+      <button type="button" className="sb-miss-btn" onClick={handleCopy}>
         Copiar lista
       </button>
-      <span aria-live="polite" className="sb-data" style={{ fontSize: 12, color: "var(--smoke)" }}>
+      <span aria-live="polite" className="sb-miss-status">
         {copied ? "Copiada" : failed ? "No se pudo copiar" : ""}
       </span>
     </span>

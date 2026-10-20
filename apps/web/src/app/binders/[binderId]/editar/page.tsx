@@ -2,7 +2,6 @@ import { formatPocketCode, generateSpreads } from "@sleevebook/binder-core";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BinderEditor } from "../../../../components/binder/binder-editor";
-import { ThemedMain } from "../../../../components/binder/themed-main";
 import { getBinderWithLayout, getVariantDisplays } from "../../../../lib/binders";
 import { getLatestPrices } from "../../../../lib/pricing";
 import { requireBinderOwner } from "../../../../lib/session";
@@ -12,6 +11,27 @@ interface PageProps {
   params: Promise<{ binderId: string }>;
   searchParams: Promise<{ spread?: string }>;
 }
+
+const NAV_LINK = {
+  display: "inline-flex",
+  alignItems: "center",
+  minHeight: 44,
+  padding: "0 14px",
+  borderRadius: 12,
+  border: "1px solid var(--line)",
+  background: "var(--surface)",
+  color: "var(--ink)",
+  fontSize: 14,
+  fontWeight: 600,
+  textDecoration: "none",
+} as const;
+
+const NAV_DISABLED = {
+  ...NAV_LINK,
+  color: "var(--muted)",
+  opacity: 0.6,
+  background: "var(--surface-2)",
+} as const;
 
 export default async function BinderEditorPage({ params, searchParams }: PageProps) {
   const { binderId } = await params;
@@ -57,57 +77,82 @@ export default async function BinderEditorPage({ params, searchParams }: PagePro
   );
 
   return (
-    <ThemedMain theme={binderData.layout.theme}>
-      <p style={{ margin: "0 0 8px", fontSize: 12, letterSpacing: "0.1em" }}>
-        <Link href={`/binders/${binderId}`}>&larr; Ver binder</Link>
-      </p>
-      <h1
-        style={{
-          fontSize: "clamp(28px, 4vw, 40px)",
-          margin: "0 0 28px",
-          lineHeight: 1.1,
-        }}
-      >
-        Editar: {binderData.name}
-      </h1>
-      <BinderEditor
-        binderId={binderId}
-        faces={spread.faces}
-        format={format}
-        pockets={pockets}
-        panels={binderData.layout.panels}
-        displays={displays}
-        prices={prices}
-        theme={binderData.layout.theme}
-      />
-      <nav
-        style={{
-          marginTop: 32,
-          paddingTop: 16,
-          borderTop: "1px solid var(--rule)",
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 16,
-          alignItems: "center",
-          justifyContent: "space-between",
-          fontSize: 12,
-          letterSpacing: "0.08em",
-        }}
-      >
-        {index > 0 ? (
-          <Link href={`/binders/${binderId}/editar?spread=${index - 1}`}>&larr; Anterior</Link>
-        ) : (
-          <span style={{ color: "var(--smoke)", opacity: 0.45 }}>&larr; Anterior</span>
-        )}
-        <span className="sb-data" style={{ color: "var(--smoke)" }}>
-          Spread {index + 1} / {spreads.length}
-        </span>
-        {index < spreads.length - 1 ? (
-          <Link href={`/binders/${binderId}/editar?spread=${index + 1}`}>Siguiente &rarr;</Link>
-        ) : (
-          <span style={{ color: "var(--smoke)", opacity: 0.45 }}>Siguiente &rarr;</span>
-        )}
-      </nav>
-    </ThemedMain>
+    <main
+      style={{
+        minHeight: "100vh",
+        boxSizing: "border-box",
+        background: "var(--bg)",
+        color: "var(--ink)",
+        padding: "20px 16px 112px",
+      }}
+    >
+      <div style={{ maxWidth: 1320, margin: "0 auto", display: "grid", gap: 16 }}>
+        <Link
+          href={`/binders/${binderId}`}
+          style={{
+            width: "max-content",
+            minHeight: 44,
+            display: "inline-flex",
+            alignItems: "center",
+            color: "var(--accent)",
+            fontSize: 14,
+            fontWeight: 600,
+            textDecoration: "none",
+          }}
+        >
+          &larr; Ver binder
+        </Link>
+        <header style={{ display: "grid", gap: 4 }}>
+          <h1
+            className="sb-display"
+            style={{ margin: 0, fontSize: "clamp(24px, 3.4vw, 28px)", lineHeight: 1.2 }}
+          >
+            Editar: {binderData.name}
+          </h1>
+          <p style={{ margin: 0, fontSize: 14, color: "var(--muted)" }}>
+            Mueve, asigna y ordena las cartas de cada hoja.
+          </p>
+        </header>
+        <BinderEditor
+          binderId={binderId}
+          faces={spread.faces}
+          format={format}
+          pockets={pockets}
+          panels={binderData.layout.panels}
+          displays={displays}
+          prices={prices}
+          theme={binderData.layout.theme}
+        />
+        <nav
+          aria-label="Páginas del editor"
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 12,
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingTop: 8,
+          }}
+        >
+          {index > 0 ? (
+            <Link href={`/binders/${binderId}/editar?spread=${index - 1}`} style={NAV_LINK}>
+              &larr; Anterior
+            </Link>
+          ) : (
+            <span style={NAV_DISABLED}>&larr; Anterior</span>
+          )}
+          <span className="sb-data" style={{ fontSize: 14, fontWeight: 700, color: "var(--ink)" }}>
+            Spread {index + 1} / {spreads.length}
+          </span>
+          {index < spreads.length - 1 ? (
+            <Link href={`/binders/${binderId}/editar?spread=${index + 1}`} style={NAV_LINK}>
+              Siguiente &rarr;
+            </Link>
+          ) : (
+            <span style={NAV_DISABLED}>Siguiente &rarr;</span>
+          )}
+        </nav>
+      </div>
+    </main>
   );
 }
