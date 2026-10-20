@@ -1,114 +1,137 @@
-/* Avisos inbox and species panel. Tokens live in globals.css; page shell comes from catalog.css. */
+/* Avisos (Estante v2): bandeja como tarjetas, chips de tipo, panel de especies. */
 .sb-avisos-header {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 24px;
+  gap: 16px 24px;
+}
+
+.sb-avisos-header .sb-catalog-eyebrow {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
 }
 
 .sb-avisos-grid {
   display: grid;
-  gap: 48px;
-  margin-top: 40px;
+  gap: 24px;
+  margin-top: 24px;
   grid-template-columns: minmax(0, 1fr);
 }
 
-@media (min-width: 760px) {
+@media (min-width: 900px) {
   .sb-avisos-grid {
-    grid-template-columns: minmax(0, 1fr) 260px;
-    gap: 56px;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 32px;
+    align-items: start;
   }
 }
 
 .sb-avisos-subtitle {
-  margin: 0;
-  color: var(--smoke);
-  font-size: 12px;
+  margin: 0 0 12px;
+  font-family: var(--font-ui);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-transform: none;
+}
+
+/* Shared primary button for this page. */
+.sb-avisos-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #ffffff;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 200ms var(--ease-out-expo);
+}
+
+.sb-avisos-btn:hover {
+  background: var(--accent-strong);
+}
+
+.sb-avisos-btn:disabled {
+  background: var(--surface-2);
+  color: var(--muted);
+  cursor: not-allowed;
 }
 
 .sb-avisos-list {
   list-style: none;
-  margin: 16px 0 0;
+  margin: 0;
   padding: 0;
-  border-top: 1px solid var(--rule);
+  display: grid;
+  gap: 10px;
 }
 
 .sb-avisos-item {
-  border-bottom: 1px solid color-mix(in srgb, var(--linen) 10%, transparent);
+  margin: 0;
 }
 
 .sb-avisos-link {
   position: relative;
   display: grid;
-  grid-template-columns: 14px minmax(0, 1fr) auto;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
   grid-template-areas:
     "mark kind when"
     "mark title title"
     "mark body body";
   column-gap: 12px;
-  row-gap: 4px;
-  align-items: baseline;
-  padding: 16px 0;
-  color: var(--smoke);
+  row-gap: 6px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  font-family: var(--font-ui);
   text-decoration: none;
-  transition: color 240ms var(--ease-out-expo);
+  transition: box-shadow 200ms var(--ease-out-expo);
 }
 
-.sb-avisos-link:hover,
+a.sb-avisos-link:hover,
+a.sb-avisos-link:focus-visible {
+  box-shadow:
+    0 1px 2px rgba(27, 32, 51, 0.08),
+    0 12px 28px rgba(27, 32, 51, 0.1);
+}
+
 .sb-avisos-link:focus-visible {
-  color: var(--linen);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.sb-avisos-item[data-unread="true"] .sb-avisos-link {
+  background: var(--accent-soft);
 }
 
 .sb-avisos-mark {
   grid-area: mark;
-  align-self: start;
-  padding-top: 0.55em;
+  align-self: center;
+  display: flex;
+  justify-content: center;
 }
 
+/* Unread dot: the only use of --coral in the app. */
 .sb-avisos-dot {
   display: block;
-  width: 7px;
-  height: 7px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: var(--foil);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--foil) 18%, transparent);
-}
-
-.sb-avisos-kind {
-  grid-area: kind;
-  font-family: var(--font-ui);
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.14em;
-  font-size: 12px;
-  color: var(--smoke);
-}
-
-.sb-avisos-when {
-  grid-area: when;
-  justify-self: end;
-  font-size: 12px;
-  color: var(--smoke);
-  font-variant-numeric: tabular-nums;
-}
-
-.sb-avisos-title {
-  grid-area: title;
-  font-family: var(--font-ui);
-  font-size: 16px;
-  line-height: 1.35;
-  overflow-wrap: anywhere;
-}
-
-.sb-avisos-item[data-unread="true"] .sb-avisos-title {
-  color: var(--linen);
-}
-
-.sb-avisos-body {
-  grid-area: body;
-  font-size: 13px;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
+  background: var(--coral);
 }
 
 .sb-avisos-sr {
@@ -120,113 +143,203 @@
   white-space: nowrap;
 }
 
-.sb-avisos-empty,
-.sb-avisos-empty-note {
-  margin: 24px 0 0;
+/* Kind chip: "Precio", "Set nuevo" */
+.sb-avisos-kind {
+  grid-area: kind;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sb-avisos-when {
+  grid-area: when;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.sb-avisos-title {
+  grid-area: title;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.sb-avisos-body {
+  grid-area: body;
   font-size: 14px;
   line-height: 1.5;
-  color: var(--smoke);
-  max-width: 52ch;
+  color: var(--muted);
+  overflow-wrap: anywhere;
 }
 
 .sb-avisos-more {
-  margin: 24px 0 0;
-}
-
-.sb-quiet-link {
-  color: var(--smoke);
+  margin: 16px 0 0;
   font-family: var(--font-ui);
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.12em;
-  font-size: 12px;
+}
+
+.sb-avisos-more a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
   text-decoration: none;
-  transition: color 240ms var(--ease-out-expo);
 }
 
-.sb-quiet-link:hover,
-.sb-quiet-link:focus-visible {
-  color: var(--foil);
+.sb-avisos-more a:hover {
+  background: var(--accent-soft);
 }
 
-.sb-foil-action:disabled {
-  opacity: 0.4;
-  cursor: default;
+.sb-avisos-empty {
+  margin: 0;
+  padding: 28px 20px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  text-align: center;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* Species panel: a card with chips */
+.sb-avisos-species {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  padding: 18px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font-family: var(--font-ui);
 }
 
 .sb-avisos-chips {
   list-style: none;
-  margin: 14px 0 0;
+  margin: 0;
   padding: 0;
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .sb-avisos-chip {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 4px 12px;
-  padding: 9px 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--linen) 10%, transparent);
+  align-items: center;
+  gap: 4px 8px;
+  max-width: 100%;
+  min-height: 36px;
+  padding: 4px 6px 4px 14px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .sb-avisos-chip-name {
-  font-family: var(--font-ui);
-  font-size: 15px;
-  color: var(--linen);
   overflow-wrap: anywhere;
 }
 
 .sb-avisos-chip-note {
-  font-family: var(--font-ui);
+  width: 100%;
   font-size: 12px;
-  color: var(--smoke);
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* Remove (×) inside a chip: 44px target via padding, visible glyph 24px. */
+.sb-avisos-chip-remove {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--accent-strong);
+  cursor: pointer;
+}
+
+.sb-avisos-chip-remove:hover {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.sb-avisos-chip-remove:disabled {
+  opacity: 0.5;
+}
+
+.sb-avisos-empty-note {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
 }
 
 .sb-avisos-form {
-  margin-top: 24px;
   display: grid;
   gap: 8px;
 }
 
 .sb-avisos-field-label {
-  color: var(--smoke);
-  font-size: 12px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
 }
 
 .sb-avisos-input-row {
   display: flex;
   gap: 8px;
-  min-width: 0;
 }
 
 .sb-avisos-input-row input {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
-  padding: 9px 10px;
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  background: transparent;
-  color: var(--linen);
-  font-family: var(--font-ui);
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
   font-size: 15px;
 }
 
-.sb-avisos-input-row input:focus-visible {
-  outline: 1px solid var(--foil);
-  outline-offset: 1px;
+.sb-avisos-input-row .sb-avisos-btn {
+  min-height: 44px;
+  padding: 0 16px;
 }
 
 .sb-avisos-error {
   margin: 0;
   font-size: 13px;
-  color: var(--foil);
+  font-weight: 600;
+  color: var(--danger);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .sb-avisos-link,
-  .sb-quiet-link {
+  .sb-avisos-btn,
+  .sb-avisos-chip-remove {
     transition: none;
   }
 }

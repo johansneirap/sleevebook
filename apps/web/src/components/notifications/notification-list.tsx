@@ -39,7 +39,7 @@ export function NotificationList({ items, nextBefore }: NotificationListProps) {
       </ul>
       {nextBefore ? (
         <p className="sb-avisos-more">
-          <Link href={`/avisos?antes=${encodeURIComponent(nextBefore)}`} className="sb-quiet-link">
+          <Link href={`/avisos?antes=${encodeURIComponent(nextBefore)}`}>
             Ver avisos anteriores
           </Link>
         </p>

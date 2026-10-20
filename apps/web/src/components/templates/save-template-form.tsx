@@ -79,7 +79,7 @@ export function SaveTemplateForm({ binderId, defaultName }: SaveTemplateFormProp
       )}
 
       <div>
-        <button type="submit" className="sb-foil-action" disabled={pending}>
+        <button type="submit" className="sb-tpl-primary" disabled={pending}>
           Guardar como plantilla
         </button>
       </div>

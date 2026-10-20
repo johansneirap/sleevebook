@@ -1,42 +1,65 @@
-/* Admin foil mask list. Tokens live in globals.css. */
+/* Lista de máscaras de foil (Estante v2): filtros en tarjeta y cuadrícula de cartas. */
 .sb-mask-intro {
-  margin: 16px 0 0;
+  margin: 12px 0 0;
   max-width: 60ch;
   font-family: var(--font-ui);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.6;
-  color: var(--smoke);
+  color: var(--muted);
 }
 
 .sb-mask-filters {
-  margin-top: 32px;
+  margin-top: 20px;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 12px 16px;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font-family: var(--font-ui);
 }
 
 .sb-mask-field {
   display: grid;
   gap: 6px;
   min-width: 0;
+  flex: 1 1 200px;
+}
+
+.sb-mask-field > .sb-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
 }
 
 .sb-mask-field input,
 .sb-mask-field select {
-  min-height: 40px;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
   padding: 8px 12px;
   font: inherit;
-  color: var(--linen);
-  background: var(--velvet-raised);
-  border: 1px solid color-mix(in srgb, var(--linen) 16%, transparent);
-  border-radius: 2px;
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.sb-mask-filters .sb-mask-btn {
+  min-width: 120px;
 }
 
 .sb-mask-count {
-  margin: 20px 0 0;
-  font-size: 13px;
-  color: var(--smoke);
+  margin: 16px 0 0;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
 }
 
 .sb-mask-grid {
@@ -44,34 +67,49 @@
   margin: 16px 0 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
 }
 
 .sb-mask-item {
+  margin: 0;
   min-width: 0;
-  border: 1px solid color-mix(in srgb, var(--linen) 10%, transparent);
-  border-radius: 2px;
-  background: var(--velvet-raised);
 }
 
 .sb-mask-link {
-  display: grid;
-  grid-template-columns: 52px minmax(0, 1fr);
-  gap: 12px;
+  display: flex;
   align-items: center;
-  padding: 10px;
-  color: inherit;
+  gap: 12px;
+  min-height: 44px;
+  padding: 12px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  font-family: var(--font-ui);
   text-decoration: none;
+  transition: box-shadow 200ms var(--ease-out-expo);
+}
+
+.sb-mask-link:hover,
+.sb-mask-link:focus-visible {
+  box-shadow:
+    0 1px 2px rgba(27, 32, 51, 0.08),
+    0 12px 28px rgba(27, 32, 51, 0.1);
+}
+
+.sb-mask-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .sb-mask-thumb {
-  display: block;
+  flex: none;
   width: 52px;
-  height: 73px;
-  border-radius: 3px;
+  aspect-ratio: 63 / 88;
+  border-radius: 6px;
   overflow: hidden;
-  background: var(--leather-deep);
+  background: var(--surface-2);
 }
 
 .sb-mask-thumb img {
@@ -82,65 +120,83 @@
 }
 
 .sb-mask-text {
-  min-width: 0;
   display: grid;
-  gap: 2px;
+  gap: 3px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .sb-mask-name {
-  font-family: var(--font-display);
-  font-size: 18px;
-  line-height: 1.2;
-  color: var(--linen);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ink);
   overflow-wrap: anywhere;
 }
 
-.sb-mask-meta,
-.sb-mask-variant {
-  font-family: var(--font-ui);
+.sb-mask-meta {
   font-size: 12px;
-  color: var(--smoke);
+  color: var(--muted);
+}
+
+.sb-mask-variant {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-strong);
 }
 
 .sb-mask-chip {
-  justify-self: start;
-  grid-column: 2;
-  padding: 1px 8px;
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  font-family: var(--font-ui);
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.14em;
-  font-size: 11px;
-  color: var(--smoke);
+  flex: none;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .sb-mask-chip-edited {
-  color: var(--foil);
-  border-color: var(--foil);
+  background: var(--success-soft);
+  color: var(--success);
 }
 
 .sb-mask-pager {
-  margin-top: 32px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
+  margin: 24px 0 0;
   font-family: var(--font-ui);
-  font-size: 13px;
-  color: var(--smoke);
+  font-size: 14px;
+  font-weight: 600;
 }
 
-.sb-mask-pager a {
-  color: var(--linen);
+.sb-mask-pager a,
+.sb-mask-pager > span[aria-hidden="true"] {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--accent);
+  text-decoration: none;
 }
 
-.sb-mask-pager a:hover,
-.sb-mask-pager a:focus-visible {
-  color: var(--foil);
+.sb-mask-pager > span[aria-hidden="true"] {
+  color: var(--muted);
+  opacity: 0.6;
 }
 
-.sb-mask-link:hover .sb-mask-name,
-.sb-mask-link:focus-visible .sb-mask-name {
-  color: var(--foil);
+@media (prefers-reduced-motion: reduce) {
+  .sb-mask-link {
+    transition: none;
+  }
 }

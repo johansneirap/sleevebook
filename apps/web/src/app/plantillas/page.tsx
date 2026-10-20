@@ -27,14 +27,7 @@ export default async function TemplatesPage({ searchParams }: PageProps) {
       <h1 className="sb-catalog-title" style={{ marginTop: 10 }}>
         Plantillas
       </h1>
-      <p
-        style={{
-          margin: "14px 0 0",
-          maxWidth: 580,
-          fontFamily: "var(--font-ui)",
-          color: "var(--smoke)",
-        }}
-      >
+      <p className="sb-tpl-intro">
         Formato, apertura, tema, paneles de arte y secciones. Una plantilla nunca incluye cartas.
       </p>
 
@@ -63,7 +56,7 @@ export default async function TemplatesPage({ searchParams }: PageProps) {
       )}
 
       {shown.length === 0 ? (
-        <p style={{ margin: "48px 0 0", fontFamily: "var(--font-ui)", color: "var(--smoke)" }}>
+        <p className="sb-tpl-empty">
           {onlyMine
             ? "Aún no has guardado plantillas. Abre un binder y elige «Guardar como plantilla»."
             : "Todavía no hay plantillas públicas."}

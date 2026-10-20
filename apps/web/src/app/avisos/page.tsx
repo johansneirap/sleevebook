@@ -55,7 +55,7 @@ export default async function AvisosPage({
           <h1 className="sb-catalog-title">Avisos</h1>
         </div>
         <form action={markAllRead}>
-          <button type="submit" className="sb-foil-action" disabled={unread === 0}>
+          <button type="submit" className="sb-avisos-btn" disabled={unread === 0}>
             Marcar todo como leído
           </button>
         </form>

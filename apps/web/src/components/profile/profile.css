@@ -1,260 +1,362 @@
-/* Cuenta (owner) and public profile pages. Tokens live in globals.css. */
+/* Cuenta y perfil público (Estante v2): tarjetas agrupadas, toggles, cabecera de perfil, binders y "Busca". */
 
+/* ---- Cuenta: settings as grouped cards ---- */
 .sb-account-form {
   display: grid;
-  gap: 40px;
-  margin-top: 40px;
+  gap: 16px;
+  margin-top: 20px;
+  font-family: var(--font-ui);
 }
 
 .sb-account-section {
   display: grid;
-  gap: 22px;
-  padding-top: 28px;
-  border-top: 1px solid color-mix(in srgb, var(--linen) 10%, transparent);
+  gap: 14px;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  min-width: 0;
 }
 
 .sb-account-title {
   margin: 0;
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 28px;
-  line-height: 1.1;
-  color: var(--linen);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
 }
 
 .sb-account-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 22px;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
 }
 
 .sb-account-field {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
-  align-content: start;
+}
+
+.sb-account-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.sb-account-field input,
+.sb-account-field textarea,
+.sb-account-field select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+}
+
+.sb-account-field textarea {
+  resize: vertical;
+  min-height: 88px;
+}
+
+.sb-account-field input::placeholder,
+.sb-account-field textarea::placeholder {
+  color: var(--muted);
+}
+
+.sb-account-field input[aria-invalid="true"],
+.sb-account-field textarea[aria-invalid="true"],
+.sb-account-field select[aria-invalid="true"] {
+  border-color: var(--danger);
 }
 
 .sb-account-field-narrow {
   max-width: 360px;
 }
 
-.sb-account-label {
-  font-family: var(--font-ui);
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.14em;
-  font-size: 12px;
-  color: var(--smoke);
-}
-
-.sb-account-help {
-  margin: 0;
-  font-family: var(--font-ui);
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--smoke);
-}
-
-.sb-account-error {
-  font-family: var(--font-ui);
-  font-size: 13px;
-  line-height: 1.4;
-  color: #e8a48c;
-}
-
-.sb-account-saved {
-  margin: 0;
-  font-family: var(--font-ui);
-  font-size: 13px;
-  color: var(--foil);
-}
-
 .sb-account-handle {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: var(--smoke);
-  font-family: var(--font-data);
-}
-
-.sb-account-form input[type="text"],
-.sb-account-form input[type="email"],
-.sb-account-form select,
-.sb-account-form textarea {
-  width: 100%;
-  box-sizing: border-box;
-  min-width: 0;
-  font: inherit;
+  padding-left: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--muted);
   font-size: 15px;
-  padding: 0.55em 0.75em;
-  color: var(--linen);
-  background: var(--velvet-raised);
-  border: 1px solid color-mix(in srgb, var(--linen) 16%, transparent);
-  border-radius: 2px;
 }
 
-.sb-account-handle input {
-  flex: 1;
+.sb-account-field .sb-account-handle input {
+  border: 0;
+  background: transparent;
+  padding-left: 0;
 }
 
-.sb-account-form textarea {
-  resize: vertical;
-  min-height: 84px;
+.sb-account-help {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+  overflow-wrap: anywhere;
 }
 
-.sb-account-form input[aria-invalid="true"],
-.sb-account-form select[aria-invalid="true"] {
-  border-color: #e8a48c;
+.sb-account-error {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--danger);
 }
 
-.sb-account-form input:focus-visible,
-.sb-account-form select:focus-visible,
-.sb-account-form textarea:focus-visible {
-  outline: 1px solid var(--foil);
-  outline-offset: 1px;
-}
-
+/* Privacy toggles: switch tracks */
 .sb-account-toggles {
-  display: grid;
-  gap: 18px;
-}
-
-.sb-account-toggle {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 14px;
-  align-items: start;
-  cursor: pointer;
-}
-
-.sb-account-toggle input {
-  margin: 4px 0 0;
-  width: 18px;
-  height: 18px;
-  accent-color: var(--foil);
-}
-
-.sb-account-toggle > span {
   display: grid;
   gap: 4px;
 }
 
+.sb-account-toggle {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 16px;
+  min-height: 56px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.sb-account-toggle:last-child {
+  border-bottom: 0;
+}
+
+.sb-account-toggle > span:nth-of-type(1) {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
 .sb-account-toggle-name {
-  font-family: var(--font-ui);
-  font-size: 16px;
-  color: var(--linen);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.sb-account-toggle input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  position: relative;
+  width: 48px;
+  height: 28px;
+  margin: 0;
+  border-radius: 999px;
+  background: #c9cedd;
+  cursor: pointer;
+  transition: background-color 200ms var(--ease-out-expo);
+}
+
+.sb-account-toggle input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(27, 32, 51, 0.25);
+  transition: transform 200ms var(--ease-out-expo);
+}
+
+.sb-account-toggle input[type="checkbox"]:checked {
+  background: var(--accent);
+}
+
+.sb-account-toggle input[type="checkbox"]:checked::after {
+  transform: translateX(20px);
+}
+
+.sb-account-toggle input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .sb-account-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 14px 20px;
+  gap: 12px 16px;
+  padding: 4px 0 0;
 }
 
-.sb-account-actions button {
+.sb-account-save {
+  min-height: 44px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #ffffff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
 }
 
-.sb-account-actions button:disabled {
-  opacity: 0.55;
+.sb-account-save:hover {
+  background: var(--accent-strong);
+}
+
+.sb-account-save:disabled {
+  opacity: 0.6;
   cursor: progress;
 }
 
-/* Public profile */
+.sb-account-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--accent);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
 
+.sb-account-link:hover {
+  background: var(--accent-soft);
+}
+
+.sb-account-saved {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--success-soft);
+  color: var(--success);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* ---- Public profile ---- */
 .sb-public-header {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 20px 26px;
+  gap: 16px 20px;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font-family: var(--font-ui);
 }
 
 .sb-public-avatar,
 .sb-public-monogram {
-  width: 76px;
-  height: 76px;
   flex: none;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
-  object-fit: cover;
   box-sizing: border-box;
 }
 
+.sb-public-avatar {
+  object-fit: cover;
+}
+
 .sb-public-monogram {
-  display: grid;
+  display: inline-grid;
   place-items: center;
-  background: var(--foil-dim);
-  color: var(--velvet);
-  font-family: var(--font-display);
-  font-size: 30px;
-  line-height: 1;
+  background: var(--accent-soft);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent-strong);
 }
 
 .sb-public-identity {
-  min-width: 0;
   display: grid;
-  gap: 6px;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 240px;
 }
 
 .sb-public-name {
   margin: 0;
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: clamp(34px, 6vw, 52px);
-  line-height: 1.05;
-  color: var(--linen);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--ink);
   overflow-wrap: anywhere;
 }
 
 .sb-public-handle {
-  font-family: var(--font-data);
-  font-size: 13px;
-  color: var(--smoke);
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
 }
 
 .sb-public-bio {
-  margin: 0;
-  max-width: 60ch;
-  font-family: var(--font-ui);
+  margin: 6px 0 0;
   font-size: 15px;
-  line-height: 1.55;
-  color: var(--linen);
-  white-space: pre-line;
+  line-height: 1.6;
+  color: var(--ink);
+  overflow-wrap: anywhere;
 }
 
 .sb-public-contact {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 18px;
-  font-family: var(--font-ui);
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.12em;
-  font-size: 12px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .sb-public-contact a {
-  color: var(--smoke);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
   text-decoration: none;
-  transition: color 240ms var(--ease-out-expo);
 }
 
 .sb-public-contact a:hover,
 .sb-public-contact a:focus-visible {
-  color: var(--foil);
+  background: var(--accent-soft);
 }
 
 .sb-public-section {
-  margin-top: 56px;
-  padding-top: 26px;
-  border-top: 1px solid color-mix(in srgb, var(--linen) 10%, transparent);
+  margin-top: 28px;
+  font-family: var(--font-ui);
 }
 
 .sb-public-section-title {
-  margin: 0 0 22px;
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 28px;
-  color: var(--linen);
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.sb-public-empty {
+  margin: 0;
+  padding: 24px 20px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  text-align: center;
+  font-size: 15px;
+  color: var(--muted);
 }
 
 .sb-public-grid {
@@ -262,92 +364,88 @@
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 22px;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
 }
 
-.sb-public-card {
+/* Busca: horizontal strip of wanted cards */
+.sb-public-strip {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 8px;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sb-public-strip > li {
+  flex: none;
+  width: 168px;
+  scroll-snap-align: start;
+}
+
+.sb-public-card,
+.sb-public-wish {
   display: grid;
-  gap: 10px;
+  gap: 8px;
+  padding: 12px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
   min-width: 0;
 }
 
 .sb-public-card a {
-  color: inherit;
+  display: grid;
+  gap: 8px;
+  color: var(--ink);
   text-decoration: none;
+}
+
+.sb-public-card a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: var(--radius);
 }
 
 .sb-public-card-image {
   display: block;
   width: 100%;
   aspect-ratio: 1200 / 630;
-  height: auto;
   object-fit: cover;
-  border: 1px solid color-mix(in srgb, var(--linen) 12%, transparent);
-  border-radius: 2px;
-  background: var(--velvet-raised);
-  transition: border-color 280ms var(--ease-out-expo);
+  border-radius: 16px;
+  background: var(--surface-2);
 }
 
-.sb-public-card a:hover .sb-public-card-image,
-.sb-public-card a:focus-visible .sb-public-card-image {
-  border-color: var(--foil);
-}
-
-.sb-public-card-name {
-  font-family: var(--font-display);
-  font-size: 22px;
-  line-height: 1.15;
-  color: var(--linen);
+.sb-public-card-name,
+.sb-public-wish-name {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ink);
   overflow-wrap: anywhere;
 }
 
 .sb-public-card-meta {
   margin: 0;
-  font-family: var(--font-ui);
-  font-variant-caps: all-small-caps;
-  letter-spacing: 0.12em;
-  font-size: 12px;
-  color: var(--smoke);
-}
-
-.sb-public-card-meta .sb-data {
-  letter-spacing: 0.04em;
-}
-
-.sb-public-wish {
-  display: grid;
-  gap: 6px;
-  min-width: 0;
+  font-size: 13px;
+  color: var(--muted);
 }
 
 .sb-public-wish-image {
   display: block;
-  width: 100%;
-  aspect-ratio: 2 / 2.8;
-  height: auto;
-  object-fit: contain;
-  border-radius: 4px;
-  background: var(--velvet-raised);
-}
-
-.sb-public-wish-name {
-  font-family: var(--font-ui);
-  font-size: 14px;
-  color: var(--linen);
-  overflow-wrap: anywhere;
-}
-
-.sb-public-empty {
-  margin: 0;
-  font-family: var(--font-ui);
-  font-size: 14px;
-  color: var(--smoke);
+  width: 64px;
+  aspect-ratio: 2.5 / 3.5;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--surface-2);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sb-public-card-image,
-  .sb-account-form * {
+  .sb-account-toggle input[type="checkbox"],
+  .sb-account-toggle input[type="checkbox"]::after {
     transition: none;
   }
 }

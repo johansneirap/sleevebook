@@ -5,6 +5,7 @@ import { type FormEvent, useState } from "react";
 import type { VariantDisplay } from "../../lib/binders";
 import { searchCardVariants } from "../../lib/search";
 import { addToWishlist } from "../../lib/wishlist-actions";
+import "./wishlist.css";
 
 /** Catalog search that adds cards to the wishlist (name search, like the binder insert). */
 export function WishlistSearch({ listedIds }: { listedIds: string[] }) {
@@ -46,13 +47,13 @@ export function WishlistSearch({ listedIds }: { listedIds: string[] }) {
   }
 
   return (
-    <section aria-labelledby="wishlist-search-title" style={{ display: "grid", gap: 16 }}>
-      <h2 id="wishlist-search-title" className="sb-catalog-eyebrow">
+    <section aria-labelledby="wishlist-search-title" className="sb-wish-card">
+      <h2 id="wishlist-search-title" className="sb-wish-section-title">
         Agregar cartas
       </h2>
-      <form onSubmit={handleSearch} style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        <label className="sb-field" style={{ flex: "1 1 240px" }}>
-          <span className="sb-field-label">Buscar por nombre</span>
+      <form onSubmit={handleSearch} className="sb-wish-search-form">
+        <label className="sb-wish-field" style={{ flex: "1 1 240px" }}>
+          <span className="sb-wish-field-label">Buscar por nombre</span>
           <input
             type="search"
             name="q"
@@ -62,49 +63,28 @@ export function WishlistSearch({ listedIds }: { listedIds: string[] }) {
             autoComplete="off"
           />
         </label>
-        <button
-          type="submit"
-          className="sb-foil-action"
-          disabled={searching}
-          style={{ alignSelf: "end" }}
-        >
+        <button type="submit" className="sb-wish-primary" disabled={searching}>
           {searching ? "Buscando…" : "Buscar"}
         </button>
       </form>
 
       {error && (
-        <p
-          role="alert"
-          className="sb-data"
-          style={{ margin: 0, fontSize: 12, color: "var(--foil)" }}
-        >
+        <p role="alert" className="sb-wish-error">
           {error}
         </p>
       )}
 
       {results !== null &&
         (results.length === 0 ? (
-          <p className="sb-catalog-empty" style={{ margin: 0 }}>
+          <p className="sb-wish-hint" style={{ maxWidth: "none" }}>
             Sin resultados para «{query.trim()}».
           </p>
         ) : (
-          <ul
-            aria-label="Resultados de búsqueda"
-            style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 2 }}
-          >
+          <ul aria-label="Resultados de búsqueda" className="sb-wish-results">
             {results.map((display) => {
               const inList = listed.has(display.id);
               return (
-                <li
-                  key={display.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 14,
-                    padding: "8px 0",
-                    borderBottom: "1px solid var(--rule)",
-                  }}
-                >
+                <li key={display.id} className="sb-wish-result">
                   {display.imageUrl ? (
                     // biome-ignore lint/performance/noImgElement: catalog thumbnails from external CDNs, sized in CSS
                     <img
@@ -113,28 +93,25 @@ export function WishlistSearch({ listedIds }: { listedIds: string[] }) {
                       width={40}
                       height={56}
                       loading="lazy"
-                      style={{ borderRadius: 3, flexShrink: 0 }}
+                      style={{ borderRadius: 6, flexShrink: 0 }}
                     />
                   ) : (
                     <span aria-hidden style={{ width: 40, height: 56, flexShrink: 0 }} />
                   )}
-                  <span style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ display: "block", color: "var(--linen)" }}>{display.name}</span>
-                    <span
-                      className="sb-data"
-                      style={{ display: "block", fontSize: 12, color: "var(--smoke)" }}
-                    >
-                      {display.setName} · {display.number} · {display.variant}
+                  <span className="sb-wish-result-body">
+                    <span className="sb-wish-result-name">{display.name}</span>
+                    <span className="sb-wish-chips">
+                      <span className="sb-wish-chip">{display.setName}</span>
+                      <span className="sb-wish-chip sb-data">{display.number}</span>
+                      <span className="sb-wish-chip">{display.variant}</span>
                     </span>
                   </span>
                   {inList ? (
-                    <span className="sb-label" style={{ color: "var(--foil)", fontSize: 12 }}>
-                      En mis deseos
-                    </span>
+                    <span className="sb-wish-chip sb-wish-chip-success">En mis deseos</span>
                   ) : (
                     <button
                       type="button"
-                      className="sb-quiet-button"
+                      className="sb-wish-secondary"
                       disabled={addingId === display.id}
                       onClick={() => handleAdd(display.id)}
                       aria-label={`Agregar ${display.name} ${display.number} (${display.variant})`}

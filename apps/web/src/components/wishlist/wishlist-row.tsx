@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState, useTransition } from "react";
 import { removeFromWishlist, setWishlistNote, setWishlistTarget } from "../../lib/wishlist-actions";
+import "./wishlist.css";
 
 export interface WishlistRowData {
   variantId: string;
@@ -86,83 +87,45 @@ export function WishlistRow({ entry }: { entry: WishlistRowData }) {
   const noteId = `note-${entry.variantId}`;
 
   return (
-    <li
-      style={{
-        display: "grid",
-        gridTemplateColumns: "auto minmax(0, 1fr)",
-        gap: "14px 18px",
-        padding: "18px 0",
-        borderBottom: "1px solid var(--rule)",
-        opacity: pending ? 0.6 : 1,
-      }}
-    >
+    <li className={`sb-wish-row${pending ? " sb-wish-row-pending" : ""}`}>
       {entry.imageUrl ? (
         // biome-ignore lint/performance/noImgElement: catalog thumbnails from external CDNs, sized in CSS
         <img
           src={entry.imageUrl}
           alt=""
-          width={72}
-          height={100}
+          width={56}
+          height={78}
           loading="lazy"
-          style={{ borderRadius: 4, gridRow: "span 2" }}
+          className="sb-wish-thumb"
         />
       ) : (
-        <span aria-hidden style={{ width: 72, height: 100, gridRow: "span 2" }} />
+        <span aria-hidden className="sb-wish-thumb" />
       )}
 
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "6px 24px",
-          alignItems: "baseline",
-          justifyContent: "space-between",
-          minWidth: 0,
-        }}
-      >
-        <div style={{ minWidth: 0 }}>
-          <p className="sb-display" style={{ margin: 0, fontSize: 22, color: "var(--linen)" }}>
-            {entry.name}
-          </p>
-          <p className="sb-data" style={{ margin: "4px 0 0", fontSize: 12, color: "var(--smoke)" }}>
-            {entry.setName} · {entry.number} · {entry.variant}
-          </p>
+      <div className="sb-wish-row-head">
+        <div className="sb-wish-row-info">
+          <p className="sb-wish-row-name">{entry.name}</p>
+          <span className="sb-wish-chips">
+            <span className="sb-wish-chip">{entry.setName}</span>
+            <span className="sb-wish-chip sb-data">{entry.number}</span>
+            <span className="sb-wish-chip">{entry.variant}</span>
+          </span>
         </div>
-        <div style={{ textAlign: "right" }}>
-          <p
-            className="sb-data"
-            style={{
-              margin: 0,
-              fontSize: 15,
-              color: entry.priceLabel ? "var(--linen)" : "var(--smoke)",
-            }}
-          >
+        <div className="sb-wish-row-prices">
+          <p className={`sb-data sb-wish-price${entry.priceLabel ? "" : " sb-wish-price-missing"}`}>
             {entry.priceLabel ?? "sin precio"}
           </p>
           {typeof entry.cardmarketEur === "number" && (
-            <p
-              className="sb-data"
-              data-testid="wishlist-cardmarket"
-              style={{ margin: "2px 0 0", fontSize: 12, color: "var(--smoke)" }}
-            >
+            <p className="sb-data sb-wish-cardmarket" data-testid="wishlist-cardmarket">
               Cardmarket: {formatCardmarketEur(entry.cardmarketEur)}
             </p>
           )}
         </div>
       </div>
 
-      <form
-        onSubmit={handleSave}
-        style={{
-          gridColumn: "2",
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "12px 16px",
-          alignItems: "flex-end",
-        }}
-      >
-        <label htmlFor={targetId} className="sb-field" style={{ width: 150 }}>
-          <span className="sb-field-label">Avisarme bajo (US$)</span>
+      <form onSubmit={handleSave} className="sb-wish-row-form">
+        <label htmlFor={targetId} className="sb-wish-field" style={{ width: 160 }}>
+          <span className="sb-wish-field-label">Avisarme bajo (US$)</span>
           <input
             id={targetId}
             type="number"
@@ -175,8 +138,8 @@ export function WishlistRow({ entry }: { entry: WishlistRowData }) {
             placeholder="Sin aviso"
           />
         </label>
-        <label htmlFor={noteId} className="sb-field" style={{ flex: "1 1 180px", minWidth: 0 }}>
-          <span className="sb-field-label">Nota</span>
+        <label htmlFor={noteId} className="sb-wish-field" style={{ flex: "1 1 180px" }}>
+          <span className="sb-wish-field-label">Nota</span>
           <input
             id={noteId}
             type="text"
@@ -186,18 +149,13 @@ export function WishlistRow({ entry }: { entry: WishlistRowData }) {
             placeholder="Ej. busco en NM"
           />
         </label>
-        <div style={{ display: "flex", gap: 16, alignItems: "baseline" }}>
-          <button
-            type="submit"
-            className="sb-quiet-button"
-            disabled={pending}
-            style={{ color: "var(--foil)" }}
-          >
+        <div className="sb-wish-row-actions">
+          <button type="submit" className="sb-wish-primary" disabled={pending}>
             Guardar
           </button>
           <button
             type="button"
-            className="sb-quiet-button"
+            className="sb-wish-danger"
             disabled={pending}
             onClick={handleRemove}
             aria-label={`Quitar ${entry.name} ${entry.number} (${entry.variant}) de mis deseos`}
@@ -206,11 +164,7 @@ export function WishlistRow({ entry }: { entry: WishlistRowData }) {
           </button>
         </div>
         {message && (
-          <p
-            role="status"
-            className="sb-data"
-            style={{ margin: 0, width: "100%", fontSize: 12, color: "var(--smoke)" }}
-          >
+          <p role="status" className="sb-wish-row-status">
             {message}
           </p>
         )}

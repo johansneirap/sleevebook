@@ -123,7 +123,7 @@ export function PublicWishlist({ items }: { items: PublicWishlistItem[] }) {
       {items.length === 0 ? (
         <p className="sb-public-empty">Todavía no hay cartas en su lista de deseos.</p>
       ) : (
-        <ul className="sb-public-grid">
+        <ul className="sb-public-strip">
           {items.map((item) => (
             <li key={item.id} className="sb-public-wish">
               {item.imageUrl ? (

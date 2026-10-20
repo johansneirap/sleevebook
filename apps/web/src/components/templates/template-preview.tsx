@@ -37,18 +37,11 @@ export function TemplatePreview({
   const sheen = sleeveOverlayStyle(theme.sleeve);
   const coverage = panelCoverageMap(panels, { rows, cols });
 
-  const spreadStyle: CSSProperties = {
-    background: tokens.background,
-    color: tokens.foreground,
-    fontFamily: tokens.fontFamily,
-  };
-
   const pages = [pageGrid(rows, cols, 1, "F"), pageGrid(rows, cols, 1, "B")];
 
   return (
     <div
       className={`sb-tpl-spread sb-tpl-spread-${size}`}
-      style={spreadStyle}
       role="img"
       aria-label={`Vista previa: ${rows} por ${cols}, tema ${tokens.label}`}
     >
@@ -67,9 +60,6 @@ export function TemplatePreview({
           const style: CSSProperties = {
             gridRow: panel ? `${row} / span ${panel.span.rows}` : `${row}`,
             gridColumn: panel ? `${col} / span ${panel.span.cols}` : `${col}`,
-            background: panel
-              ? undefined
-              : `color-mix(in srgb, ${tokens.foreground} 9%, transparent)`,
             ...(asset
               ? {
                   backgroundImage: `url("${asset}")`,

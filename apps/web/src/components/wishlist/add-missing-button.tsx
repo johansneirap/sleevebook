@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { addManyToWishlist } from "../../lib/wishlist-actions";
+import "./wishlist.css";
 
 const CHUNK_SIZE = 500;
 
@@ -33,20 +34,17 @@ export function AddMissingToWishlistButton({ variantIds }: { variantIds: string[
   }
 
   return (
-    <span
-      style={{ display: "inline-flex", flexWrap: "wrap", alignItems: "baseline", gap: "6px 12px" }}
-    >
+    <span className="sb-wish-add-all">
       <button
         type="button"
-        className="sb-quiet-button"
+        className="sb-wish-secondary"
         disabled={pending || variantIds.length === 0}
         onClick={handleClick}
-        style={{ color: "var(--foil)" }}
       >
         {pending ? "Agregando…" : "Agregar todo a mis deseos"}
       </button>
       {result && (
-        <span role="status" className="sb-data" style={{ fontSize: 12, color: "var(--smoke)" }}>
+        <span role="status" className="sb-wish-add-all-status">
           {result}
         </span>
       )}

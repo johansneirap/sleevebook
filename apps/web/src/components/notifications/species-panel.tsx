@@ -64,7 +64,7 @@ export function SpeciesPanel({ derived, followed }: SpeciesPanelProps) {
               <span className="sb-avisos-chip-name">{item.species}</span>
               <button
                 type="button"
-                className="sb-quiet-button"
+                className="sb-avisos-chip-remove"
                 aria-label={`Dejar de seguir ${item.species}`}
                 disabled={pending}
                 onClick={() =>
@@ -73,7 +73,21 @@ export function SpeciesPanel({ derived, followed }: SpeciesPanelProps) {
                   })
                 }
               >
-                Quitar
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
               </button>
             </li>
           ))}
@@ -103,11 +117,7 @@ export function SpeciesPanel({ derived, followed }: SpeciesPanelProps) {
             aria-describedby={error ? errorId : undefined}
             onChange={(event) => setValue(event.target.value)}
           />
-          <button
-            type="submit"
-            className="sb-foil-action"
-            disabled={pending || value.trim() === ""}
-          >
+          <button type="submit" className="sb-avisos-btn" disabled={pending || value.trim() === ""}>
             Seguir
           </button>
         </div>
