@@ -47,8 +47,14 @@ async function openAddDialogFor(page: import("@playwright/test").Page, name: str
   await page.getByRole("button", { name: "+ Agregar copias" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
-  await dialog.getByLabel("Busca la carta por nombre").fill(name);
-  await dialog.getByRole("button", { name: new RegExp(name) }).click();
+  const result = dialog.getByRole("button", { name: new RegExp(name) });
+  // The search is debounced and its server action may still be compiling on a
+  // cold dev server: retype until the result shows up.
+  await expect(async () => {
+    await dialog.getByLabel("Busca la carta por nombre").fill(name);
+    await expect(result).toBeVisible({ timeout: 5_000 });
+  }).toPass({ timeout: 30_000 });
+  await result.click();
   return dialog;
 }
 
@@ -98,6 +104,8 @@ test.describe
     test("agrega copias JP y LP desde el diálogo", async ({ page }) => {
       await page.goto("/coleccion");
       await expect(page.getByRole("heading", { name: "Mi colección" })).toBeVisible();
+      // The dialog only works once React has hydrated the page.
+      await page.waitForLoadState("networkidle");
 
       // Two identical Japanese copies: one row with a "×2" counter.
       let dialog = await openAddDialogFor(page, "F5C Alfa");

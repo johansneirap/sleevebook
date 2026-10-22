@@ -203,6 +203,8 @@ test.describe("phone", () => {
   test("the copy chip and the focus sheet fit a 390px phone", async ({ page }) => {
     await page.goto(`/binders/${collectionBinderId}?spread=0`);
     await expect(page.getByText("JP", { exact: true })).toBeVisible();
+    // The pocket only opens the dialog once React has hydrated the page.
+    await page.waitForLoadState("networkidle");
 
     await page.getByTitle(CARD_NAME, { exact: true }).click();
     const dialog = page.getByRole("dialog");
