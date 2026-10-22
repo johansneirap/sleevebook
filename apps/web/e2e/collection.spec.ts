@@ -53,7 +53,7 @@ async function openAddDialogFor(page: import("@playwright/test").Page, name: str
   await expect(async () => {
     await dialog.getByLabel("Busca la carta por nombre").fill(name);
     await expect(result).toBeVisible({ timeout: 5_000 });
-  }).toPass({ timeout: 30_000 });
+  }).toPass({ timeout: 60_000 });
   await result.click();
   return dialog;
 }
@@ -102,6 +102,8 @@ test.afterAll(async () => {
 test.describe
   .serial("Mi colección", () => {
     test("agrega copias JP y LP desde el diálogo", async ({ page }) => {
+      // First call of the search action compiles it on a cold CI dev server.
+      test.setTimeout(120_000);
       await page.goto("/coleccion");
       await expect(page.getByRole("heading", { name: "Mi colección" })).toBeVisible();
       // The dialog only works once React has hydrated the page.
