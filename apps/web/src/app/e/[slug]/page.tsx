@@ -2,8 +2,10 @@ import { generateSpreads } from "@sleevebook/binder-core";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BinderStage } from "../../../components/binder/binder-stage";
+import { pocketCopiesByCode } from "../../../components/binder/pocket-copy-badge";
 import { ThemedMain } from "../../../components/binder/themed-main";
 import { collectVariantIds, getBinderWithLayout, getVariantDisplays } from "../../../lib/binders";
+import { getPocketCopies } from "../../../lib/collection";
 import { getPublishedBinderBySlug } from "../../../lib/share";
 import { clampSpreadIndex } from "../../../lib/spreads";
 
@@ -50,6 +52,7 @@ export default async function EmbedBinderPage({ params, searchParams }: PageProp
   const { format, pockets } = binderData.layout;
   const displays = await getVariantDisplays(collectVariantIds(pockets));
   const closed = spreadParam === undefined;
+  const copies = await getPocketCopies(binderData.ownerId, pockets, {});
 
   return (
     <ThemedMain theme={binderData.layout.theme}>
@@ -104,6 +107,7 @@ export default async function EmbedBinderPage({ params, searchParams }: PageProp
               panels={binderData.layout.panels}
               displays={displays}
               sleeve={binderData.layout.theme.sleeve}
+              pocketCopies={pocketCopiesByCode(pockets, copies.badges)}
             />
           </div>
         </div>

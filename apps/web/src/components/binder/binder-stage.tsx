@@ -158,6 +158,7 @@ export function BinderStage({
   displays,
   sleeve,
   pocketMeta,
+  pocketCopies,
   wishlistVariantIds,
   canWish,
 }: BinderStageProps) {
@@ -196,6 +197,7 @@ export function BinderStage({
               displays={displays}
               sleeve={sleeve}
               pocketMeta={pocketMeta}
+              pocketCopies={pocketCopies}
               wishlistVariantIds={wishlistVariantIds}
               canWish={canWish}
             />

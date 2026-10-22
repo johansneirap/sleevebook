@@ -37,6 +37,8 @@ export async function listBinders(userId: string): Promise<BinderSummary[]> {
 
 export interface BinderWithLayout {
   id: string;
+  /** The owner's user id: copies are read from their collection, never the viewer's. */
+  ownerId: string;
   name: string;
   sheets: number;
   status: string;
@@ -77,6 +79,7 @@ export async function getBinderWithLayout(binderId: string): Promise<BinderWithL
 
   return {
     id: binderRow.id,
+    ownerId: binderRow.userId,
     name: binderRow.name,
     sheets: binderRow.sheets,
     status: binderRow.status,

@@ -6,12 +6,14 @@ import {
 } from "@sleevebook/binder-core";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { pocketCopiesByCode } from "../../../../components/binder/pocket-copy-badge";
 import { priceToInput } from "../../../../components/seller/listing-model";
 import { type ListingRowData, ListingsEditor } from "../../../../components/seller/listings-editor";
 import { SellerSettingsForm } from "../../../../components/seller/seller-settings-form";
 import "../../../../components/seller/seller.css";
 import "../../../../components/library/catalog.css";
 import { getBinderWithLayout, getVariantDisplays } from "../../../../lib/binders";
+import { getPocketCopies } from "../../../../lib/collection";
 import { getListings } from "../../../../lib/listings";
 import { getExchangeRates } from "../../../../lib/money";
 import { getLatestPrices } from "../../../../lib/pricing";
@@ -54,15 +56,22 @@ export default async function SellerModePage({ params }: PageProps) {
   ]);
 
   const currency = data.currency;
+  // Fase 7: a pocket linked to a copy is referenced at the copy's estimated value.
+  const marketUsd = Object.fromEntries(
+    Object.entries(prices).map(([id, price]) => [id, price.amountUsd]),
+  );
+  const copies = await getPocketCopies(data.ownerId, data.layout.pockets, marketUsd);
+  const pocketCopies = pocketCopiesByCode(data.layout.pockets, copies.badges);
   const rows: ListingRowData[] = cardPockets.map(([code, content]) => {
     const display = displays.get(content.variant);
     const parsed = parsePocketCode(code);
     const listing = listings[code];
+    const copyValue = content.instance ? copies.values[content.instance] : undefined;
 
     const reference = resolvePocketPrice(
       content,
       undefined,
-      prices[content.variant]?.amountUsd,
+      copyValue ?? prices[content.variant]?.amountUsd,
       currency,
       exchange.rates,
     );
@@ -79,6 +88,7 @@ export default async function SellerModePage({ params }: PageProps) {
       setName: display?.setName ?? "",
       number: display?.number ?? String(parsed.index),
       imageUrl: display?.imageUrl ?? null,
+      copy: pocketCopies[code] ?? null,
       reference:
         reference && reference.origin !== "vendedor"
           ? { amount: reference.amount, origin: reference.origin }

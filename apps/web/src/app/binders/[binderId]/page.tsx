@@ -8,10 +8,12 @@ import {
 } from "../../../components/binder/binder-header";
 import { BinderStage } from "../../../components/binder/binder-stage";
 import { OwnerToolbar } from "../../../components/binder/owner-toolbar";
+import { pocketCopiesByCode } from "../../../components/binder/pocket-copy-badge";
 import { ThemedMain } from "../../../components/binder/themed-main";
 import { loadSellerPocketData } from "../../../components/seller-public/seller-pocket-data";
 import { SiteNav } from "../../../components/site/site-nav";
 import { collectVariantIds, getBinderWithLayout, getVariantDisplays } from "../../../lib/binders";
+import { getPocketCopies } from "../../../lib/collection";
 import { getGoalProgress } from "../../../lib/goals";
 import { getExchangeRates } from "../../../lib/money";
 import { getLatestPrices } from "../../../lib/pricing";
@@ -57,7 +59,9 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
   const priceLookup = Object.fromEntries(
     Object.entries(prices).map(([id, price]) => [id, price.amountUsd]),
   );
-  const totalValueUsd = computeBinderValueUsd(pockets, priceLookup);
+  // Fase 7: linked copies are valued from their condition (owner's own value wins).
+  const copies = await getPocketCopies(binderData.ownerId, pockets, priceLookup);
+  const totalValueUsd = computeBinderValueUsd(pockets, priceLookup, copies.values);
 
   const { rates, capturedAt } = await getExchangeRates();
   const displayCurrency = binderData.currency;
@@ -78,8 +82,16 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
   // Seller binders preview their price tags and listing states to the owner too.
   const sellerData =
     binderData.mode === "seller"
-      ? await loadSellerPocketData(binderId, pockets, displays, binderData.currency)
+      ? await loadSellerPocketData(
+          binderId,
+          binderData.ownerId,
+          pockets,
+          displays,
+          binderData.currency,
+          copies,
+        )
       : null;
+  const pocketCopies = sellerData?.pocketCopies ?? pocketCopiesByCode(pockets, copies.badges);
 
   const shareInfo = await getShareLinkForBinder(binderId);
   const siteUrl = getSiteUrl();
@@ -149,6 +161,7 @@ export default async function BinderViewerPage({ params, searchParams }: PagePro
           displays={displays}
           sleeve={binderData.layout.theme.sleeve}
           pocketMeta={sellerData?.pocketMeta}
+          pocketCopies={pocketCopies}
           wishlistVariantIds={wishlistVariantIds}
           canWish
         />

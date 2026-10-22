@@ -5,6 +5,8 @@ export interface PocketMeta {
   /** Already formatted in the binder currency, e.g. "$12.500". */
   price?: string;
   status?: ListingStatus;
+  /** The price is a condition estimate of the linked copy (not a listing or an override). */
+  estimated?: boolean;
 }
 
 /** Keyed by pocket code (e.g. "S1·F·1"). */

@@ -8,6 +8,7 @@ import { sleeveOverlayStyle } from "../../lib/theme-presets";
 import { usePrefersReducedMotion } from "../../lib/use-prefers-reduced-motion";
 import type { PocketMetaMap } from "../seller-public/types";
 import { PanelCell } from "./panel-cell";
+import { CopyBadge, type PocketCopyMap } from "./pocket-copy-badge";
 
 // Time the thumbnail stays hidden after the card is returned, so it does not
 // show through the card while it flies back into the pocket.
@@ -33,6 +34,8 @@ interface FaceGridProps {
   ghost?: boolean;
   /** Seller mode only: price tags and listing status per pocket. */
   pocketMeta?: PocketMetaMap;
+  /** Fase 7: language and grading chips of the linked copies, by pocket code. */
+  pocketCopies?: PocketCopyMap;
 }
 
 // Vendido: the art stays readable but recedes behind the label.
@@ -194,6 +197,7 @@ export function FaceGrid({
   side = "right",
   ghost = false,
   pocketMeta,
+  pocketCopies,
 }: FaceGridProps) {
   const reducedMotion = usePrefersReducedMotion();
   const codes = Array.from({ length: format.rows * format.cols }, (_, i) =>
@@ -293,6 +297,7 @@ export function FaceGrid({
                   transition: `opacity 0s linear ${reducedMotion ? 0 : REVEAL_DELAY_S}s`,
                 };
             const meta = pocketMeta?.[code];
+            const copy = pocketCopies?.[code];
             const sold = meta?.status === "vendido";
             const reserved = meta?.status === "reservado";
             const artStyle: CSSProperties = sold
@@ -380,6 +385,21 @@ export function FaceGrid({
                     }}
                   />
                 )}
+                {copy ? (
+                  // Top-left corner, under the status label when there is one.
+                  <span
+                    style={{
+                      position: "absolute",
+                      left: 4,
+                      top: reserved || sold ? 26 : 4,
+                      zIndex: 2,
+                      pointerEvents: "none",
+                      ...contentStyle,
+                    }}
+                  >
+                    <CopyBadge language={copy.language} grading={copy.grading} />
+                  </span>
+                ) : null}
                 {reserved || sold ? (
                   <span
                     className="sb-label"
