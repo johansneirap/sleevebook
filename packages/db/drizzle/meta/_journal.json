@@ -36,6 +36,20 @@
       "when": 1792407432741,
       "tag": "0004_lyrical_puff_adder",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792698315619,
+      "tag": "0005_special_vindicator",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792698315945,
+      "tag": "0006_dazzling_calypso",
+      "breakpoints": true
     }
   ]
 }

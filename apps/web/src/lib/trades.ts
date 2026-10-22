@@ -1,6 +1,7 @@
 import type {
   ListingStatus,
   SellerContact,
+  TradeCopy,
   TradeLayoutInput,
   TradeParty,
   WantsLayoutInput,
@@ -16,6 +17,7 @@ import {
 import {
   binder,
   binderVersion,
+  cardInstance,
   goal,
   pocketListing,
   profile,
@@ -71,7 +73,7 @@ function compareIds(a: string, b: string): number {
  * The matching rules live in @sleevebook/binder-core (trade.ts).
  */
 export async function loadTradeMatches(viewerId: string): Promise<TradesData> {
-  const [profileRows, binderRows, listingRows, wishRows, userRows] = await Promise.all([
+  const [profileRows, binderRows, listingRows, wishRows, userRows, copyRows] = await Promise.all([
     db
       .select({
         userId: profile.userId,
@@ -91,6 +93,13 @@ export async function loadTradeMatches(viewerId: string): Promise<TradesData> {
       .select({ userId: wishlistItem.userId, variantId: wishlistItem.variantId })
       .from(wishlistItem),
     db.select({ id: user.id, name: user.name, handle: user.handle, image: user.image }).from(user),
+    db
+      .select({
+        id: cardInstance.id,
+        userId: cardInstance.userId,
+        variantId: cardInstance.variantId,
+      })
+      .from(cardInstance),
   ]);
 
   // A missing profile row means the defaults: opted in, public contact empty.
@@ -128,6 +137,13 @@ export async function loadTradeMatches(viewerId: string): Promise<TradesData> {
     wantLayoutsByUser.set(row.userId, wantLayouts);
   }
 
+  const copiesByUser = new Map<string, TradeCopy[]>();
+  for (const row of copyRows) {
+    const list = copiesByUser.get(row.userId) ?? [];
+    list.push({ id: row.id, variantId: row.variantId });
+    copiesByUser.set(row.userId, list);
+  }
+
   const wishlistByUser = new Map<string, string[]>();
   for (const row of wishRows) {
     const list = wishlistByUser.get(row.userId) ?? [];
@@ -140,13 +156,17 @@ export async function loadTradeMatches(viewerId: string): Promise<TradesData> {
   const participantIds = new Set([
     ...tradeLayoutsByUser.keys(),
     ...wishlistByUser.keys(),
+    ...copiesByUser.keys(),
     viewerId,
   ]);
   const parties = new Map<string, TradeParty>();
   for (const userId of participantIds) {
     parties.set(userId, {
       userId,
-      tradeable: collectTradeable(tradeLayoutsByUser.get(userId) ?? []),
+      tradeable: collectTradeable(
+        tradeLayoutsByUser.get(userId) ?? [],
+        copiesByUser.get(userId) ?? [],
+      ),
       wants: collectWants(wishlistByUser.get(userId) ?? [], wantLayoutsByUser.get(userId) ?? []),
       optedIn: optedInById(userId),
     });

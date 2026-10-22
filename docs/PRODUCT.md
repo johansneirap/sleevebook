@@ -364,7 +364,7 @@ Las ideas con más potencial son las que conectan el binder digital con el físi
 
 ## Roadmap y tracking
 
-Siete fases (0–6); cada una termina con algo usable. La fase 1 tiene que poder reproducir los dos binders de Zoroark y Lucario. Marca las tareas aquí a medida que avanzan.
+Ocho fases (0–7); cada una termina con algo usable. La fase 1 tiene que poder reproducir los dos binders de Zoroark y Lucario. Marca las tareas aquí a medida que avanzan.
 
 ### Fase 0 — Fundaciones
 
@@ -421,6 +421,15 @@ Siete fases (0–6); cada una termina con algo usable. La fase 1 tiene que poder
 - [x] Binder como objeto real: tapa, lomo con anillas, hojas de papel y fundas; en móvil una hoja a la vez con deslizamiento
 - [x] Todas las pantallas (biblioteca, landing, visor, vendedor, comunidad, editor, escáner) en el nuevo diseño
 - [x] Ajustes tras revisión: giro de página curvo sin pliegue recto; carta ampliada sobre el panel inferior en móvil
+
+### Fase 7 — Copias reales
+
+- [x] Modelo: `card_instance` como copia física (idioma, condición, gradeo, precio de compra, valor propio); un bolsillo enlaza a lo más una copia
+- [ ] "Mi colección" (`/coleccion`): listar, filtrar, agregar, editar y borrar copias; crear copias desde los binders existentes
+- [ ] Editor: asignar o crear la copia de un bolsillo
+- [ ] Visor, link público y modo vendedor: chip de idioma y gradeo en el bolsillo; idioma, condición y gradeo en la carta ampliada
+- [ ] Precio estimado por condición (NM 100 %, LP 85 %, MP 70 %, HP 50 %, DMG 30 %); gradeadas con valor propio o el precio NM como referencia
+- [ ] Intercambios: las copias sueltas cuentan como repetidas
 
 ## Decisiones abiertas y registro
 
@@ -483,6 +492,7 @@ Alcance, backend y hosting quedaron decididos el 13-10-2026; antes del primer li
 | 2026-10-17 | Comunidad: perfil (tabla `profile` aparte de `user`), lista de deseos con precio objetivo, intercambios calculados en memoria (beta cerrada, tope 500 usuarios), galería solo de binders publicados como públicos, plantillas que copian diseño (formato, tema, paneles, secciones) y nunca cartas | Para intercambios, lo ofrecible son las copias extra (se guarda una) más lo disponible en binders en venta; lo buscado, la lista de deseos y los faltantes de objetivos. Todo opt-out desde /cuenta |
 | 2026-10-17 | Avisos dentro de la app (tabla `notification`): precio cuando el mercado cruza el objetivo (una vez por cruce) en el job de precios, y set nuevo con especies de tus objetivos o seguidas en el ingest del catálogo | Decisión del usuario: sin proveedor de correo ni DNS por ahora. El tipo "intercambio" existe en la bandeja pero aún no lo genera nada |
 | 2026-10-19 | TCGdex como fuente principal de precios (gratis, sin key; TCGplayer en USD y Cardmarket en EUR); pokemontcg.io v2 como respaldo para las cartas que TCGdex no puede valorar, hasta su apagado el 1-mar-2027 | pokemontcg.io ya no emite API keys y tiene caídas 500/502. TCGdex es open source, sin límite publicado, y sus precios TCGplayer coinciden con los de pokemontcg.io |
+| 2026-10-22 | Fase 7: copias reales en `card_instance` (una fila por carta física); el idioma es solo una etiqueta (chip) de la copia y el catálogo e imágenes siguen en inglés; precio por condición estimado con factores fijos sobre el precio NM de mercado | Decisión del usuario: le sirve más el inventario que un catálogo ES/JP. Ninguna fuente gratuita entrega precio por condición ni por gradeo; por eso el valor de una gradeada es el que pone el dueño o, sin él, el NM como referencia |
 | 2026-10-19 | Imágenes de cartas copiadas a nuestro bucket R2: primero las referenciadas por binders, objetivos y listas de deseos, luego el catálogo por lotes; la app usa esas copias | Las URLs de images.pokemontcg.io dejan de existir al apagarse (1-mar-2027); el job diario copia hasta 500 por corrida y es reanudable |
 | 2026-10-19 | Holo N3 en WebGL propio (un quad, un shader: relieve por Sobel de luminancia, iridiscencia de película delgada, destellos) en el detalle de carta, con caída al holo CSS si no hay WebGL; máscaras N4 por variante (`foil_mask`, zonas normalizadas dentro/fuera/toda/sin) editables solo por el administrador en /admin/mascaras | three.js no hace falta para un solo quad. La imagen se pide con fetch CORS (cache reload) porque Chrome reusaba la copia sin CORS de las miniaturas y WebGL quedaba bloqueado. Las máscaras de la comunidad quedan para después |
 | 2026-10-19 | Escaneo con cámara en /escanear: la foto se recorta y reduce en el navegador, Claude Haiku (`claude-haiku-5-5`, salida estructurada) lee nombre, número y set, y se busca en el catálogo; el usuario confirma antes de guardar. Límite diario por usuario (SCAN_DAILY_LIMIT, 30), registro en `scan_log`; la foto nunca se guarda | Decisión del usuario (Claude Vision, ~US$0,005 por escaneo, sin mensualidad). Sin ANTHROPIC_API_KEY la página explica que no está disponible |

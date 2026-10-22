@@ -6,12 +6,15 @@ import type { BinderMode, ListingStatus } from "./seller";
 // Two sides per user, both computed from the LATEST layout of each binder:
 //
 // - TRADEABLE copies of a variant:
-//   - collection binders: the card pockets are summed per variant across ALL of
-//     the user's collection binders, then one copy is kept for the collection
-//     (extras only). Pockets count `pocket.count ?? 1`.
+//   - collection: the user's owned copies are summed per variant, then one copy
+//     is kept for the collection (extras only). Owned copies are the physical
+//     copies (card_instance, Fase 7) wherever they are -- loose or in a
+//     collection binder -- plus the collection-binder card pockets that are not
+//     linked to a copy, which count `pocket.count ?? 1`.
 //   - seller binders: every card pocket whose listing is "disponible" (or has no
 //     pocket_listing row, which means disponible) counts fully: it is for sale.
-//     "reservado" and "vendido" never count.
+//     "reservado" and "vendido" never count. A copy linked from a seller
+//     pocket is counted there only, never again as an owned copy.
 // - WANTS: the user's wishlist variants, plus, for every binder with a goal, the
 //   goal's variants that are not present as a card in that same binder.
 //
@@ -59,14 +62,25 @@ function addCount(map: Map<string, number>, variantId: string, count: number): v
   map.set(variantId, (map.get(variantId) ?? 0) + count);
 }
 
+/** A physical copy of the user, as far as trades are concerned. */
+export interface TradeCopy {
+  id: string;
+  variantId: string;
+}
+
 /**
- * Tradeable copies per variant for one user, across all their binders.
- * Collection binders keep one copy for the collection; seller binders offer
+ * Tradeable copies per variant for one user, across all their binders and
+ * copies. The collection keeps one copy per variant; seller binders offer
  * every disponible card pocket.
  */
-export function collectTradeable(layouts: readonly TradeLayoutInput[]): Map<string, number> {
+export function collectTradeable(
+  layouts: readonly TradeLayoutInput[],
+  copies: readonly TradeCopy[] = [],
+): Map<string, number> {
   const owned = new Map<string, number>();
   const forSale = new Map<string, number>();
+  const copyIds = new Set(copies.map((copy) => copy.id));
+  const inSellerPockets = new Set<string>();
 
   for (const layout of layouts) {
     for (const [code, content] of Object.entries(layout.pockets)) {
@@ -75,13 +89,22 @@ export function collectTradeable(layouts: readonly TradeLayoutInput[]): Map<stri
       }
       const count = content.count ?? 1;
       if (layout.mode === "seller") {
+        if (content.instance) {
+          inSellerPockets.add(content.instance);
+        }
         const status = layout.listings[code]?.status ?? "disponible";
         if (status === "disponible") {
           addCount(forSale, content.variant, count);
         }
-      } else {
+      } else if (!(content.instance && copyIds.has(content.instance))) {
+        // Linked pockets are counted through their copy below.
         addCount(owned, content.variant, count);
       }
+    }
+  }
+  for (const copy of copies) {
+    if (!inSellerPockets.has(copy.id)) {
+      addCount(owned, copy.variantId, 1);
     }
   }
 
