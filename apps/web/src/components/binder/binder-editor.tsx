@@ -10,11 +10,17 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import type { Format, Layout, SheetFace } from "@sleevebook/binder-core";
-import { computeBinderValueUsd, formatPocketCode, panelCoverageMap } from "@sleevebook/binder-core";
+import {
+  computeBinderValueUsd,
+  formatPocketCode,
+  gradingLabel,
+  panelCoverageMap,
+} from "@sleevebook/binder-core";
 import { motion } from "motion/react";
 import { type ReactNode, useRef, useState, useTransition } from "react";
 import { flushSync } from "react-dom";
 import type { VariantDisplay } from "../../lib/binders";
+import { createCopyForPocket, linkPocketCopy } from "../../lib/collection-actions";
 import {
   computeImportLayout,
   type ImportDestination,
@@ -35,6 +41,8 @@ import {
 import { type ThemeInput, updateBinderTheme } from "../../lib/theme-actions";
 import { SLEEVE_LABELS, sleeveOverlayStyle, THEME_PRESETS } from "../../lib/theme-presets";
 import { usePrefersReducedMotion } from "../../lib/use-prefers-reduced-motion";
+import { CopyBadge } from "./copy-badge";
+import { type CopyCandidate, CopySection, type NewCopyInput } from "./copy-section";
 import { HoloCard } from "./holo-card";
 import { PanelCell } from "./panel-cell";
 
@@ -224,6 +232,15 @@ const EDITOR_CSS = `
 .sb-ed .sb-ed-inspector-hint { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); }
 .sb-ed .sb-ed-selected-title { margin: 0; font-size: 14px; color: var(--ink); }
 .sb-ed .sb-ed-caption { margin: 0; font-size: 13px; color: var(--muted); }
+.sb-ed .sb-ed-copy-badge { position: absolute; left: 4px; bottom: 4px; z-index: 1; max-width: calc(100% - 8px); pointer-events: none; }
+.sb-ed .sb-ed-copy { display: grid; gap: 10px; padding: 12px; border-radius: 14px; background: var(--surface-2); }
+.sb-ed .sb-ed-copy-title { margin: 0; font-size: 13px; font-weight: 700; color: var(--muted); }
+.sb-ed .sb-ed-copy-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.sb-ed .sb-ed-copy-ask { display: grid; gap: 8px; padding: 10px; border-radius: 12px; background: var(--accent-soft); }
+.sb-ed .sb-ed-copy-new { display: grid; gap: 8px; }
+.sb-ed .sb-ed-copy-where { flex: 1 1 100%; font-size: 12px; color: var(--muted); }
+.sb-ed .sb-ed-copy-pick .sb-ed-line { flex-wrap: wrap; }
+.sb-ed .sb-ed-copy-pick .sb-ed-line .sb-ed-btn { margin-left: auto; min-height: 44px; padding: 0 12px; font-size: 13px; }
 @media (min-width: 1100px) {
   .sb-ed { grid-template-columns: minmax(0, 1fr) 360px; gap: 28px; }
   .sb-ed-side {
@@ -239,8 +256,26 @@ const EDITOR_CSS = `
 }
 `;
 
+/** A physical copy of one of the binder's cards, compact for the client. */
+export interface EditorCopy {
+  id: string;
+  variantId: string;
+  language: string;
+  condition: string;
+  /** "PSA 10"; null when raw. */
+  grading: string | null;
+  placedIn: { binderId: string; binderName: string; pocketCode: string } | null;
+}
+
+interface CopyPlacement {
+  binderId: string;
+  binderName: string;
+  pocketCode: string;
+}
+
 interface BinderEditorProps {
   binderId: string;
+  binderName: string;
   faces: SheetFace[];
   format: Format;
   pockets: Layout["pockets"];
@@ -248,6 +283,7 @@ interface BinderEditorProps {
   displays: Record<string, VariantDisplay>;
   prices: Record<string, number>;
   theme: Layout["theme"];
+  copies: EditorCopy[];
 }
 
 interface HistoryChange {
@@ -258,6 +294,53 @@ interface HistoryChange {
 
 interface HistoryEntry {
   changes: HistoryChange[];
+}
+
+/** The pocket layout as the editor shows it, plus where each copy sits. */
+interface LiveLayout {
+  pockets: Record<string, PocketValue>;
+  placements: Record<string, CopyPlacement>;
+}
+
+interface PendingMove {
+  copyId: string;
+  location: string;
+}
+
+function messageForCopyError(): string {
+  return "No se pudo guardar la copia. Inténtalo de nuevo.";
+}
+
+/** "Mi binder · S1·F·1" */
+function pocketLabel(placement: CopyPlacement): string {
+  return `${placement.binderName} · ${placement.pocketCode}`;
+}
+
+function placementsFromCopies(copies: EditorCopy[]): Record<string, CopyPlacement> {
+  const placements: Record<string, CopyPlacement> = {};
+  for (const copy of copies) {
+    if (copy.placedIn) {
+      placements[copy.id] = {
+        binderId: copy.placedIn.binderId,
+        binderName: copy.placedIn.binderName,
+        pocketCode: copy.placedIn.pocketCode,
+      };
+    }
+  }
+  return placements;
+}
+
+/** Forgets a copy's place, but only if it is the given pocket that holds it. */
+function releasePlacement(
+  placements: Record<string, CopyPlacement>,
+  copyId: string,
+  binderId: string,
+  pocketCode: string,
+) {
+  const placed = placements[copyId];
+  if (placed?.binderId === binderId && placed.pocketCode === pocketCode) {
+    delete placements[copyId];
+  }
 }
 
 type SectionKey = "sort" | "import" | "theme" | "panels";
@@ -300,6 +383,7 @@ function Pocket({
   layoutId,
   insertNonce,
   reduceMotion,
+  copy,
   onSelect,
 }: {
   code: string;
@@ -312,6 +396,8 @@ function Pocket({
   // Set only for the pocket that received a card through the search "add card" path.
   insertNonce?: number;
   reduceMotion: boolean;
+  // The copy linked to this pocket, when it is one of the owner's known copies.
+  copy?: EditorCopy;
   onSelect: (code: string, additive: boolean) => void;
 }) {
   const hasContent = !!content && content.kind !== "empty";
@@ -384,6 +470,11 @@ function Pocket({
             <span className="sb-ed-slot-code">{code}</span>
           )}
         </motion.div>
+        {copy && (
+          <span className="sb-ed-copy-badge">
+            <CopyBadge language={copy.language} grading={copy.grading} size="sm" />
+          </span>
+        )}
       </motion.div>
     </button>
   );
@@ -391,6 +482,7 @@ function Pocket({
 
 export function BinderEditor({
   binderId,
+  binderName,
   faces,
   format,
   pockets,
@@ -398,6 +490,7 @@ export function BinderEditor({
   displays,
   prices,
   theme,
+  copies,
 }: BinderEditorProps) {
   const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
   const [query, setQuery] = useState("");
@@ -451,7 +544,28 @@ export function BinderEditor({
   const [insertion, setInsertion] = useState<{ code: string; nonce: number } | null>(null);
   const insertNonceRef = useRef(0);
   const flipTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const effectivePockets = optimisticPockets ?? pockets;
+  // Pocket changes wait for the server, as before: the grid follows the props
+  // that the action's revalidation refreshes. Copy links are mirrored at once
+  // (linkLocally) and the props replace them on the next refresh (below).
+  const [synced, setSynced] = useState({ pockets, copies });
+  const [live, setLive] = useState<LiveLayout>(() => ({
+    pockets,
+    placements: placementsFromCopies(copies),
+  }));
+  // Copy links live outside undo history (see replayChanges). This list holds
+  // every copy shown in the editor, including ones created here.
+  const [copyList, setCopyList] = useState<EditorCopy[]>(copies);
+  const [copyBusy, setCopyBusy] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
+  const [pendingMove, setPendingMove] = useState<PendingMove | null>(null);
+  if (synced.pockets !== pockets || synced.copies !== copies) {
+    // Server refresh (new props object): adopt it. Adjusting state during render
+    // is the React-sanctioned way to derive state from changed props.
+    setSynced({ pockets, copies });
+    setLive({ pockets, placements: placementsFromCopies(copies) });
+    setCopyList(copies);
+  }
+  const effectivePockets = optimisticPockets ?? live.pockets;
 
   function getContent(code: string): PocketValue {
     return effectivePockets[code] ?? EMPTY_POCKET;
@@ -470,6 +584,46 @@ export function BinderEditor({
     runChanges(entries.map(({ pocketCode, after }) => ({ pocketCode, content: after })));
   }
 
+  /**
+   * Turns a history side ("before" for undo, "after" for redo) into writes that
+   * keep the copies right. Each history entry remembers the instance a pocket
+   * had at the time, but copies are linked and moved outside history, so that
+   * snapshot can be stale. Rule:
+   * - same card now as in the snapshot: keep the copy the pocket holds now;
+   * - card changed: restore the snapshot's copy only if it is free (unplaced,
+   *   or released by this same batch) and no other pocket of the batch claims it;
+   * - otherwise the pocket goes without a copy.
+   */
+  function replayChanges(entries: HistoryChange[], side: "before" | "after"): PocketChange[] {
+    const batchCodes = new Set(entries.map((entry) => entry.pocketCode));
+    const claimed = new Set<string>();
+    return entries.map(({ pocketCode, before, after }) => {
+      const target = side === "before" ? before : after;
+      if (target.kind !== "card") {
+        return { pocketCode, content: target };
+      }
+      const now = effectivePockets[pocketCode];
+      let instance: string | null;
+      if (now?.kind === "card" && now.variant === target.variant) {
+        instance = now.instance;
+      } else {
+        instance = target.instance;
+        if (instance) {
+          const holder = live.placements[instance];
+          const free =
+            !holder || (holder.binderId === binderId && batchCodes.has(holder.pocketCode));
+          if (!free || claimed.has(instance)) {
+            instance = null;
+          }
+        }
+      }
+      if (instance) {
+        claimed.add(instance);
+      }
+      return { pocketCode, content: { ...target, instance } };
+    });
+  }
+
   function handleSelect(code: string, additive: boolean) {
     setSelectedCodes((current) => {
       if (additive) {
@@ -479,6 +633,8 @@ export function BinderEditor({
     });
     setQuery("");
     setResults([]);
+    setPendingMove(null);
+    setCopyError(null);
   }
 
   /** Toolbar buttons open the matching side card and bring it into view. */
@@ -580,7 +736,7 @@ export function BinderEditor({
     }
     setUndoStack((stack) => stack.slice(0, -1));
     setRedoStack((stack) => [...stack, entry]);
-    runChanges(entry.changes.map(({ pocketCode, before }) => ({ pocketCode, content: before })));
+    runChanges(replayChanges(entry.changes, "before"));
   }
 
   function handleRedo() {
@@ -590,7 +746,7 @@ export function BinderEditor({
     }
     setRedoStack((stack) => stack.slice(0, -1));
     setUndoStack((stack) => [...stack, entry]);
-    runChanges(entry.changes.map(({ pocketCode, after }) => ({ pocketCode, content: after })));
+    runChanges(replayChanges(entry.changes, "after"));
   }
 
   async function handleApplySort() {
@@ -767,6 +923,118 @@ export function BinderEditor({
     });
   }
 
+  // Copy links (Fase 7). The server calls are in collection-actions.ts; the
+  // results are mirrored here at once. Copy links are NOT in undo history:
+  // undo/redo only rewrites card identity, and replayChanges keeps the copies.
+  function linkLocally(pocketCode: string, copyId: string | null) {
+    setLive((state) => {
+      const content = state.pockets[pocketCode];
+      if (content?.kind !== "card") {
+        return state;
+      }
+      const pockets = { ...state.pockets };
+      const placements = { ...state.placements };
+      if (content.instance) {
+        releasePlacement(placements, content.instance, binderId, pocketCode);
+      }
+      if (copyId) {
+        // A copy moved here from another pocket of this binder leaves that pocket.
+        const holder = placements[copyId];
+        if (holder?.binderId === binderId && holder.pocketCode !== pocketCode) {
+          const other = pockets[holder.pocketCode];
+          if (other?.kind === "card" && other.instance === copyId) {
+            pockets[holder.pocketCode] = { ...other, instance: null };
+          }
+        }
+        placements[copyId] = { binderId, binderName, pocketCode };
+      }
+      pockets[pocketCode] = { ...content, instance: copyId };
+      return { pockets, placements };
+    });
+  }
+
+  async function pickCopy(copyId: string, move = false) {
+    if (!singleSelectedCode) {
+      return;
+    }
+    const code = singleSelectedCode;
+    setCopyError(null);
+    const placed = live.placements[copyId];
+    if (!move && placed && !(placed.binderId === binderId && placed.pocketCode === code)) {
+      setPendingMove({ copyId, location: pocketLabel(placed) });
+      return;
+    }
+    setCopyBusy(true);
+    try {
+      const result = await linkPocketCopy(binderId, code, copyId, move);
+      if (!result.ok) {
+        setPendingMove({
+          copyId,
+          location: `${result.binderName} · ${result.pocketCode}`,
+        });
+        return;
+      }
+      setPendingMove(null);
+      linkLocally(code, copyId);
+    } catch {
+      setCopyError(messageForCopyError());
+    } finally {
+      setCopyBusy(false);
+    }
+  }
+
+  async function unlinkCopy() {
+    if (!singleSelectedCode) {
+      return;
+    }
+    const code = singleSelectedCode;
+    setCopyError(null);
+    setCopyBusy(true);
+    try {
+      await linkPocketCopy(binderId, code, null);
+      linkLocally(code, null);
+    } catch {
+      setCopyError(messageForCopyError());
+    } finally {
+      setCopyBusy(false);
+    }
+  }
+
+  async function createCopy(input: NewCopyInput) {
+    if (!singleSelectedCode) {
+      return;
+    }
+    const code = singleSelectedCode;
+    const content = getContent(code);
+    if (content.kind !== "card") {
+      return;
+    }
+    setCopyError(null);
+    setCopyBusy(true);
+    try {
+      const copyId = await createCopyForPocket(binderId, code, input);
+      setCopyList((list) => [
+        ...list,
+        {
+          id: copyId,
+          variantId: content.variant,
+          language: input.language,
+          condition: input.condition,
+          grading: gradingLabel({
+            gradingCompany: input.gradingCompany,
+            gradingGrade: input.gradingGrade,
+          }),
+          placedIn: null,
+        },
+      ]);
+      linkLocally(code, copyId);
+    } catch {
+      setCopyError(messageForCopyError());
+    } finally {
+      setCopyBusy(false);
+    }
+  }
+
   function onSearchChange(value: string) {
     setQuery(value);
     if (debounceRef.current) {
@@ -786,6 +1054,29 @@ export function BinderEditor({
 
   const singleSelectedCode = selectedCodes.length === 1 ? selectedCodes[0] : null;
   const selectedContent = singleSelectedCode ? getContent(singleSelectedCode) : null;
+  const copyById = new Map(copyList.map((copy) => [copy.id, copy]));
+  const selectedCopy =
+    selectedContent?.kind === "card" && selectedContent.instance
+      ? copyById.get(selectedContent.instance)
+      : undefined;
+  const copyCandidates: CopyCandidate[] =
+    selectedContent?.kind === "card"
+      ? copyList
+          .filter(
+            (copy) =>
+              copy.variantId === selectedContent.variant && copy.id !== selectedContent.instance,
+          )
+          .map((copy) => {
+            const placed = live.placements[copy.id];
+            return {
+              id: copy.id,
+              language: copy.language,
+              condition: copy.condition,
+              grading: copy.grading,
+              location: placed ? `En ${pocketLabel(placed)}` : "Suelta",
+            };
+          })
+      : [];
   const totalValueUsd = computeBinderValueUsd(effectivePockets, prices);
   const panelCoverage = panelCoverageMap(panels, format);
 
@@ -916,6 +1207,11 @@ export function BinderEditor({
                         layoutId={activeMoveIds?.get(code)}
                         insertNonce={insertion?.code === code ? insertion.nonce : undefined}
                         reduceMotion={prefersReducedMotion}
+                        copy={
+                          content?.kind === "card" && content.instance
+                            ? copyById.get(content.instance)
+                            : undefined
+                        }
                         onSelect={handleSelect}
                       />
                     );
@@ -1031,6 +1327,35 @@ export function BinderEditor({
                     )}
                   </div>
                 </div>
+              )}
+
+              {selectedContent?.kind === "card" && (
+                <CopySection
+                  key={`${singleSelectedCode}-${selectedCopy?.id ?? "none"}`}
+                  linked={
+                    selectedCopy
+                      ? {
+                          id: selectedCopy.id,
+                          language: selectedCopy.language,
+                          condition: selectedCopy.condition,
+                          grading: selectedCopy.grading,
+                        }
+                      : null
+                  }
+                  candidates={copyCandidates}
+                  pendingMove={pendingMove ? { location: pendingMove.location } : null}
+                  busy={copyBusy || isPending}
+                  error={copyError}
+                  onPick={(copyId) => void pickCopy(copyId)}
+                  onConfirmMove={() => {
+                    if (pendingMove) {
+                      void pickCopy(pendingMove.copyId, true);
+                    }
+                  }}
+                  onCancelMove={() => setPendingMove(null)}
+                  onUnlink={() => void unlinkCopy()}
+                  onCreate={createCopy}
+                />
               )}
 
               <div className="sb-ed-search">

@@ -1,8 +1,14 @@
-import { formatPocketCode, generateSpreads } from "@sleevebook/binder-core";
+import {
+  formatPocketCode,
+  generateSpreads,
+  gradingLabel,
+  placeCopies,
+} from "@sleevebook/binder-core";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BinderEditor } from "../../../../components/binder/binder-editor";
+import { BinderEditor, type EditorCopy } from "../../../../components/binder/binder-editor";
 import { getBinderWithLayout, getVariantDisplays } from "../../../../lib/binders";
+import { listCopies, loadUserLayouts } from "../../../../lib/collection";
 import { getLatestPrices } from "../../../../lib/pricing";
 import { requireBinderOwner } from "../../../../lib/session";
 import { clampSpreadIndex } from "../../../../lib/spreads";
@@ -35,7 +41,7 @@ const NAV_DISABLED = {
 
 export default async function BinderEditorPage({ params, searchParams }: PageProps) {
   const { binderId } = await params;
-  await requireBinderOwner(binderId, `/binders/${binderId}/editar`);
+  const owner = await requireBinderOwner(binderId, `/binders/${binderId}/editar`);
   const { spread: spreadParam } = await searchParams;
 
   const binderData = await getBinderWithLayout(binderId);
@@ -76,6 +82,31 @@ export default async function BinderEditorPage({ params, searchParams }: PagePro
     Object.entries(pricesMap).map(([id, price]) => [id, price.amountUsd]),
   );
 
+  // Fase 7: the owner's copies of the cards in this binder, and where each one
+  // sits (any binder of theirs), for the copy section and the pocket badges.
+  const [allCopies, layouts] = await Promise.all([listCopies(owner.id), loadUserLayouts(owner.id)]);
+  const placements = placeCopies(layouts);
+  const binderNames = new Map(layouts.map((layout) => [layout.binderId, layout.binderName]));
+  const copies: EditorCopy[] = allCopies
+    .filter((copy) => allVariantIds.has(copy.variantId))
+    .map((copy) => {
+      const placed = placements.get(copy.id);
+      return {
+        id: copy.id,
+        variantId: copy.variantId,
+        language: copy.language,
+        condition: copy.condition,
+        grading: gradingLabel(copy),
+        placedIn: placed
+          ? {
+              binderId: placed.binderId,
+              binderName: binderNames.get(placed.binderId) ?? "",
+              pocketCode: placed.pocketCode,
+            }
+          : null,
+      };
+    });
+
   return (
     <main
       style={{
@@ -114,7 +145,9 @@ export default async function BinderEditorPage({ params, searchParams }: PagePro
           </p>
         </header>
         <BinderEditor
+          key={`${binderId}-${index}`}
           binderId={binderId}
+          binderName={binderData.name}
           faces={spread.faces}
           format={format}
           pockets={pockets}
@@ -122,6 +155,7 @@ export default async function BinderEditorPage({ params, searchParams }: PagePro
           displays={displays}
           prices={prices}
           theme={binderData.layout.theme}
+          copies={copies}
         />
         <nav
           aria-label="Páginas del editor"
