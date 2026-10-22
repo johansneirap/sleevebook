@@ -2,7 +2,7 @@
 
 import { defaultFoilMask } from "@sleevebook/binder-core";
 import { motion } from "motion/react";
-import { type CSSProperties, useEffect, useState } from "react";
+import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { VariantDisplay } from "../../lib/binders";
 import { usePrefersReducedMotion } from "../../lib/use-prefers-reduced-motion";
 import { HoloGl } from "../card-render/holo-gl";
@@ -22,6 +22,9 @@ const DESKTOP_VERTICAL_MARGIN = 72;
 const EDGE = 16;
 /** Height kept free under the card on phones for the bottom sheet. */
 const PHONE_PANEL_RESERVE = 260;
+/** Phones: room kept above the card for the close button. */
+const PHONE_TOP_RESERVE = 68;
+const PHONE_CARD_MIN_WIDTH = 120;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
@@ -211,7 +214,40 @@ export function CardFocusOverlay({
       sidePanel: viewportWidth >= SIDE_PANEL_MIN_VIEWPORT,
     };
   });
-  const { cardWidth, sidePanel } = layout;
+  const { sidePanel } = layout;
+
+  // Phones: the bottom sheet's height depends on its content, so it is
+  // measured before the first paint and the card is fitted into the space
+  // above it (never under it). The FLIP origin is re-aimed at that spot.
+  const sheetRef = useRef<HTMLElement>(null);
+  const [phoneFit, setPhoneFit] = useState<{
+    cardWidth: number;
+    origin: FocusOrigin;
+    top: number;
+    height: number;
+  } | null>(null);
+  useLayoutEffect(() => {
+    if (sidePanel || !sheetRef.current) return;
+    const { width: viewportWidth, height: viewportHeight } = viewportSize();
+    const sheetHeight = sheetRef.current.getBoundingClientRect().height;
+    const height = Math.max(0, viewportHeight - sheetHeight - PHONE_TOP_RESERVE - EDGE);
+    const fitted = clamp(
+      Math.min(viewportWidth - 2 * EDGE, Math.floor(height / CARD_ASPECT_RATIO)),
+      PHONE_CARD_MIN_WIDTH,
+      CARD_MAX_WIDTH,
+    );
+    const pocketWidth = origin.scale * layout.cardWidth;
+    const centerShift = PHONE_TOP_RESERVE + height / 2 - viewportHeight / 2;
+    setPhoneFit({
+      cardWidth: fitted,
+      origin: { x: origin.x, y: origin.y - centerShift, scale: pocketWidth / fitted },
+      top: PHONE_TOP_RESERVE,
+      height,
+    });
+  }, [sidePanel, origin, layout.cardWidth]);
+  const cardWidth = phoneFit?.cardWidth ?? layout.cardWidth;
+  const cardOrigin = phoneFit?.origin ?? origin;
+  const showCard = sidePanel || phoneFit !== null;
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -243,9 +279,9 @@ export function CardFocusOverlay({
         transition: REDUCED_FADE,
       }
     : {
-        initial: { x: origin.x, y: origin.y, scale: origin.scale, opacity: 1 },
+        initial: { x: cardOrigin.x, y: cardOrigin.y, scale: cardOrigin.scale, opacity: 1 },
         animate: { x: 0, y: 0, scale: 1, opacity: 1 },
-        exit: { x: origin.x, y: origin.y, scale: origin.scale, opacity: 1 },
+        exit: { x: cardOrigin.x, y: cardOrigin.y, scale: cardOrigin.scale, opacity: 1 },
         transition: SPRING,
       };
 
@@ -264,7 +300,7 @@ export function CardFocusOverlay({
         left: 0,
         right: 0,
         bottom: 0,
-        maxHeight: "60vh",
+        maxHeight: "55vh",
         overflowY: "auto",
         padding: "10px 20px calc(20px + env(safe-area-inset-bottom, 0px))",
         borderRadius: "20px 20px 0 0",
@@ -316,39 +352,44 @@ export function CardFocusOverlay({
       <div
         style={{
           position: "absolute",
-          inset: 0,
+          ...(phoneFit
+            ? { left: 0, right: 0, top: phoneFit.top, height: phoneFit.height }
+            : { inset: 0 }),
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           pointerEvents: "none",
         }}
       >
-        <motion.div
-          data-testid="focused-card"
-          initial={cardMotion.initial}
-          animate={cardMotion.animate}
-          exit={cardMotion.exit}
-          transition={cardMotion.transition}
-          style={{ width: cardWidth, pointerEvents: "auto", willChange: "transform" }}
-        >
-          <FlipCard
-            flipped={flipped}
-            width={cardWidth}
-            front={
-              <HoloGl
-                imageUrl={display.imageUrl}
-                name={display.name}
-                variant={display.variant}
-                mask={display.foilMask ?? defaultFoilMask(display.variant)}
-                sleeve={sleeve}
-                width={cardWidth}
-              />
-            }
-            back={<CardBack width={cardWidth} />}
-          />
-        </motion.div>
+        {showCard && (
+          <motion.div
+            data-testid="focused-card"
+            initial={cardMotion.initial}
+            animate={cardMotion.animate}
+            exit={cardMotion.exit}
+            transition={cardMotion.transition}
+            style={{ width: cardWidth, pointerEvents: "auto", willChange: "transform" }}
+          >
+            <FlipCard
+              flipped={flipped}
+              width={cardWidth}
+              front={
+                <HoloGl
+                  imageUrl={display.imageUrl}
+                  name={display.name}
+                  variant={display.variant}
+                  mask={display.foilMask ?? defaultFoilMask(display.variant)}
+                  sleeve={sleeve}
+                  width={cardWidth}
+                />
+              }
+              back={<CardBack width={cardWidth} />}
+            />
+          </motion.div>
+        )}
       </div>
       <motion.section
+        ref={sheetRef}
         aria-label="Datos de catálogo"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -453,17 +494,20 @@ export function CardFocusOverlay({
             ) : null}
           </div>
         ) : null}
-        <p
-          className="sb-data"
-          style={{
-            margin: "14px 0 0",
-            fontSize: 12,
-            color: "var(--muted)",
-            overflowWrap: "anywhere",
-          }}
-        >
-          {caption}
-        </p>
+        {/* Phones: the caption repeats the chips; skip it to leave room for the card. */}
+        {sidePanel ? (
+          <p
+            className="sb-data"
+            style={{
+              margin: "14px 0 0",
+              fontSize: 12,
+              color: "var(--muted)",
+              overflowWrap: "anywhere",
+            }}
+          >
+            {caption}
+          </p>
+        ) : null}
         <div
           style={{
             display: "flex",
