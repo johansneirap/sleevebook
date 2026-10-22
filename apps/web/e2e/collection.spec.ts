@@ -53,7 +53,13 @@ async function openAddDialogFor(page: import("@playwright/test").Page, name: str
   await expect(async () => {
     await dialog.getByLabel("Busca la carta por nombre").fill(name);
     await expect(result).toBeVisible({ timeout: 5_000 });
-  }).toPass({ timeout: 60_000 });
+  })
+    .toPass({ timeout: 60_000 })
+    .catch(async (error) => {
+      // TEMP: CI-only failure, show what the dialog rendered.
+      console.log("DIALOG TEXT:", await dialog.innerText());
+      throw error;
+    });
   await result.click();
   return dialog;
 }
