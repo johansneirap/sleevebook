@@ -364,7 +364,7 @@ Las ideas con más potencial son las que conectan el binder digital con el físi
 
 ## Roadmap y tracking
 
-Seis fases; cada una termina con algo usable. La fase 1 tiene que poder reproducir los dos binders de Zoroark y Lucario. Marca las tareas aquí a medida que avanzan.
+Siete fases (0–6); cada una termina con algo usable. La fase 1 tiene que poder reproducir los dos binders de Zoroark y Lucario. Marca las tareas aquí a medida que avanzan.
 
 ### Fase 0 — Fundaciones
 
@@ -414,6 +414,13 @@ Seis fases; cada una termina con algo usable. La fase 1 tiene que poder reproduc
 - [x] Holo con WebGL y relieve (N3); máscaras de foil por carta (N4) (WebGL propio sin three.js; máscaras las cura el administrador — ver registro)
 - [x] Escaneo de cartas con cámara (Claude Vision con Haiku; límite diario por usuario — ver registro)
 - [ ] Segundo TCG (One Piece o Lorcana) — postergado por decisión del usuario (2026-10-19)
+
+### Fase 6 — Rediseño "Estante"
+
+- [x] App clara y amable: tokens v2, Plus Jakarta Sans, barra superior y barra inferior en móvil (`docs/DESIGN_BRIEF.md` v2)
+- [x] Binder como objeto real: tapa, lomo con anillas, hojas de papel y fundas; en móvil una hoja a la vez con deslizamiento
+- [x] Todas las pantallas (biblioteca, landing, visor, vendedor, comunidad, editor, escáner) en el nuevo diseño
+- [x] Ajustes tras revisión: giro de página curvo sin pliegue recto; carta ampliada sobre el panel inferior en móvil
 
 ## Decisiones abiertas y registro
 
