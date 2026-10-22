@@ -109,6 +109,8 @@ test.describe
   .serial("plantillas", () => {
     test("guardar un binder como plantilla pública y usarla", async ({ page }) => {
       await page.goto(`/binders/${sourceBinderId}/plantilla`);
+      // Typing before hydration would be reset when React takes over the form.
+      await page.waitForLoadState("networkidle");
       await expect(page.getByLabel("Nombre")).toHaveValue(`F4E Origen ${RUN_TAG} (diseño)`);
       await page.getByLabel("Nombre").fill(TEMPLATE_NAME);
       await page.getByLabel("Descripción (opcional)").fill("Plantilla de prueba E2E");

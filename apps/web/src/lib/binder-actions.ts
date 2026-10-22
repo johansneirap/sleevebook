@@ -1,6 +1,6 @@
 "use server";
 
-import { createEmptyLayout } from "@sleevebook/binder-core";
+import { createEmptyLayout, layoutSchema } from "@sleevebook/binder-core";
 import { binder, binderVersion } from "@sleevebook/db";
 import { desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -94,10 +94,19 @@ export async function duplicateBinder(formData: FormData): Promise<void> {
     .returning({ id: binder.id });
   const binderId = (created as { id: string }).id;
 
+  // A physical copy sits in one pocket only: the duplicate keeps the cards
+  // but not the links to the original's copies.
+  const layout = layoutSchema.parse(latestVersion.layout);
+  const pockets = Object.fromEntries(
+    Object.entries(layout.pockets).map(([code, content]) => [
+      code,
+      content.kind === "card" ? { ...content, instance: null } : content,
+    ]),
+  );
   await db.insert(binderVersion).values({
     binderId,
     versionNumber: 1,
-    layout: latestVersion.layout,
+    layout: { ...layout, pockets },
   });
 
   revalidatePath("/binders");
