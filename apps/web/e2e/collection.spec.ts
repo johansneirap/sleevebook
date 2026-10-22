@@ -53,13 +53,7 @@ async function openAddDialogFor(page: import("@playwright/test").Page, name: str
   await expect(async () => {
     await dialog.getByLabel("Busca la carta por nombre").fill(name);
     await expect(result).toBeVisible({ timeout: 5_000 });
-  })
-    .toPass({ timeout: 60_000 })
-    .catch(async (error) => {
-      // TEMP: CI-only failure, show what the dialog rendered.
-      console.log("DIALOG TEXT:", await dialog.innerText());
-      throw error;
-    });
+  }).toPass({ timeout: 60_000 });
   await result.click();
   return dialog;
 }
@@ -121,6 +115,10 @@ test.describe
       await dialog.getByLabel(/^Idioma/).selectOption("ja");
       await dialog.getByRole("button", { name: "Agregar copias", exact: true }).click();
       await expect(page.getByRole("dialog")).toBeHidden();
+      // Wait for the refreshed list: reopening earlier lets the refresh remount
+      // the dialog mid-search (seen on slow CI runners).
+      await expect(page.locator(".sb-col-row", { hasText: "F5C Alfa" })).toHaveCount(1);
+      await page.waitForLoadState("networkidle");
 
       // A worn English copy, kept as its own row.
       dialog = await openAddDialogFor(page, "F5C Alfa");
