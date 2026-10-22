@@ -115,6 +115,8 @@ test("visiting a binder without ?spread shows the closed binder first", async ({
 
 test("ver lomo rotates the closed binder to its spine", async ({ page }) => {
   await page.goto(`/binders/${binderId}`);
+  // The buttons only respond once React has hydrated the page.
+  await page.waitForLoadState("networkidle");
   await page.getByRole("button", { name: "Ver lomo" }).click();
   await expect(page.getByTestId("binder-spine")).toBeVisible();
   // Once settled, the front cover is edge-on to the viewer (narrow box).
@@ -127,6 +129,8 @@ test("Abrir binder shows the spread and Cerrar binder returns to the closed view
   page,
 }) => {
   await page.goto(`/binders/${binderId}`);
+  // The buttons only respond once React has hydrated the page.
+  await page.waitForLoadState("networkidle");
   await page.getByRole("button", { name: "Abrir binder" }).click();
   await expect(page.getByText("Hoja 1 · Frente")).toBeVisible({ timeout: 10_000 });
   await expect(page.getByText("E2E Test Card 1")).toBeVisible();
