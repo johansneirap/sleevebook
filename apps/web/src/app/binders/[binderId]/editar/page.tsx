@@ -1,4 +1,5 @@
 import {
+  estimateCopyValueUsd,
   formatPocketCode,
   generateSpreads,
   gradingLabel,
@@ -97,6 +98,7 @@ export default async function BinderEditorPage({ params, searchParams }: PagePro
         language: copy.language,
         condition: copy.condition,
         grading: gradingLabel(copy),
+        valueUsd: estimateCopyValueUsd(copy, prices[copy.variantId])?.amountUsd ?? null,
         placedIn: placed
           ? {
               binderId: placed.binderId,

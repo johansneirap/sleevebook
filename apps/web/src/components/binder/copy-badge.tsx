@@ -2,7 +2,8 @@ import { languageChip, languageLabel } from "@sleevebook/binder-core";
 
 // Fase 7: small tags for a physical copy shown on a pocket. Presentational
 // only (no data): the caller passes the copy's language code and grading
-// label. Inline styles with tokens, so the viewer can reuse it without CSS.
+// label. Inline styles with tokens, shared by the editor and the viewer;
+// solid colors so the tags stay legible over card art.
 // Renders nothing for an English raw copy.
 
 export interface CopyBadgeProps {
@@ -43,7 +44,7 @@ export function CopyBadge({ language, grading, size = "md" }: CopyBadgeProps) {
       {showLanguage && (
         <span
           title={languageLabel(language)}
-          style={{ ...tag, background: "var(--accent-soft)", color: "var(--accent-strong)" }}
+          style={{ ...tag, background: "rgba(27,32,51,0.82)", color: "#fff" }}
         >
           {languageChip(language)}
         </span>
@@ -51,12 +52,7 @@ export function CopyBadge({ language, grading, size = "md" }: CopyBadgeProps) {
       {grading !== null && (
         <span
           title={`Gradeo: ${grading}`}
-          style={{
-            ...tag,
-            background: "var(--surface)",
-            color: "var(--ink)",
-            border: "1px solid var(--line)",
-          }}
+          style={{ ...tag, background: "var(--accent)", color: "#fff" }}
         >
           {grading}
         </span>

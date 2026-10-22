@@ -425,11 +425,11 @@ Ocho fases (0–7); cada una termina con algo usable. La fase 1 tiene que poder 
 ### Fase 7 — Copias reales
 
 - [x] Modelo: `card_instance` como copia física (idioma, condición, gradeo, precio de compra, valor propio); un bolsillo enlaza a lo más una copia
-- [ ] "Mi colección" (`/coleccion`): listar, filtrar, agregar, editar y borrar copias; crear copias desde los binders existentes
-- [ ] Editor: asignar o crear la copia de un bolsillo
-- [ ] Visor, link público y modo vendedor: chip de idioma y gradeo en el bolsillo; idioma, condición y gradeo en la carta ampliada
-- [ ] Precio estimado por condición (NM 100 %, LP 85 %, MP 70 %, HP 50 %, DMG 30 %); gradeadas con valor propio o el precio NM como referencia
-- [ ] Intercambios: las copias sueltas cuentan como repetidas
+- [x] "Mi colección" (`/coleccion`): listar, filtrar, agregar, editar y borrar copias; crear copias desde los binders existentes
+- [x] Editor: asignar o crear la copia de un bolsillo
+- [x] Visor, link público y modo vendedor: chip de idioma y gradeo en el bolsillo; idioma, condición y gradeo en la carta ampliada
+- [x] Precio estimado por condición (NM 100 %, LP 85 %, MP 70 %, HP 50 %, DMG 30 %); gradeadas con valor propio o el precio NM como referencia
+- [x] Intercambios: las copias sueltas cuentan como repetidas
 
 ## Decisiones abiertas y registro
 

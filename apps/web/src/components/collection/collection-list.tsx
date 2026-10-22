@@ -99,7 +99,12 @@ export function CollectionList({ rows }: { rows: CopyGroupRow[] }) {
                 </div>
 
                 <p className="sb-col-value">
-                  <span className="sb-data sb-col-value-amount">{row.valueText}</span>
+                  <span
+                    className="sb-data sb-col-value-amount"
+                    data-empty={row.valueText === "sin precio"}
+                  >
+                    {row.valueText}
+                  </span>
                   {row.valueHint ? <span className="sb-col-hint">{row.valueHint}</span> : null}
                 </p>
 

@@ -7,12 +7,13 @@ import {
   cardInstance,
   cardVariant,
   createDb,
-  DEV_USER_ID,
   ensureDevUser,
   game,
   set,
+  user,
 } from "@sleevebook/db";
 import { eq, inArray } from "drizzle-orm";
+import { createTestUser, signInAs, TEST_USER_PASSWORD } from "./auth-helpers";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
@@ -51,41 +52,49 @@ async function openAddDialogFor(page: import("@playwright/test").Page, name: str
   return dialog;
 }
 
+// Fixtures are shared by every describe below, so the file runs in order.
+test.describe.configure({ mode: "serial" });
+
+const OWNER_ID = "e2e-collection-owner";
+const OWNER_EMAIL = "e2e-collection-owner@sleevebook.local";
+
+test.beforeAll(async () => {
+  await ensureDevUser(db);
+
+  const [gameRow] = await db
+    .insert(game)
+    .values({ name: "F5C Collection Fixture Game" })
+    .returning({ id: game.id });
+  gameId = (gameRow as { id: string }).id;
+
+  const [setRow] = await db
+    .insert(set)
+    .values({ gameId, name: "F5C Collection Fixture Set", language: "en" })
+    .returning({ id: set.id });
+  setId = (setRow as { id: string }).id;
+
+  alfaVariantId = await addCard("F5C Alfa", "1");
+  betaVariantId = await addCard("F5C Beta", "2");
+});
+
+test.afterAll(async () => {
+  // The owner of the "crear desde binders" test cascades to its binder and copies.
+  await db
+    .delete(cardInstance)
+    .where(inArray(cardInstance.variantId, [alfaVariantId, betaVariantId]));
+  if (binderId) {
+    await db.delete(binder).where(eq(binder.id, binderId));
+  }
+  await db.delete(cardVariant).where(inArray(cardVariant.id, [alfaVariantId, betaVariantId]));
+  await db.delete(card).where(eq(card.setId, setId));
+  await db.delete(set).where(eq(set.id, setId));
+  await db.delete(game).where(eq(game.id, gameId));
+  await db.delete(user).where(eq(user.id, OWNER_ID));
+  await db.$client.end();
+});
+
 test.describe
   .serial("Mi colección", () => {
-    test.beforeAll(async () => {
-      await ensureDevUser(db);
-
-      const [gameRow] = await db
-        .insert(game)
-        .values({ name: "F5C Collection Fixture Game" })
-        .returning({ id: game.id });
-      gameId = (gameRow as { id: string }).id;
-
-      const [setRow] = await db
-        .insert(set)
-        .values({ gameId, name: "F5C Collection Fixture Set", language: "en" })
-        .returning({ id: set.id });
-      setId = (setRow as { id: string }).id;
-
-      alfaVariantId = await addCard("F5C Alfa", "1");
-      betaVariantId = await addCard("F5C Beta", "2");
-    });
-
-    test.afterAll(async () => {
-      await db
-        .delete(cardInstance)
-        .where(inArray(cardInstance.variantId, [alfaVariantId, betaVariantId]));
-      if (binderId) {
-        await db.delete(binder).where(eq(binder.id, binderId));
-      }
-      await db.delete(cardVariant).where(inArray(cardVariant.id, [alfaVariantId, betaVariantId]));
-      await db.delete(card).where(eq(card.setId, setId));
-      await db.delete(set).where(eq(set.id, setId));
-      await db.delete(game).where(eq(game.id, gameId));
-      await db.$client.end();
-    });
-
     test("agrega copias JP y LP desde el diálogo", async ({ page }) => {
       await page.goto("/coleccion");
       await expect(page.getByRole("heading", { name: "Mi colección" })).toBeVisible();
@@ -165,44 +174,55 @@ test.describe
       expect(alfaLines.some((line) => line.includes(",ja,NM,"))).toBe(true);
       expect(alfaLines.every((line) => line.includes(",ja,NM,"))).toBe(true);
     });
-
-    test("crea copias para las cartas de mis binders sin copia", async ({ page }) => {
-      const [binderRow] = await db
-        .insert(binder)
-        .values({
-          userId: DEV_USER_ID,
-          name: "F5C Coleccion Binder",
-          formatRows: 1,
-          formatCols: 1,
-          sheets: 1,
-          status: "published",
-        })
-        .returning({ id: binder.id });
-      binderId = (binderRow as { id: string }).id;
-      await db.insert(binderVersion).values({
-        binderId,
-        versionNumber: 1,
-        layout: layoutSchema.parse({
-          format: { rows: 1, cols: 1 },
-          opening: "side",
-          sheets: 1,
-          theme: { preset: "default", sleeve: "clear" },
-          pockets: { [POCKET]: { kind: "card", variant: betaVariantId, instance: null } },
-        }),
-      });
-
-      await page.goto("/coleccion");
-      await expect(page.getByText(/sin copia registrada\./)).toBeVisible();
-      await page.getByRole("button", { name: "Crear copias desde mis binders" }).click();
-      await expect(page.getByText(/Creamos \d+ cop/)).toBeVisible();
-
-      const betaRow = page.locator(".sb-col-row", { hasText: "F5C Beta" });
-      await expect(betaRow).toHaveCount(1);
-      await expect(betaRow.getByText("En F5C Coleccion Binder")).toBeVisible();
-      await expect(betaRow.locator(".sb-col-lang")).toHaveText("EN");
-      await expect(betaRow.getByText("Casi nueva (NM)")).toBeVisible();
-    });
   });
+
+// "Crear copias desde mis binders" acts on every binder of the user, so it
+// runs as its own user: as the dev user it would also create copies for the
+// fixture binders of specs running in parallel.
+test.describe("crear copias desde mis binders", () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+  test.beforeAll(async () => {
+    await createTestUser(db, { id: OWNER_ID, email: OWNER_EMAIL, handle: "e2e-coleccion" });
+  });
+
+  test("crea copias para las cartas de mis binders sin copia", async ({ page, baseURL }) => {
+    await signInAs(page.request, baseURL ?? "", OWNER_EMAIL, TEST_USER_PASSWORD);
+    const [binderRow] = await db
+      .insert(binder)
+      .values({
+        userId: OWNER_ID,
+        name: "F5C Coleccion Binder",
+        formatRows: 1,
+        formatCols: 1,
+        sheets: 1,
+        status: "published",
+      })
+      .returning({ id: binder.id });
+    binderId = (binderRow as { id: string }).id;
+    await db.insert(binderVersion).values({
+      binderId,
+      versionNumber: 1,
+      layout: layoutSchema.parse({
+        format: { rows: 1, cols: 1 },
+        opening: "side",
+        sheets: 1,
+        theme: { preset: "default", sleeve: "clear" },
+        pockets: { [POCKET]: { kind: "card", variant: betaVariantId, instance: null } },
+      }),
+    });
+
+    await page.goto("/coleccion");
+    // With no copies yet the empty state offers the same button as the callout.
+    await page.getByRole("button", { name: "Crear copias desde mis binders" }).click();
+    await expect(page.getByText(/Creamos \d+ cop/)).toBeVisible();
+
+    const betaRow = page.locator(".sb-col-row", { hasText: "F5C Beta" });
+    await expect(betaRow).toHaveCount(1);
+    await expect(betaRow.getByText("En F5C Coleccion Binder")).toBeVisible();
+    await expect(betaRow.locator(".sb-col-lang")).toHaveText("EN");
+    await expect(betaRow.getByText("Casi nueva (NM)")).toBeVisible();
+  });
+});
 
 test.describe("Mi colección en el móvil", () => {
   test.use({ viewport: { width: 390, height: 844 } });

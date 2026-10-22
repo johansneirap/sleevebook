@@ -1,5 +1,5 @@
 import type { Layout } from "@sleevebook/binder-core";
-import { conditionLabel, languageChip, languageLabel } from "@sleevebook/binder-core";
+import { conditionLabel, languageLabel } from "@sleevebook/binder-core";
 import type { CSSProperties } from "react";
 import type { PocketCopyBadge } from "../../lib/collection";
 
@@ -41,49 +41,7 @@ export function pocketCopiesByCode(
   return result;
 }
 
-const CHIP: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  height: 16,
-  padding: "0 5px",
-  borderRadius: 4,
-  background: "rgba(27,32,51,0.8)",
-  color: "#FFFFFF",
-  fontSize: 9,
-  fontWeight: 700,
-  lineHeight: 1,
-  letterSpacing: "0.02em",
-  whiteSpace: "nowrap",
-};
-
-const GRADING_CHIP: CSSProperties = {
-  ...CHIP,
-  background: "var(--accent)",
-};
-
-/**
- * Tiny language and grading chips for a pocket's corner. Renders nothing for a
- * raw English copy (the common case), so the grid stays quiet.
- */
-export function CopyBadge({ language, grading }: { language: string; grading: string | null }) {
-  if (language === "en" && grading === null) {
-    return null;
-  }
-  return (
-    <span style={{ display: "inline-flex", gap: 3 }}>
-      {language !== "en" ? (
-        <span className="sb-data" style={CHIP} title="Idioma de la carta">
-          {languageChip(language)}
-        </span>
-      ) : null}
-      {grading !== null ? (
-        <span className="sb-data" style={GRADING_CHIP} title="Gradeo">
-          {grading}
-        </span>
-      ) : null}
-    </span>
-  );
-}
+export { CopyBadge } from "./copy-badge";
 
 const FULL_CHIP: CSSProperties = {
   display: "inline-flex",

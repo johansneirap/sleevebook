@@ -12,6 +12,7 @@ import {
 import type { Format, Layout, SheetFace } from "@sleevebook/binder-core";
 import {
   computeBinderValueUsd,
+  estimateCopyValueUsd,
   formatPocketCode,
   gradingLabel,
   panelCoverageMap,
@@ -264,6 +265,8 @@ export interface EditorCopy {
   condition: string;
   /** "PSA 10"; null when raw. */
   grading: string | null;
+  /** Estimated USD value (condition / own value), for the binder total. */
+  valueUsd: number | null;
   placedIn: { binderId: string; binderName: string; pocketCode: string } | null;
 }
 
@@ -1024,6 +1027,17 @@ export function BinderEditor({
             gradingCompany: input.gradingCompany,
             gradingGrade: input.gradingGrade,
           }),
+          valueUsd:
+            estimateCopyValueUsd(
+              {
+                language: input.language,
+                condition: input.condition,
+                gradingCompany: input.gradingCompany,
+                gradingGrade: input.gradingGrade,
+                valueUsd: null,
+              },
+              prices[content.variant],
+            )?.amountUsd ?? null,
           placedIn: null,
         },
       ]);
@@ -1077,7 +1091,13 @@ export function BinderEditor({
             };
           })
       : [];
-  const totalValueUsd = computeBinderValueUsd(effectivePockets, prices);
+  const copyValues: Record<string, number> = {};
+  for (const copy of copyList) {
+    if (copy.valueUsd !== null) {
+      copyValues[copy.id] = copy.valueUsd;
+    }
+  }
+  const totalValueUsd = computeBinderValueUsd(effectivePockets, prices, copyValues);
   const panelCoverage = panelCoverageMap(panels, format);
 
   return (
@@ -1149,7 +1169,7 @@ export function BinderEditor({
           )}
         </div>
 
-        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+        <DndContext id="binder-editor-dnd" sensors={sensors} onDragEnd={handleDragEnd}>
           <div className="sb-ed-tray">
             {faces.map((face) => (
               <section key={`${face.sheet}-${face.side}`} className="sb-ed-page">

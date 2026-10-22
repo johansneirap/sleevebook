@@ -55,6 +55,13 @@
   color: var(--ink);
 }
 
+.sb-col-value-amount[data-empty="true"] {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
 .sb-col-hint {
   font-size: 12px;
   font-weight: 600;
@@ -175,8 +182,26 @@
   grid-column: 1 / -1;
 }
 
-.sb-col-filter-actions {
+/* Phones: the selects sit behind "Filtros y orden"; larger screens show them. */
+.sb-col-filter-toggle {
+  justify-self: start;
+}
+
+.sb-col-filter-toggle[aria-expanded="true"],
+.sb-col-filters:has(.sb-col-filter-toggle[aria-expanded="true"]) .sb-col-filter-actions {
   grid-column: 1 / -1;
+}
+
+.sb-col-filter-more {
+  display: contents;
+}
+
+.sb-col-filter-more[data-open="false"] > * {
+  display: none;
+}
+
+.sb-col-filter-actions {
+  justify-content: flex-end;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -675,15 +700,24 @@
 
 @media (min-width: 768px) {
   .sb-col-filters {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .sb-col-filter-toggle {
+    display: none;
+  }
+
+  .sb-col-filter-more[data-open="false"] > * {
+    display: grid;
   }
 
   .sb-col-filter-search {
-    grid-column: span 2;
+    grid-column: span 3;
   }
 
   .sb-col-filter-actions {
-    grid-column: span 6;
+    grid-column: 1 / -1;
+    justify-content: flex-start;
   }
 
   .sb-col-list {
@@ -709,6 +743,15 @@
 }
 
 @media (min-width: 1100px) {
+  .sb-col-filters {
+    grid-template-columns: minmax(0, 2fr) repeat(5, minmax(0, 1fr));
+    align-items: end;
+  }
+
+  .sb-col-filter-search {
+    grid-column: auto;
+  }
+
   .sb-col-list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
