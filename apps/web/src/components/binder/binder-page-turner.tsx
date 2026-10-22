@@ -28,6 +28,7 @@ import {
   type TurnDirection,
   turnGeometry,
 } from "./page-curl";
+import type { PocketCopyMap } from "./pocket-copy-badge";
 import { useCompactLayout } from "./use-compact-layout";
 
 const TURN_CLEANUP_MS = PAGE_TURN_MS + 50;
@@ -133,6 +134,8 @@ interface BinderPageTurnerProps {
   sleeve: string;
   /** Seller mode only; absent keeps the collection look. */
   pocketMeta?: PocketMetaMap;
+  /** Fase 7: language and grading chips of the copies linked to pockets, by pocket code. */
+  pocketCopies?: PocketCopyMap;
   /** Fase 4: the viewer's wishlist variant ids; with canWish, cards get a "mis deseos" toggle. */
   wishlistVariantIds?: string[];
   canWish?: boolean;
@@ -149,6 +152,7 @@ export function BinderPageTurner({
   displays,
   sleeve,
   pocketMeta,
+  pocketCopies,
   wishlistVariantIds,
   canWish,
 }: BinderPageTurnerProps) {
@@ -289,6 +293,7 @@ export function BinderPageTurner({
           displays,
           sleeve,
           pocketMeta,
+          pocketCopies,
           wishlistVariantIds,
           canWish,
         }}
@@ -310,6 +315,7 @@ export function BinderPageTurner({
             sleeve={sleeve}
             opening={opening}
             pocketMeta={pocketMeta}
+            pocketCopies={pocketCopies}
             wishlistVariantIds={wishlistVariantIds}
             canWish={canWish}
           />
@@ -329,6 +335,7 @@ export function BinderPageTurner({
                   displays={displays}
                   sleeve={sleeve}
                   pocketMeta={pocketMeta}
+                  pocketCopies={pocketCopies}
                   side={side}
                 />
               ) : (
@@ -394,6 +401,7 @@ export function BinderPageTurner({
 }
 
 interface PhoneFaceProps {
+  pocketCopies?: PocketCopyMap;
   format: Format;
   pockets: Layout["pockets"];
   panels: Layout["panels"];
@@ -496,6 +504,7 @@ function PhonePages({
           displays={faces.displays}
           sleeve={faces.sleeve}
           pocketMeta={faces.pocketMeta}
+          pocketCopies={faces.pocketCopies}
           wishlistVariantIds={faces.wishlistVariantIds}
           canWish={faces.canWish}
         />

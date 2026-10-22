@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BinderTitle, ProgressFigure } from "../../../components/binder/binder-header";
 import { BinderStage } from "../../../components/binder/binder-stage";
+import { pocketCopiesByCode } from "../../../components/binder/pocket-copy-badge";
 import { ThemedMain } from "../../../components/binder/themed-main";
 import { SellerContactButtons } from "../../../components/seller-public/seller-contact-buttons";
 import { loadSellerPocketData } from "../../../components/seller-public/seller-pocket-data";
@@ -10,6 +11,7 @@ import { SellerTray } from "../../../components/seller-public/seller-tray";
 import { SellerPublicProvider } from "../../../components/seller-public/want-list";
 import { SiteNav } from "../../../components/site/site-nav";
 import { collectVariantIds, getBinderWithLayout, getVariantDisplays } from "../../../lib/binders";
+import { getPocketCopies } from "../../../lib/collection";
 import { getGoalProgress } from "../../../lib/goals";
 import { getCurrentUser } from "../../../lib/session";
 import { getPublishedBinderBySlug, incrementShareViews } from "../../../lib/share";
@@ -65,8 +67,18 @@ export default async function PublicBinderPage({ params, searchParams }: PagePro
   // Seller mode only: collection binders never load listings or prices here.
   const sellerData =
     binderData.mode === "seller"
-      ? await loadSellerPocketData(publicBinder.id, pockets, displays, binderData.currency)
+      ? await loadSellerPocketData(
+          publicBinder.id,
+          binderData.ownerId,
+          pockets,
+          displays,
+          binderData.currency,
+        )
       : null;
+  // Copy chips (language, grading) only: no prices or owner values on public pages.
+  const pocketCopies =
+    sellerData?.pocketCopies ??
+    pocketCopiesByCode(pockets, (await getPocketCopies(binderData.ownerId, pockets, {})).badges);
 
   const body = (
     <section
@@ -124,6 +136,7 @@ export default async function PublicBinderPage({ params, searchParams }: PagePro
             displays={displays}
             sleeve={binderData.layout.theme.sleeve}
             pocketMeta={sellerData?.pocketMeta}
+            pocketCopies={pocketCopies}
             wishlistVariantIds={wishlistVariantIds}
             canWish={Boolean(viewer)}
           />

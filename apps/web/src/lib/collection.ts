@@ -35,6 +35,8 @@ export interface PocketCopyBadge {
   condition: string;
   /** "PSA 10"; null when raw. */
   grading: string | null;
+  /** True when the value is a condition estimate (no owner valuation). */
+  estimated: boolean;
 }
 
 const COPY_COLUMNS = {
@@ -135,13 +137,14 @@ export async function getPocketCopies(
   const badges: Record<string, PocketCopyBadge> = {};
   const values: Record<string, number> = {};
   for (const copy of copies) {
+    const value = estimateCopyValueUsd(copy, marketUsd[copy.variantId]);
     badges[copy.id] = {
       copyId: copy.id,
       language: copy.language,
       condition: copy.condition,
       grading: gradingLabel(copy),
+      estimated: value?.origin === "condicion",
     };
-    const value = estimateCopyValueUsd(copy, marketUsd[copy.variantId]);
     if (value) {
       values[copy.id] = value.amountUsd;
     }

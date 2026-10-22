@@ -1,6 +1,6 @@
 "use client";
 
-import { defaultFoilMask } from "@sleevebook/binder-core";
+import { conditionLabel, defaultFoilMask, languageLabel } from "@sleevebook/binder-core";
 import { motion } from "motion/react";
 import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { VariantDisplay } from "../../lib/binders";
@@ -10,6 +10,7 @@ import { type PocketMeta, STATUS_LABELS } from "../seller-public/types";
 import { useWantList } from "../seller-public/want-list";
 import { CardBack } from "./card-back";
 import { FlipCard } from "./flip-card";
+import type { PocketCopy } from "./pocket-copy-badge";
 
 const CARD_ASPECT_RATIO = 88 / 63;
 const CARD_MAX_WIDTH = 340;
@@ -191,6 +192,7 @@ export function CardFocusOverlay({
   onClose,
   pocketCode,
   pocketMeta,
+  copy,
   wish,
 }: {
   display: VariantDisplay;
@@ -200,6 +202,8 @@ export function CardFocusOverlay({
   /** Seller mode only: the focused pocket and its price/status. */
   pocketCode?: string;
   pocketMeta?: PocketMeta;
+  /** Fase 7: the physical copy linked to this pocket, if any. */
+  copy?: PocketCopy;
   /** Signed-in viewers only: toggles the card on their wishlist. */
   wish?: { inList: boolean; onToggle: () => void };
 }) {
@@ -453,6 +457,24 @@ export function CardFocusOverlay({
               <dd style={CHIP_VALUE}>{display.rarity}</dd>
             </div>
           ) : null}
+          {copy ? (
+            <>
+              <div style={CHIP_STYLE}>
+                <dt style={CHIP_LABEL}>Idioma</dt>
+                <dd style={CHIP_VALUE}>{languageLabel(copy.language)}</dd>
+              </div>
+              <div style={CHIP_STYLE}>
+                <dt style={CHIP_LABEL}>Condición</dt>
+                <dd style={CHIP_VALUE}>{conditionLabel(copy.condition)}</dd>
+              </div>
+              {copy.grading ? (
+                <div style={CHIP_STYLE}>
+                  <dt style={CHIP_LABEL}>Gradeo</dt>
+                  <dd style={CHIP_VALUE}>{copy.grading}</dd>
+                </div>
+              ) : null}
+            </>
+          ) : null}
         </dl>
         {pocketMeta?.price || status ? (
           <div
@@ -475,6 +497,11 @@ export function CardFocusOverlay({
                 >
                   {pocketMeta.price}
                 </dd>
+                {pocketMeta.estimated ? (
+                  <dd style={{ margin: "2px 0 0", fontSize: 12, color: "var(--muted)" }}>
+                    estimado por condición
+                  </dd>
+                ) : null}
               </dl>
             ) : null}
             {status && statusColors ? (

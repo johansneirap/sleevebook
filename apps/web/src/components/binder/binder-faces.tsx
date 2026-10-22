@@ -10,6 +10,7 @@ import type { PocketMetaMap } from "../seller-public/types";
 import { CardFocusOverlay, type FocusOrigin, measureFocusOrigin } from "./card-focus-overlay";
 import { FaceGrid, faceSizeVars } from "./face-grid";
 import type { OpeningAxis } from "./page-curl";
+import type { PocketCopyMap } from "./pocket-copy-badge";
 
 interface FocusedCard {
   code: string;
@@ -174,6 +175,7 @@ export function BinderFaces({
   opening = "side",
   single = false,
   pocketMeta,
+  pocketCopies,
   wishlistVariantIds,
   canWish = false,
 }: {
@@ -188,6 +190,8 @@ export function BinderFaces({
   single?: boolean;
   /** Seller mode only; absent keeps the collection look. */
   pocketMeta?: PocketMetaMap;
+  /** Fase 7: copy chips per pocket code (collection and seller views). */
+  pocketCopies?: PocketCopyMap;
   /** Variants already on the viewer's wishlist (signed-in viewers only). */
   wishlistVariantIds?: string[];
   /** Shows the "mis deseos" toggle in the card overlay. */
@@ -261,6 +265,7 @@ export function BinderFaces({
                 onCardClick={handleCardClick}
                 side="right"
                 pocketMeta={pocketMeta}
+                pocketCopies={pocketCopies}
               />
             )}
           </>
@@ -285,6 +290,7 @@ export function BinderFaces({
                   turnSlot={i}
                   side={SIDES[i]}
                   pocketMeta={pocketMeta}
+                  pocketCopies={pocketCopies}
                 />
               ) : (
                 <InsideCover turnSlot={i} format={format} />
@@ -305,6 +311,7 @@ export function BinderFaces({
               onClose={handleClose}
               pocketCode={focused.code}
               pocketMeta={pocketMeta?.[focused.code]}
+              copy={pocketCopies?.[focused.code]}
               wish={
                 canWish
                   ? {

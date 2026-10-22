@@ -3,6 +3,7 @@
 import { type Currency, formatMoney, type ListingStatus } from "@sleevebook/binder-core";
 import { useMemo, useState, useTransition } from "react";
 import { type ListingChange, saveListings } from "../../lib/seller-actions";
+import { CopyChips, type PocketCopy } from "../binder/pocket-copy-badge";
 import { type ListingDraft, parsePriceInput, priceToInput, sameDraft } from "./listing-model";
 
 export interface ListingRowData {
@@ -11,6 +12,8 @@ export interface ListingRowData {
   setName: string;
   number: string;
   imageUrl: string | null;
+  /** Fase 7: the physical copy linked to this pocket, if any. */
+  copy?: PocketCopy | null;
   /** Price the public page would show without a seller price, in the binder currency. */
   reference: { amount: number; origin: "manual" | "mercado" } | null;
   /** What is stored right now. */
@@ -198,6 +201,7 @@ export function ListingsEditor({ binderId, currency, rows }: ListingsEditorProps
                         {row.setName} · #{row.number}
                       </span>
                       <span className="sb-data sb-seller-code">{row.pocketCode}</span>
+                      {row.copy ? <CopyChips copy={row.copy} /> : null}
                     </span>
                   </div>
 
