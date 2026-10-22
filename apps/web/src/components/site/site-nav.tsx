@@ -309,19 +309,24 @@ const CSS = `
 
 const DESKTOP_LINKS = [
   { href: "/binders", label: "Mis binders" },
+  { href: "/coleccion", label: "Colección" },
   { href: "/deseos", label: "Deseos" },
   { href: "/intercambios", label: "Intercambios" },
   { href: "/galeria", label: "Galería" },
 ] as const;
 
+// Phones show Deseos here (not in the tab bar, which has room for five items).
 const MORE_LINKS = [
+  { href: "/deseos", label: "Deseos" },
   { href: "/galeria", label: "Galería" },
   { href: "/plantillas", label: "Plantillas" },
 ] as const;
 
+// Mobile tab bar: five slots including the central "Escanear". "Colección"
+// takes the slot of "Deseos", which moves to the "Más" menu.
 const TABS = [
   { href: "/binders", label: "Binders" },
-  { href: "/deseos", label: "Deseos" },
+  { href: "/coleccion", label: "Colección" },
   { href: "/intercambios", label: "Cambios" },
   { href: "/cuenta", label: "Cuenta" },
 ] as const;
@@ -340,6 +345,14 @@ function TabIcon({ href }: { href: string }) {
       return (
         <svg width={22} height={22} strokeWidth={2} aria-hidden="true" {...SVG_PROPS}>
           <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+        </svg>
+      );
+    case "/coleccion":
+      return (
+        <svg width={22} height={22} strokeWidth={2} aria-hidden="true" {...SVG_PROPS}>
+          <rect x="3" y="4" width="12" height="16" rx="2" />
+          <path d="M19 8v10a2 2 0 0 1-2 2H9" />
+          <path d="M7 9h4" />
         </svg>
       );
     case "/deseos":
